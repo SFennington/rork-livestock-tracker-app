@@ -17,14 +17,15 @@ jobs:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      # Install deps (works with or without a lockfile)
       - name: Install dependencies
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
@@ -45,10 +46,27 @@ jobs:
             fi
           fi
 
-      - name: Ensure EAS CLI
+      # ✅ Fix AJV stack (ajv v8 + ajv-keywords v5 + schema-utils v4)
+      - name: Ensure AJV v8 stack
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 schema-utils@^4.2.0 --no-fund
+          npm ls ajv || true
+          npm ls ajv-keywords || true
+          npm ls schema-utils || true
+
+      # ✅ Satisfy EAS probe for expo-dev-client (even for prod builds)
+      - name: Ensure expo-dev-client present
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: npm i -D expo-dev-client --no-fund || true
+
+      - name: Install EAS CLI
         working-directory: ${{ env.PROJECT_DIR }}
         run: npm i -D eas-cli
 
+      # Pin CLI in eas.json; set production android build to app-bundle & no dev-client
       - name: Normalize EAS config
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
@@ -57,7 +75,8 @@ jobs:
           test -f eas.json
           node -e "const fs=require('fs');const p='eas.json';let o={};
           try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};
-          o.cli=o.cli||{};if(!o.cli.version)o.cli.version='>=3.20.0';
+          o.cli=o.cli||{};
+          if(!o.cli.version)o.cli.version='>=3.20.0';
           if(!o.cli.appVersionSource)o.cli.appVersionSource='remote';
           o.build=o.build||{};o.build.production=o.build.production||{};
           o.build.production.android=Object.assign({buildType:'app-bundle'},o.build.production.android||{});
@@ -65,7 +84,7 @@ jobs:
           fs.writeFileSync(p,JSON.stringify(o,null,2));
           console.log('eas.json normalized');"
 
-      - name: Verify Expo project and owner
+      - name: Verify Expo owner/project
         working-directory: ${{ env.PROJECT_DIR }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -74,8 +93,7 @@ jobs:
           npx eas whoami || true
           if [ -f app.json ]; then
             node -e "
-              const fs=require('fs');const p='app.json';
-              const cp=require('child_process');
+              const fs=require('fs');const cp=require('child_process');const p='app.json';
               let j={};try{j=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};
               j.expo=j.expo||{};
               if(!j.expo.slug){
@@ -99,14 +117,21 @@ jobs:
             "
           fi
 
-      - name: Build Android AAB
+      - name: Build Android AAB (production)
         working-directory: ${{ env.PROJECT_DIR }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_DEBUG: "1"
         run: npx eas build --platform android --profile production --non-interactive --wait
 
-      - name: Download latest AAB
+      - name: Show latest EAS build
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build:list --limit 1 || true
+
+      - name: Download latest Android AAB
         if: always()
         working-directory: ${{ env.PROJECT_DIR }}
         env:
@@ -123,6 +148,3 @@ jobs:
           name: android-aab
           path: build-outputs/*.aab
           if-no-files-found: warn
-
-      - name: Output completion message
-        run: echo "✅ Build completed. Download the .AAB from the workflow artifacts in GitHub Actions."
