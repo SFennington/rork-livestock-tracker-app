@@ -32,7 +32,7 @@ export default function RecordsScreen() {
     updateIncome,
     deleteIncome,
   } = useLivestock();
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
 
   const [activeTab, setActiveTab] = useState<'eggs' | 'breeding' | 'financial'>('eggs');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -303,38 +303,38 @@ export default function RecordsScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]} testID="records-root">
-        <View style={styles.tabs}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]} testID="records-root">
+        <View style={[styles.tabs, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'eggs' && styles.activeTab]}
             onPress={() => { setActiveTab('eggs'); clearSelections(); }}
             testID="tab-eggs"
           >
-            <Egg size={20} color={activeTab === 'eggs' ? '#10b981' : '#6b7280'} />
-            <Text style={[styles.tabText, activeTab === 'eggs' && styles.activeTabText]}>Eggs</Text>
+            <Egg size={20} color={activeTab === 'eggs' ? colors.primary : colors.textMuted} />
+            <Text style={[styles.tabText, { color: activeTab === 'eggs' ? colors.primary : colors.textMuted }]}>Eggs</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'breeding' && styles.activeTab]}
             onPress={() => { setActiveTab('breeding'); clearSelections(); }}
             testID="tab-breeding"
           >
-            <Heart size={20} color={activeTab === 'breeding' ? '#10b981' : '#6b7280'} />
-            <Text style={[styles.tabText, activeTab === 'breeding' && styles.activeTabText]}>Breeding</Text>
+            <Heart size={20} color={activeTab === 'breeding' ? colors.primary : colors.textMuted} />
+            <Text style={[styles.tabText, { color: activeTab === 'breeding' ? colors.primary : colors.textMuted }]}>Breeding</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'financial' && styles.activeTab]}
             onPress={() => { setActiveTab('financial'); clearSelections(); }}
             testID="tab-financial"
           >
-            <DollarSign size={20} color={activeTab === 'financial' ? '#10b981' : '#6b7280'} />
-            <Text style={[styles.tabText, activeTab === 'financial' && styles.activeTabText]}>Financial</Text>
+            <DollarSign size={20} color={activeTab === 'financial' ? colors.primary : colors.textMuted} />
+            <Text style={[styles.tabText, { color: activeTab === 'financial' ? colors.primary : colors.textMuted }]}>Financial</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
           {activeTab === 'eggs' && (
             <View>
-              <TouchableOpacity style={[styles.addRecordButton, { backgroundColor: themeColors.primary }]} onPress={() => router.push('/log-eggs')}>
+              <TouchableOpacity style={[styles.addRecordButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/log-eggs')}>
                 <Plus size={20} color="#fff" />
                 <Text style={styles.addRecordButtonText}>Add Egg Record</Text>
               </TouchableOpacity>
