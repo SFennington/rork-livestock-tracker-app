@@ -25,42 +25,35 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # One robust step: remove conflicting deps, set overrides, and install (works with/without lockfile)
-      - name: Prepare deps (handle overrides + no-lockfile)
+      # Install deps (works with or without a lockfile)
+      - name: Install dependencies
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-          # 1) Remove direct deps that collide with overrides (avoids EOVERRIDE)
-          npm pkg delete dependencies.ajv || true
-          npm pkg delete devDependencies.ajv || true
-          npm pkg delete dependencies."ajv-keywords" || true
-          npm pkg delete devDependencies."ajv-keywords" || true
-          npm pkg delete dependencies."schema-utils" || true
-          npm pkg delete devDependencies."schema-utils" || true
-
-          # 2) Force known-good versions via overrides
-          npm pkg set "overrides.ajv=^8.12.0"
-          npm pkg set "overrides.ajv-keywords=^5.1.0"
-          npm pkg set "overrides.schema-utils=^4.2.0"
-
-          # 3) Install (choose path based on lockfile)
-          if [ -f package-lock.json ]; then
-            npm ci --no-fund || npm i --no-fund
+          if [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --frozen-lockfile || yarn install
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            pnpm install --frozen-lockfile || pnpm install
           else
-            npm i --package-lock-only --no-fund
-            npm i --no-fund
+            if [ -f package-lock.json ]; then
+              npm ci --no-fund || npm i --no-fund
+            else
+              npm i --package-lock-only --no-fund
+              npm i --no-fund
+            fi
           fi
 
-          # 4) Ensure AJV stack is present in node_modules
-          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 schema-utils@^4.2.0 --no-fund
-
-      - name: Check AJV versions
+      # Ensure ajv-keywords v5 (compatible with AJV v8) WITHOUT overrides (avoids EOVERRIDE)
+      - name: Ensure ajv-keywords v5
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
+          npm uninstall ajv-keywords || true
+          npm i -D ajv-keywords@^5.1.0 --no-fund
           npm ls ajv || true
           npm ls ajv-keywords || true
-          npm ls schema-utils || true
 
       - name: Install EAS CLI
         working-directory: ${{ env.PROJECT_DIR }}
@@ -72,6 +65,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas whoami || true
 
+      # Validate config early (helps catch bad paths/env)
       - name: Validate & print resolved Expo config
         working-directory: ${{ env.PROJECT_DIR }}
         env:
