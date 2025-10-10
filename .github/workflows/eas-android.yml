@@ -82,7 +82,9 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas build --platform android --profile production --non-interactive --wait
+          EXPO_DEBUG: "1"
+        run: npx eas build --platform android --profile production --non-interactive --wait --log-level debug
+
 
       - name: Write Play service account JSON (if provided)
         if: ${{ env.HAS_PLAY_KEY != '' }}
