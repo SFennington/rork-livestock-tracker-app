@@ -25,22 +25,20 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # One robust step: remove conflicting deps, set overrides, and install (works with/without lockfile)
-      - name: Prepare deps (handle overrides + no-lockfile)
+      # One robust step: ensure compatible ajv-* stack and install (works with/without lockfile)
+      - name: Prepare deps (handle ajv-* + no-lockfile)
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-          # 1) Remove direct deps that collide with overrides (avoids EOVERRIDE)
-          npm pkg delete dependencies.ajv || true
-          npm pkg delete devDependencies.ajv || true
+          # 1) We DO NOT override 'ajv' to avoid EOVERRIDE with your direct dependency.
+          #    Just ensure the companions are compatible with AJV v8.
           npm pkg delete dependencies."ajv-keywords" || true
           npm pkg delete devDependencies."ajv-keywords" || true
           npm pkg delete dependencies."schema-utils" || true
           npm pkg delete devDependencies."schema-utils" || true
 
-          # 2) Force known-good versions via overrides
-          npm pkg set "overrides.ajv=^8.12.0"
+          # 2) Force known-good companions (compatible with AJV v8)
           npm pkg set "overrides.ajv-keywords=^5.1.0"
           npm pkg set "overrides.schema-utils=^4.2.0"
 
@@ -52,10 +50,10 @@ jobs:
             npm i --no-fund
           fi
 
-          # 4) Ensure AJV stack is present in node_modules
-          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 schema-utils@^4.2.0 --no-fund
+          # 4) Ensure the companion libs exist in node_modules
+          npm i -D ajv-keywords@^5.1.0 schema-utils@^4.2.0 --no-fund
 
-      - name: Check AJV versions
+      - name: Check AJV stack
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
           npm ls ajv || true
