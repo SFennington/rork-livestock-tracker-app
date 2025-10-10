@@ -29,10 +29,16 @@ jobs:
       - name: Pin AJV stack (CI hotfix)
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
+          # Remove existing AJV if present (avoids EOVERRIDE)
+          npm uninstall ajv ajv-keywords schema-utils || true
+      
+          # Force known-good versions and set overrides
           npm pkg set "overrides.ajv=^8.12.0"
           npm pkg set "overrides.ajv-keywords=^5.1.0"
           npm pkg set "overrides.schema-utils=^4.2.0"
-          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0
+      
+          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 schema-utils@^4.2.0
+
 
       - name: Install dependencies
         working-directory: ${{ env.PROJECT_DIR }}
