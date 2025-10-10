@@ -16,14 +16,43 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: '20'   # Expo/RN friendly LTS
+          cache: 'npm'
+
+      # If your repo has a Yarn or PNPM lockfile, use the matching tool
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "manager=yarn" >> $GITHUB_OUTPUT
+          elif [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> $GITHUB_OUTPUT
+          else
+            echo "manager=npm" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up PNPM (only if pnpm-lock.yaml)
+        if: steps.pm.outputs.manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
+          if [ "${{ steps.pm.outputs.manager }}" = "yarn" ]; then
+            corepack enable
+            # Yarn v1 lockfiles work with this; Yarn v3+ uses --immutable
+            yarn install --frozen-lockfile || yarn install
+          elif [ "${{ steps.pm.outputs.manager }}" = "pnpm" ]; then
+            corepack enable
+            pnpm install --frozen-lockfile || pnpm install
           else
-            npm i
+            # npm path (handles ERESOLVE)
+            if [ -f package-lock.json ]; then
+              npm ci --no-audit --no-fund || npm ci --legacy-peer-deps --no-audit --no-fund || npm i --legacy-peer-deps --no-audit --no-fund
+            else
+              npm i --legacy-peer-deps --no-audit --no-fund
+            fi
           fi
 
       - name: Install EAS CLI locally
@@ -33,8 +62,3 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas build --platform android --profile production --non-interactive --wait
-
-      - name: Show latest build
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas build:list --limit 1
