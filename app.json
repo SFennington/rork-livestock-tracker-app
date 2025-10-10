@@ -2,7 +2,7 @@
   "expo": {
     "name": "Livestock Tracker App",
     "slug": "livestock-tracker-app",
-    "owner": "SFennington",
+    "owner": "sfennington",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
