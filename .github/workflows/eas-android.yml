@@ -1,18 +1,18 @@
-name: EAS Android Build & (Auto) Submit
+name: EAS Android Build & Submit
 
 on:
   workflow_dispatch:
     inputs:
       track:
-        description: "Google Play track (internal/alpha/beta/production)"
+        description: "Play track (internal/alpha/beta/production)"
         required: false
         default: "internal"
       project_dir:
-        description: "Project subfolder (leave blank if project is in repo root)"
+        description: "Project subfolder (blank = repo root)"
         required: false
         default: ""
   push:
-    branches: [ main ]   # change to your default branch if different
+    branches: [ main ]
     paths:
       - "**.js"
       - "**.ts"
@@ -28,7 +28,6 @@ on:
 
 env:
   NODE_VERSION: "20"
-  # Default values; can be overridden by workflow_dispatch inputs
   TRACK: "${{ github.event.inputs.track || 'internal' }}"
   PROJECT_DIR: "${{ github.event.inputs.project_dir || '' }}"
 
@@ -59,8 +58,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # Only cache if a lockfile exists (GitHub setup-node requires one)
-          cache: ${{ hashFiles(format('{0}/{1}', steps.rwd.outputs.dir, 'package-lock.json')) != '' && 'npm' || '' }}
 
       - name: Detect package manager
         id: pm
@@ -83,6 +80,7 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ steps.rwd.outputs.dir }}
         run: |
+          set -e
           if [ "${{ steps.pm.outputs.manager }}" = "yarn" ]; then
             corepack enable
             yarn install --frozen-lockfile || yarn install
@@ -90,7 +88,6 @@ jobs:
             corepack enable
             pnpm install --frozen-lockfile || pnpm install
           else
-            # npm path (handles missing lockfile + peer dep conflicts)
             if [ -f package-lock.json ]; then
               npm ci --no-audit --no-fund || npm ci --legacy-peer-deps --no-audit --no-fund || npm i --legacy-peer-deps --no-audit --no-fund
             else
@@ -102,29 +99,18 @@ jobs:
         working-directory: ${{ steps.rwd.outputs.dir }}
         run: npm i -D eas-cli
 
-      - name: EAS Login (token)
-        if: ${{ env.EXPO_TOKEN != '' }}
+      - name: EAS login (token)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          # npx uses local eas-cli we just installed
-          npx eas whoami || true
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        run: npx eas whoami || true
 
       - name: Build Android AAB with EAS
-        id: build
-        working-directory: ${{ steps.rwd.outputs.dir }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          # Ensure eas.json exists and build profile named 'production' is present.
-          # If your profile has a different name, change '--profile production' below.
-          npx eas build --platform android --profile production --non-interactive --wait --json > build.json
-          echo "artifact_url=$(cat build.json | jq -r '.[0].artifacts.buildUrl // .artifacts.buildUrl // .builds[0].artifacts.buildUrl')" >> $GITHUB_OUTPUT
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        run: npx eas build --platform android --profile production --non-interactive --wait
 
-      - name: Show build artifact URL
-        run: echo "AAB: ${{ steps.build.outputs.artifact_url }}"
-
-      # Prepare Google Play key file if provided
       - name: Check for Play service account key
         id: playkey
         run: |
@@ -135,26 +121,4 @@ jobs:
           fi
 
       - name: Write Play service account JSON
-        if: steps.playkey.outputs.has_key == 'true'
-        working-directory: ${{ steps.rwd.outputs.dir }}
-        run: |
-          echo '${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}' > google-play-key.json
-
-      - name: Submit to Google Play (auto)
-        if: steps.playkey.outputs.has_key == 'true'
-        working-directory: ${{ steps.rwd.outputs.dir }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          # Adjust --track as needed (internal/alpha/beta/production)
-          npx eas submit --platform android \
-            --path "$(jq -r '.artifactPath // .artifacts.buildUrl // empty' build.json || true)" \
-            --track "${TRACK}" \
-            --key "google-play-key.json" \
-            --non-interactive
-
-      - name: Note if submit was skipped
-        if: steps.playkey.outputs.has_key != 'true'
-        run: |
-          echo "PLAY_SERVICE_ACCOUNT_JSON not set; submission skipped."
-          echo "Download your AAB from the URL above and upload it in Play Console (Internal testing)."
+        if: steps.playkey.outp
