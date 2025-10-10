@@ -16,6 +16,7 @@ jobs:
       NPM_CONFIG_AUDIT: "false"
       HAS_PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
     steps:
       - name: Checkout
@@ -150,6 +151,27 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas build:list --limit 1 || true
 
+      # NEW: Download the built AAB so we can attach it to the workflow
+      - name: Download latest Android AAB
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-outputs
+          (cd build-outputs && npx eas build:download -p android --latest --non-interactive || true)
+          ls -la build-outputs || true
+
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: build-outputs/*.aab
+          if-no-files-found: warn
+
       - name: Write Play service account JSON (if provided)
         if: ${{ env.HAS_PLAY_KEY != '' }}
         working-directory: ${{ env.PROJECT_DIR }}
@@ -158,8 +180,10 @@ jobs:
           printf "%s" "${HAS_PLAY_KEY}" > google-play-key.json
           test -s google-play-key.json && echo "Key written."
 
-      - name: Submit to Google Play (auto)
+      # Make submit non-blocking so the job still succeeds
+      - name: Submit to Google Play (auto, non-blocking)
         if: ${{ env.HAS_PLAY_KEY != '' }}
+        continue-on-error: true
         working-directory: ${{ env.PROJECT_DIR }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -167,7 +191,7 @@ jobs:
 
       - name: Submission skipped note
         if: ${{ env.HAS_PLAY_KEY == '' }}
-        run: echo "No PLAY_SERVICE_ACCOUNT_JSON secret; submission skipped. Download AAB from the EAS build page."
+        run: echo "No PLAY_SERVICE_ACCOUNT_JSON secret; submission skipped. Use the 'android-aab' artifact from this run to upload in Play Console."
 
       - name: Upload npm logs (on failure)
         if: failure()
