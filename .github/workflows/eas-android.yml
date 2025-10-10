@@ -10,11 +10,12 @@ jobs:
       contents: read
     env:
       NODE_VERSION: "20"
-      PROJECT_DIR: "."         # your app lives in ./app
-      TRACK: "internal"          # internal | alpha | beta | production
-      HAS_PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}  # expose secret for if: checks
+      PROJECT_DIR: "."                 # your Expo project is at repo root
+      TRACK: "internal"                # internal | alpha | beta | production
       NPM_CONFIG_LEGACY_PEER_DEPS: "true"
       NPM_CONFIG_AUDIT: "false"
+      HAS_PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,7 +24,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
+      # ---------- CI hotfix: pin AJV stack for expo-router/schema-utils ----------
       - name: Pin AJV stack (CI hotfix)
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
@@ -32,16 +34,11 @@ jobs:
           npm pkg set "overrides.schema-utils=^4.2.0"
           npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0
 
-      - name: Show project files
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: ls -la
-
       - name: Install dependencies
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-          # Prefer lockfile if present; otherwise regular install.
           if [ -f yarn.lock ]; then
             corepack enable
             yarn install --frozen-lockfile || yarn install
@@ -52,18 +49,18 @@ jobs:
             if [ -f package-lock.json ]; then
               npm ci --no-fund || npm ci --no-fund --legacy-peer-deps || npm i --no-fund --legacy-peer-deps
             else
-              # Create a lockfile with legacy resolution, then install
               npm i --package-lock-only --no-fund --legacy-peer-deps
               npm ci --no-fund --legacy-peer-deps
             fi
           fi
-      - name: Pin AJV stack (CI hotfix)
+
+      # (Optional) quick sanity print
+      - name: Check AJV versions
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
-          npm pkg set "overrides.ajv=^8.12.0"
-          npm pkg set "overrides.ajv-keywords=^5.1.0"
-          npm pkg set "overrides.schema-utils=^4.2.0"
-          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0
+          npm ls ajv || true
+          npm ls ajv-keywords || true
+          npm ls schema-utils || true
 
       - name: Install EAS CLI
         working-directory: ${{ env.PROJECT_DIR }}
@@ -74,24 +71,14 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas whoami || true
-        
-      - name: Show Expo versions
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: |
-          node -v
-          npm -v
-          npx expo --version || npx --yes expo@latest --version
-          node -e "try{console.log('expo dep:', require('./package.json').dependencies.expo)}catch(e){console.log('no expo in package.json')}"
 
+      # Surface config errors early (missing env, bad JSON, bad asset paths, etc.)
       - name: Validate & print resolved Expo config
         working-directory: ${{ env.PROJECT_DIR }}
         env:
-          # Provide safe defaults in CI to avoid env-based crashes in app.config.*
           NODE_ENV: production
           APP_ENV: ci
-        run: |
-          # This will fail early if your config throws (missing env, bad JSON, etc.)
-          npx --yes expo@latest config --type public
+        run: npx --yes expo@latest config --type public
 
       - name: Build Android AAB
         working-directory: ${{ env.PROJECT_DIR }}
@@ -100,6 +87,12 @@ jobs:
           EXPO_DEBUG: "1"
         run: npx eas build --platform android --profile production --non-interactive --wait --log-level debug
 
+      - name: Show latest EAS build (always)
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build:list --limit 1 || true
 
       - name: Write Play service account JSON (if provided)
         if: ${{ env.HAS_PLAY_KEY != '' }}
