@@ -45,36 +45,75 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Detect package manager
-        id: pm
-        working-directory: ${{ steps.rwd.outputs.dir }}
-        run: |
-          if [ -f "yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-          elif [ -f "pnpm-lock.yaml" ]; then
-            echo "manager=pnpm" >> $GITHUB_OUTPUT
-          else
-            echo "manager=npm" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Setup PNPM (if needed)
-        if: steps.pm.outputs.manager == 'pnpm'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
+      # ---------- Install deps (robust, no expressions inside shell) ----------
       - name: Install dependencies
         working-directory: ${{ steps.rwd.outputs.dir }}
+        shell: bash
         run: |
-          set -e
-          if [ "${{ steps.pm.outputs.manager }}" = "yarn" ]; then
+          set -euo pipefail
+          if [ -f "yarn.lock" ]; then
             corepack enable
             yarn install --frozen-lockfile || yarn install
-          elif [ "${{ steps.pm.outputs.manager }}" = "pnpm" ]; then
+          elif [ -f "pnpm-lock.yaml" ]; then
             corepack enable
             pnpm install --frozen-lockfile || pnpm install
           else
-            if [ -f package-lock.json ]; then
+            if [ -f "package-lock.json" ]; then
               npm ci --no-audit --no-fund || npm ci --legacy-peer-deps --no-audit --no-fund || npm i --legacy-peer-deps --no-audit --no-fund
             else
-              npm i --legacy-peer-deps --no-audi
+              npm i --legacy-peer-deps --no-audit --no-fund
+            fi
+          fi
+
+      - name: Install EAS CLI locally
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        run: npm i -D eas-cli
+
+      - name: EAS login (token)
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas whoami || true
+
+      - name: Build Android AAB with EAS
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build --platform android --profile production --non-interactive --wait
+
+      # ---------- Auto-submit if Play key secret exists ----------
+      - name: Check for Play service account key
+        id: playkey
+        run: |
+          if [ -n "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "has_key=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_key=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Write Play service account JSON
+        if: steps.playkey.outputs.has_key == 'true'
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > google-play-key.json <<'JSON'
+${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+JSON
+          test -s google-play-key.json && echo "Key written."
+
+      - name: Submit to Google Play (auto)
+        if: steps.playkey.outputs.has_key == 'true'
+        working-directory: ${{ steps.rwd.outputs.dir }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          npx eas submit --platform android \
+            --latest \
+            --track "${{ github.event.inputs.track || 'internal' }}" \
+            --key "google-play-key.json" \
+            --non-interactive
+
+      - name: Note if submit was skipped
+        if: steps.playkey.outputs.has_key != 'true'
+        run: echo "PLAY_SERVICE_ACCOUNT_JSON not set; submission skipped. Download AAB from the EAS build page."
