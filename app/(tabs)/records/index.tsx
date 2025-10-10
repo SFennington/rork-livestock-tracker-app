@@ -1,0 +1,1189 @@
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform } from "react-native";
+import { useLivestock } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
+import { Egg, Heart, DollarSign, TrendingUp, Edit3, Trash2, Save, X, ChevronUp, ChevronDown, Filter, Plus } from "lucide-react-native";
+import { router } from "expo-router";
+import { useMemo, useState, useCallback } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import DatePicker from "@/components/DatePicker";
+
+type SortDirection = "asc" | "desc";
+
+type EggSortKey = "date" | "count" | "notes";
+
+type BreedSortKey = "breedingDate" | "expectedKindlingDate" | "status" | "litterSize";
+
+type MoneySortKey = "date" | "amount" | "description" | "type";
+
+export default function RecordsScreen() {
+  const {
+    eggProduction,
+    breedingRecords,
+    expenses,
+    income,
+    rabbits,
+    isLoading,
+    updateEggProduction,
+    deleteEggProduction,
+    updateBreedingRecord,
+    deleteBreedingRecord,
+    updateExpense,
+    deleteExpense,
+    updateIncome,
+    deleteIncome,
+  } = useLivestock();
+  const { colors: themeColors } = useTheme();
+
+  const [activeTab, setActiveTab] = useState<'eggs' | 'breeding' | 'financial'>('eggs');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [eggForm, setEggForm] = useState<{ date: string; count: string; notes: string } | null>(null);
+  const [breedForm, setBreedForm] = useState<{ breedingDate: string; expectedKindlingDate?: string; status?: string; litterSize?: string } | null>(null);
+  const [moneyForm, setMoneyForm] = useState<{ date: string; amount: string; description?: string; isIncome: boolean; type?: string } | null>(null);
+
+  const [eggSort, setEggSort] = useState<{ key: EggSortKey; dir: SortDirection }>({ key: "date", dir: "desc" });
+  const [breedSort, setBreedSort] = useState<{ key: BreedSortKey; dir: SortDirection }>({ key: "breedingDate", dir: "desc" });
+  const [moneySort, setMoneySort] = useState<{ key: MoneySortKey; dir: SortDirection }>({ key: "date", dir: "desc" });
+
+  const [eggFilters, setEggFilters] = useState<{ startDate?: string; endDate?: string; minCount?: string; maxCount?: string; notes?: string }>({});
+  const [breedFilters, setBreedFilters] = useState<{ startDate?: string; endDate?: string; status?: string } >({});
+  const [moneyFilters, setMoneyFilters] = useState<{ startDate?: string; endDate?: string; minAmount?: string; maxAmount?: string; type?: "income" | "expense" | "all"; text?: string }>({ type: "all" });
+
+  const insets = useSafeAreaInsets();
+
+  const [selectedEggIds, setSelectedEggIds] = useState<Set<string>>(new Set());
+  const [selectedBreedingIds, setSelectedBreedingIds] = useState<Set<string>>(new Set());
+  const [selectedMoneyKeys, setSelectedMoneyKeys] = useState<Set<string>>(new Set());
+  
+  const [showEggFilters, setShowEggFilters] = useState(false);
+  const [showBreedFilters, setShowBreedFilters] = useState(false);
+  const [showMoneyFilters, setShowMoneyFilters] = useState(false);
+
+  const toggleEggSelected = useCallback((id: string) => {
+    setSelectedEggIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleBreedingSelected = useCallback((id: string) => {
+    setSelectedBreedingIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const moneyKey = useCallback((isIncomeRec: boolean, id: string) => `${isIncomeRec ? 'i' : 'e'}-${id}`, []);
+
+  const toggleMoneySelected = useCallback((key: string) => {
+    setSelectedMoneyKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const clearSelections = useCallback(() => {
+    setSelectedEggIds(new Set());
+    setSelectedBreedingIds(new Set());
+    setSelectedMoneyKeys(new Set());
+  }, []);
+
+  const filteredSortedEggs = useMemo(() => {
+    const start = eggFilters.startDate ? new Date(eggFilters.startDate).getTime() : undefined;
+    const end = eggFilters.endDate ? new Date(eggFilters.endDate).getTime() : undefined;
+    const min = eggFilters.minCount ? Number(eggFilters.minCount) : undefined;
+    const max = eggFilters.maxCount ? Number(eggFilters.maxCount) : undefined;
+    const notesQ = eggFilters.notes?.toLowerCase() ?? '';
+
+    const filtered = eggProduction.filter(r => {
+      const t = new Date(r.date).getTime();
+      if (start !== undefined && t < start) return false;
+      if (end !== undefined && t > end) return false;
+      if (min !== undefined && r.count < min) return false;
+      if (max !== undefined && r.count > max) return false;
+      if (notesQ && !(r.notes ?? '').toLowerCase().includes(notesQ)) return false;
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const dir = eggSort.dir === 'asc' ? 1 : -1;
+      switch (eggSort.key) {
+        case 'date':
+          return dir * (new Date(a.date).getTime() - new Date(b.date).getTime());
+        case 'count':
+          return dir * (a.count - b.count);
+        case 'notes':
+          return dir * ((a.notes ?? '').localeCompare(b.notes ?? ''));
+      }
+    });
+
+    return sorted;
+  }, [eggProduction, eggFilters.startDate, eggFilters.endDate, eggFilters.minCount, eggFilters.maxCount, eggFilters.notes, eggSort.key, eggSort.dir]);
+
+  const filteredSortedBreeding = useMemo(() => {
+    const start = breedFilters.startDate ? new Date(breedFilters.startDate).getTime() : undefined;
+    const end = breedFilters.endDate ? new Date(breedFilters.endDate).getTime() : undefined;
+    const statusQ = breedFilters.status?.toLowerCase() ?? '';
+
+    const filtered = breedingRecords.filter(r => {
+      const t = new Date(r.breedingDate).getTime();
+      if (start !== undefined && t < start) return false;
+      if (end !== undefined && t > end) return false;
+      if (statusQ && !(r.status ?? '').toLowerCase().includes(statusQ)) return false;
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const dir = breedSort.dir === 'asc' ? 1 : -1;
+      switch (breedSort.key) {
+        case 'breedingDate':
+          return dir * (new Date(a.breedingDate).getTime() - new Date(b.breedingDate).getTime());
+        case 'expectedKindlingDate':
+          return dir * (new Date(a.expectedKindlingDate ?? '').getTime() - new Date(b.expectedKindlingDate ?? '').getTime());
+        case 'status':
+          return dir * ((a.status ?? '').localeCompare(b.status ?? ''));
+        case 'litterSize':
+          return dir * ((a.litterSize ?? 0) - (b.litterSize ?? 0));
+      }
+    });
+
+    return sorted;
+  }, [breedingRecords, breedFilters.startDate, breedFilters.endDate, breedFilters.status, breedSort.key, breedSort.dir]);
+
+  const unifiedMoney = useMemo(() => {
+    return [
+      ...income.map(i => ({ ...i, isIncome: true as const, type: 'income' as const })),
+      ...expenses.map(e => ({ ...e, isIncome: false as const, type: 'expense' as const })),
+    ];
+  }, [income, expenses]);
+
+  const filteredSortedMoney = useMemo(() => {
+    const start = moneyFilters.startDate ? new Date(moneyFilters.startDate).getTime() : undefined;
+    const end = moneyFilters.endDate ? new Date(moneyFilters.endDate).getTime() : undefined;
+    const min = moneyFilters.minAmount ? Number(moneyFilters.minAmount) : undefined;
+    const max = moneyFilters.maxAmount ? Number(moneyFilters.maxAmount) : undefined;
+    const q = moneyFilters.text?.toLowerCase() ?? '';
+
+    const filtered = unifiedMoney.filter(r => {
+      const t = new Date(r.date).getTime();
+      if (start !== undefined && t < start) return false;
+      if (end !== undefined && t > end) return false;
+      if (min !== undefined && r.amount < min) return false;
+      if (max !== undefined && r.amount > max) return false;
+      if (moneyFilters.type && moneyFilters.type !== 'all') {
+        if (moneyFilters.type === 'income' && !r.isIncome) return false;
+        if (moneyFilters.type === 'expense' && r.isIncome) return false;
+      }
+      if (q && !(r.description ?? '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const dir = moneySort.dir === 'asc' ? 1 : -1;
+      switch (moneySort.key) {
+        case 'date':
+          return dir * (new Date(a.date).getTime() - new Date(b.date).getTime());
+        case 'amount':
+          return dir * (a.amount - b.amount);
+        case 'description':
+          return dir * ((a.description ?? '').localeCompare(b.description ?? ''));
+        case 'type':
+          return dir * ((a.isIncome ? 'income' : 'expense').localeCompare(b.isIncome ? 'income' : 'expense'));
+      }
+    });
+
+    return sorted;
+  }, [unifiedMoney, moneyFilters.startDate, moneyFilters.endDate, moneyFilters.minAmount, moneyFilters.maxAmount, moneyFilters.type, moneyFilters.text, moneySort.key, moneySort.dir]);
+
+  const SortIcon = ({ dir, active }: { dir: SortDirection; active: boolean }) => (
+    <View style={styles.sortIconRow}>
+      {active && (dir === 'asc' ? <ChevronUp size={14} color="#10b981" /> : <ChevronDown size={14} color="#10b981" />)}
+    </View>
+  );
+
+  const isAllEggsSelected = selectedEggIds.size > 0 && selectedEggIds.size === filteredSortedEggs.length;
+  const isAllBreedingSelected = selectedBreedingIds.size > 0 && selectedBreedingIds.size === filteredSortedBreeding.length;
+  const isAllMoneySelected = selectedMoneyKeys.size > 0 && selectedMoneyKeys.size === filteredSortedMoney.length;
+
+  const confirmDelete = useCallback(async (onConfirm: () => Promise<void> | void) => {
+    try {
+      if (Platform.OS === 'web') {
+        const ok = (globalThis as any).confirm ? (globalThis as any).confirm('Delete this record?') : true;
+        if (ok) await onConfirm();
+        return;
+      }
+      Alert.alert('Delete', 'Delete this record?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => { void onConfirm(); } },
+      ]);
+    } catch (err) {
+      console.log('confirmDelete error', err);
+    }
+  }, []);
+
+  const toggleSort = useCallback(<K extends string>(cur: { key: K; dir: SortDirection }, key: K): { key: K; dir: SortDirection } => {
+    if (cur.key === key) {
+      return { key, dir: cur.dir === "asc" ? "desc" : "asc" };
+    }
+    return { key, dir: "asc" };
+  }, []);
+
+  const bulkDeleteEggs = useCallback(async () => {
+    if (selectedEggIds.size === 0) return;
+    const proceed = Platform.OS === 'web' ? ((globalThis as any).confirm ? (globalThis as any).confirm(`Delete ${selectedEggIds.size} selected records?`) : true) : true;
+    if (!proceed && Platform.OS === 'web') return;
+    const run = async () => {
+      const ids = Array.from(selectedEggIds);
+      await Promise.all(ids.map(id => deleteEggProduction(id)));
+      setSelectedEggIds(new Set());
+    };
+    if (Platform.OS !== 'web') {
+      Alert.alert('Delete selected', `Delete ${selectedEggIds.size} selected records?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => { void run(); } }
+      ]);
+    } else {
+      await run();
+    }
+  }, [selectedEggIds, deleteEggProduction]);
+
+  const bulkDeleteBreeding = useCallback(async () => {
+    if (selectedBreedingIds.size === 0) return;
+    const proceed = Platform.OS === 'web' ? ((globalThis as any).confirm ? (globalThis as any).confirm(`Delete ${selectedBreedingIds.size} selected records?`) : true) : true;
+    if (!proceed && Platform.OS === 'web') return;
+    const run = async () => {
+      const ids = Array.from(selectedBreedingIds);
+      await Promise.all(ids.map(id => deleteBreedingRecord(id)));
+      setSelectedBreedingIds(new Set());
+    };
+    if (Platform.OS !== 'web') {
+      Alert.alert('Delete selected', `Delete ${selectedBreedingIds.size} selected records?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => { void run(); } }
+      ]);
+    } else {
+      await run();
+    }
+  }, [selectedBreedingIds, deleteBreedingRecord]);
+
+  const bulkDeleteMoney = useCallback(async () => {
+    if (selectedMoneyKeys.size === 0) return;
+    const proceed = Platform.OS === 'web' ? ((globalThis as any).confirm ? (globalThis as any).confirm(`Delete ${selectedMoneyKeys.size} selected records?`) : true) : true;
+    if (!proceed && Platform.OS === 'web') return;
+    const run = async () => {
+      const keys = Array.from(selectedMoneyKeys);
+      await Promise.all(keys.map(key => {
+        const isIncomeKey = key.startsWith('i-');
+        const id = key.slice(2);
+        return isIncomeKey ? deleteIncome(id) : deleteExpense(id);
+      }));
+      setSelectedMoneyKeys(new Set());
+    };
+    if (Platform.OS !== 'web') {
+      Alert.alert('Delete selected', `Delete ${selectedMoneyKeys.size} selected records?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => { void run(); } }
+      ]);
+    } else {
+      await run();
+    }
+  }, [selectedMoneyKeys, deleteIncome, deleteExpense]);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}
+        testID="records-loading">
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]} testID="records-root">
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'eggs' && styles.activeTab]}
+            onPress={() => { setActiveTab('eggs'); clearSelections(); }}
+            testID="tab-eggs"
+          >
+            <Egg size={20} color={activeTab === 'eggs' ? '#10b981' : '#6b7280'} />
+            <Text style={[styles.tabText, activeTab === 'eggs' && styles.activeTabText]}>Eggs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'breeding' && styles.activeTab]}
+            onPress={() => { setActiveTab('breeding'); clearSelections(); }}
+            testID="tab-breeding"
+          >
+            <Heart size={20} color={activeTab === 'breeding' ? '#10b981' : '#6b7280'} />
+            <Text style={[styles.tabText, activeTab === 'breeding' && styles.activeTabText]}>Breeding</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'financial' && styles.activeTab]}
+            onPress={() => { setActiveTab('financial'); clearSelections(); }}
+            testID="tab-financial"
+          >
+            <DollarSign size={20} color={activeTab === 'financial' ? '#10b981' : '#6b7280'} />
+            <Text style={[styles.tabText, activeTab === 'financial' && styles.activeTabText]}>Financial</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {activeTab === 'eggs' && (
+            <View>
+              <TouchableOpacity style={[styles.addRecordButton, { backgroundColor: themeColors.primary }]} onPress={() => router.push('/log-eggs')}>
+                <Plus size={20} color="#fff" />
+                <Text style={styles.addRecordButtonText}>Add Egg Record</Text>
+              </TouchableOpacity>
+              {filteredSortedEggs.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Egg size={48} color="#d1d5db" />
+                  <Text style={styles.emptyText}>No egg production records</Text>
+                  <Text style={styles.emptySubtext}>Start logging daily egg collection</Text>
+                </View>
+              ) : (
+                <View>
+                  <View style={styles.toolbar}>
+                    <View style={styles.toolbarTitleRow}>
+                      <TouchableOpacity 
+                        style={styles.filterToggleButton}
+                        onPress={() => setShowEggFilters(!showEggFilters)}
+                        testID="toggle-egg-filters"
+                      >
+                        <Filter size={16} color="#6b7280" />
+                        <Text style={styles.toolbarTitle}>{showEggFilters ? 'Hide' : 'Show'} Filters</Text>
+                        {showEggFilters ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
+                      </TouchableOpacity>
+                    </View>
+                    {showEggFilters && (<View style={styles.filtersRow}>
+                      <View style={styles.filterItem}>
+                        <DatePicker value={eggFilters.startDate ?? ''} onChange={(d) => setEggFilters(prev => ({ ...prev, startDate: d }))} label="From" />
+                      </View>
+                      <View style={styles.filterItem}>
+                        <DatePicker value={eggFilters.endDate ?? ''} onChange={(d) => setEggFilters(prev => ({ ...prev, endDate: d }))} label="To" />
+                      </View>
+                      <View style={styles.filterItemSmall}> 
+                        <Text style={styles.filterLabel}>Min</Text>
+                        <TextInput style={styles.filterInput} keyboardType="numeric" value={eggFilters.minCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, minCount: t }))} placeholder="0" />
+                      </View>
+                      <View style={styles.filterItemSmall}>
+                        <Text style={styles.filterLabel}>Max</Text>
+                        <TextInput style={styles.filterInput} keyboardType="numeric" value={eggFilters.maxCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, maxCount: t }))} placeholder="999" />
+                      </View>
+                      <View style={styles.filterItemNotes}>
+                        <Text style={styles.filterLabel}>Notes</Text>
+                        <TextInput style={styles.filterInput} value={eggFilters.notes ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, notes: t }))} placeholder="search notes" />
+                      </View>
+                      <TouchableOpacity style={styles.clearFiltersBtn} onPress={() => setEggFilters({})} testID="eggs-clear-filters">
+                        <Text style={styles.clearFiltersText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>)}
+                    <View style={styles.bulkActionsRow}>
+                      <TouchableOpacity accessibilityRole="button" testID="eggs-select-toggle" style={[styles.bulkBtn, isAllEggsSelected ? styles.bulkBtnActive : null]} onPress={() => {
+                        if (isAllEggsSelected) setSelectedEggIds(new Set()); else setSelectedEggIds(new Set(filteredSortedEggs.map(r => r.id)));
+                      }}>
+                        <Text style={styles.bulkBtnText}>{isAllEggsSelected ? 'Unselect all' : 'Select all'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity accessibilityRole="button" testID="eggs-delete-selected" style={[styles.bulkBtn, selectedEggIds.size === 0 && styles.bulkBtnDisabled]} disabled={selectedEggIds.size === 0} onPress={() => { void bulkDeleteEggs(); }}>
+                        <Text style={styles.bulkBtnDangerText}>Delete selected</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                  <View style={styles.table}>
+                    <View style={[styles.rowHead]}>
+                      <View style={[styles.cell, styles.cellXs]}>
+                        <TouchableOpacity accessibilityRole="checkbox" testID="eggs-select-all" onPress={() => {
+                          if (isAllEggsSelected) setSelectedEggIds(new Set()); else setSelectedEggIds(new Set(filteredSortedEggs.map(r => r.id)));
+                        }} style={[styles.checkbox, isAllEggsSelected && styles.checkboxChecked]}>
+                          <View style={[styles.checkboxInner, isAllEggsSelected && styles.checkboxInnerChecked]} />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={[styles.cell, styles.cellActions]}>
+                        <Text style={styles.headText}>Actions</Text>
+                      </View>
+                      <TouchableOpacity style={[styles.cell, styles.cellMd]} onPress={() => setEggSort(prev => toggleSort(prev, 'date'))} testID="eggs-sort-date">
+                        <Text style={styles.headText}>Date</Text>
+                        <SortIcon dir={eggSort.dir} active={eggSort.key === 'date'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'count'))} testID="eggs-sort-count">
+                        <Text style={styles.headText}>Count</Text>
+                        <SortIcon dir={eggSort.dir} active={eggSort.key === 'count'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setEggSort(prev => toggleSort(prev, 'notes'))} testID="eggs-sort-notes">
+                        <Text style={styles.headText}>Notes</Text>
+                        <SortIcon dir={eggSort.dir} active={eggSort.key === 'notes'} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {filteredSortedEggs.map(record => (
+                      <View key={record.id} style={styles.rowBody} testID={`egg-row-${record.id}`}>
+                        <View style={[styles.cell, styles.cellXs]}>
+                          <TouchableOpacity accessibilityRole="checkbox" testID={`egg-select-${record.id}`} onPress={() => toggleEggSelected(record.id)} style={[styles.checkbox, selectedEggIds.has(record.id) && styles.checkboxChecked]}>
+                            <View style={[styles.checkboxInner, selectedEggIds.has(record.id) && styles.checkboxInnerChecked]} />
+                          </TouchableOpacity>
+                        </View>
+                        <View style={[styles.cell, styles.cellActions]}>
+                          {editingId === record.id ? (
+                            <View style={styles.actionRow}>
+                              <TouchableOpacity accessibilityRole="button" testID={`egg-save-${record.id}`} style={styles.iconButton} onPress={async () => {
+                                try {
+                                  const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
+                                  const parsed = parseInt(payload.count, 10);
+                                  if (Number.isNaN(parsed)) {
+                                    Alert.alert('Invalid', 'Count must be a number');
+                                    return;
+                                  }
+                                  await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
+                                  setEditingId(null);
+                                  setEggForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save egg record');
+                                  console.log('save egg error', e);
+                                }
+                              }}>
+                                <Save size={18} color="#10b981" />
+                              </TouchableOpacity>
+                              <TouchableOpacity accessibilityRole="button" testID={`egg-cancel-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(null); setEggForm(null); }}>
+                                <X size={18} color="#6b7280" />
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <View style={styles.actionRow}>
+                              <TouchableOpacity accessibilityRole="button" testID={`egg-edit-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(record.id); setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' }); }}>
+                                <Edit3 size={18} color="#6b7280" />
+                              </TouchableOpacity>
+                              <TouchableOpacity accessibilityRole="button" testID={`egg-delete-${record.id}`} style={styles.iconButton} onPress={() => confirmDelete(async () => { await deleteEggProduction(record.id); })}>
+                                <Trash2 size={18} color="#ef4444" />
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellMd]}>
+                          {editingId === record.id ? (
+                            <DatePicker value={eggForm?.date ?? record.date} onChange={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), date: t }))} />
+                          ) : (
+                            <Text style={styles.bodyText}>{record.date}</Text>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellSm]}>
+                          {editingId === record.id ? (
+                            <TextInput testID={`egg-count-${record.id}`} style={styles.inlineInput} keyboardType="numeric" value={eggForm?.count ?? String(record.count)} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), count: t }))} />
+                          ) : (
+                            <Text style={styles.bodyText}>{record.count}</Text>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellLg]}>
+                          {editingId === record.id ? (
+                            <TextInput testID={`egg-notes-${record.id}`} style={styles.inlineInput} value={eggForm?.notes ?? (record.notes ?? '')} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), notes: t }))} placeholder="optional" />
+                          ) : (
+                            <Text style={styles.bodyText}>{record.notes ?? ''}</Text>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+
+          {activeTab === 'breeding' && (
+            <View>
+              <TouchableOpacity style={styles.addRecordButton} onPress={() => router.push('/add-breeding')}>
+                <Plus size={20} color="#fff" />
+                <Text style={styles.addRecordButtonText}>Add Breeding Record</Text>
+              </TouchableOpacity>
+              {filteredSortedBreeding.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Heart size={48} color="#d1d5db" />
+                  <Text style={styles.emptyText}>No breeding records</Text>
+                  <Text style={styles.emptySubtext}>Record rabbit breeding activities</Text>
+                </View>
+              ) : (
+                <View>
+                  <View style={styles.toolbar}>
+                    <View style={styles.toolbarTitleRow}>
+                      <TouchableOpacity 
+                        style={styles.filterToggleButton}
+                        onPress={() => setShowBreedFilters(!showBreedFilters)}
+                        testID="toggle-breed-filters"
+                      >
+                        <Filter size={16} color="#6b7280" />
+                        <Text style={styles.toolbarTitle}>{showBreedFilters ? 'Hide' : 'Show'} Filters</Text>
+                        {showBreedFilters ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
+                      </TouchableOpacity>
+                    </View>
+                    {showBreedFilters && (<View style={styles.filtersRow}>
+                      <View style={styles.filterItem}>
+                        <DatePicker value={breedFilters.startDate ?? ''} onChange={(d) => setBreedFilters(prev => ({ ...prev, startDate: d }))} label="From" />
+                      </View>
+                      <View style={styles.filterItem}>
+                        <DatePicker value={breedFilters.endDate ?? ''} onChange={(d) => setBreedFilters(prev => ({ ...prev, endDate: d }))} label="To" />
+                      </View>
+                      <View style={styles.filterItemNotes}>
+                        <Text style={styles.filterLabel}>Status</Text>
+                        <TextInput style={styles.filterInput} value={breedFilters.status ?? ''} onChangeText={(t) => setBreedFilters(prev => ({ ...prev, status: t }))} placeholder="bred/kindled/weaned" />
+                      </View>
+                      <TouchableOpacity style={styles.clearFiltersBtn} onPress={() => setBreedFilters({})} testID="breed-clear-filters">
+                        <Text style={styles.clearFiltersText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>)}
+                    <View style={styles.bulkActionsRow}>
+                      <TouchableOpacity accessibilityRole="button" testID="breed-select-toggle" style={[styles.bulkBtn, isAllBreedingSelected ? styles.bulkBtnActive : null]} onPress={() => {
+                        if (isAllBreedingSelected) setSelectedBreedingIds(new Set()); else setSelectedBreedingIds(new Set(filteredSortedBreeding.map(r => r.id)));
+                      }}>
+                        <Text style={styles.bulkBtnText}>{isAllBreedingSelected ? 'Unselect all' : 'Select all'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity accessibilityRole="button" testID="breed-delete-selected" style={[styles.bulkBtn, selectedBreedingIds.size === 0 && styles.bulkBtnDisabled]} disabled={selectedBreedingIds.size === 0} onPress={() => { void bulkDeleteBreeding(); }}>
+                        <Text style={styles.bulkBtnDangerText}>Delete selected</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                  <View style={styles.table}>
+                    <View style={styles.rowHead}>
+                      <View style={[styles.cell, styles.cellXs]}>
+                        <TouchableOpacity accessibilityRole="checkbox" testID="breed-select-all" onPress={() => {
+                          if (isAllBreedingSelected) setSelectedBreedingIds(new Set()); else setSelectedBreedingIds(new Set(filteredSortedBreeding.map(r => r.id)));
+                        }} style={[styles.checkbox, isAllBreedingSelected && styles.checkboxChecked]}>
+                          <View style={[styles.checkboxInner, isAllBreedingSelected && styles.checkboxInnerChecked]} />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={[styles.cell, styles.cellActions]}>
+                        <Text style={styles.headText}>Actions</Text>
+                      </View>
+                      <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setBreedSort(prev => toggleSort(prev, 'breedingDate'))} testID="breed-sort-bred">
+                        <Text style={styles.headText}>Bred</Text>
+                        <SortIcon dir={breedSort.dir} active={breedSort.key === 'breedingDate'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setBreedSort(prev => toggleSort(prev, 'expectedKindlingDate'))} testID="breed-sort-expected">
+                        <Text style={styles.headText}>Expected</Text>
+                        <SortIcon dir={breedSort.dir} active={breedSort.key === 'expectedKindlingDate'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellMd]} onPress={() => setBreedSort(prev => toggleSort(prev, 'status'))} testID="breed-sort-status">
+                        <Text style={styles.headText}>Status</Text>
+                        <SortIcon dir={breedSort.dir} active={breedSort.key === 'status'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setBreedSort(prev => toggleSort(prev, 'litterSize'))} testID="breed-sort-litter">
+                        <Text style={styles.headText}>Litter</Text>
+                        <SortIcon dir={breedSort.dir} active={breedSort.key === 'litterSize'} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {filteredSortedBreeding.map(record => {
+                      const buck = rabbits.find(r => r.id === record.buckId);
+                      const doe = rabbits.find(r => r.id === record.doeId);
+                      return (
+                        <View key={record.id} style={styles.rowBody} testID={`breed-row-${record.id}`}>
+                          <View style={[styles.cell, styles.cellXs]}>
+                            <TouchableOpacity accessibilityRole="checkbox" testID={`breed-select-${record.id}`} onPress={() => toggleBreedingSelected(record.id)} style={[styles.checkbox, selectedBreedingIds.has(record.id) && styles.checkboxChecked]}>
+                              <View style={[styles.checkboxInner, selectedBreedingIds.has(record.id) && styles.checkboxInnerChecked]} />
+                            </TouchableOpacity>
+                          </View>
+                          <View style={[styles.cell, styles.cellActions]}>
+                            {editingId === record.id ? (
+                              <View style={styles.actionRow}>
+                                <TouchableOpacity accessibilityRole="button" testID={`breed-save-${record.id}`} style={styles.iconButton} onPress={async () => {
+                                  try {
+                                    const f = breedForm ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined };
+                                    const litter = f.litterSize ? parseInt(f.litterSize, 10) : undefined;
+                                    if (f.litterSize && Number.isNaN(litter)) {
+                                      Alert.alert('Invalid', 'Litter size must be a number');
+                                      return;
+                                    }
+                                    await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
+                                    setEditingId(null);
+                                    setBreedForm(null);
+                                  } catch (e) {
+                                    Alert.alert('Error', 'Failed to save breeding record');
+                                    console.log('save breeding error', e);
+                                  }
+                                }}>
+                                  <Save size={18} color="#10b981" />
+                                </TouchableOpacity>
+                                <TouchableOpacity accessibilityRole="button" testID={`breed-cancel-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(null); setBreedForm(null); }}>
+                                  <X size={18} color="#6b7280" />
+                                </TouchableOpacity>
+                              </View>
+                            ) : (
+                              <View style={styles.actionRow}>
+                                <TouchableOpacity accessibilityRole="button" testID={`breed-edit-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(record.id); setBreedForm({ breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }); }}>
+                                  <Edit3 size={18} color="#6b7280" />
+                                </TouchableOpacity>
+                                <TouchableOpacity accessibilityRole="button" testID={`breed-delete-${record.id}`} style={styles.iconButton} onPress={() => confirmDelete(async () => { await deleteBreedingRecord(record.id); })}>
+                                  <Trash2 size={18} color="#ef4444" />
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                          <View style={[styles.cell, styles.cellLg]}>
+                            {editingId === record.id ? (
+                              <DatePicker value={breedForm?.breedingDate ?? record.breedingDate} onChange={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), breedingDate: t }))} />
+                            ) : (
+                              <Text style={styles.bodyText}>{record.breedingDate}</Text>
+                            )}
+                          </View>
+                          <View style={[styles.cell, styles.cellLg]}>
+                            {editingId === record.id ? (
+                              <DatePicker value={breedForm?.expectedKindlingDate ?? (record.expectedKindlingDate ?? '')} onChange={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), expectedKindlingDate: t }))} />
+                            ) : (
+                              <Text style={styles.bodyText}>{record.expectedKindlingDate || ''}</Text>
+                            )}
+                          </View>
+                          <View style={[styles.cell, styles.cellMd]}>
+                            {editingId === record.id ? (
+                              <TextInput testID={`breed-status-${record.id}`} style={styles.inlineInput} value={breedForm?.status ?? (record.status ?? '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), status: t }))} placeholder="status" />
+                            ) : (
+                              <Text style={styles.bodyText}>{record.status}</Text>
+                            )}
+                            <Text style={styles.subtleText}>{(buck?.name || 'Unknown') + ' × ' + (doe?.name || 'Unknown')}</Text>
+                          </View>
+                          <View style={[styles.cell, styles.cellSm]}>
+                            {editingId === record.id ? (
+                              <TextInput testID={`breed-litter-${record.id}`} style={styles.inlineInput} keyboardType="numeric" value={breedForm?.litterSize ?? (record.litterSize ? String(record.litterSize) : '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), litterSize: t }))} placeholder="#" />
+                            ) : (
+                              <Text style={styles.bodyText}>{record.litterSize ?? ''}</Text>
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+
+          {activeTab === 'financial' && (
+            <View>
+              <View style={styles.addRecordRow}>
+                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf]} onPress={() => router.push('/add-income')}>
+                  <Plus size={20} color="#fff" />
+                  <Text style={styles.addRecordButtonText}>Add Income</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf]} onPress={() => router.push('/add-expense')}>
+                  <Plus size={20} color="#fff" />
+                  <Text style={styles.addRecordButtonText}>Add Expense</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.financialSummary}>
+                <View style={styles.summaryCard}>
+                  <TrendingUp size={20} color="#10b981" />
+                  <Text style={styles.summaryLabel}>Total Income</Text>
+                  <Text style={styles.summaryValue}>
+                    ${income.reduce((sum, i) => sum + i.amount, 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <DollarSign size={20} color="#ef4444" />
+                  <Text style={styles.summaryLabel}>Total Expenses</Text>
+                  <Text style={styles.summaryValue}>
+                    ${expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+
+              {filteredSortedMoney.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <DollarSign size={48} color="#d1d5db" />
+                  <Text style={styles.emptyText}>No financial records</Text>
+                  <Text style={styles.emptySubtext}>Track expenses and income</Text>
+                </View>
+              ) : (
+                <View>
+                  <View style={styles.toolbar}>
+                    <View style={styles.toolbarTitleRow}>
+                      <TouchableOpacity 
+                        style={styles.filterToggleButton}
+                        onPress={() => setShowMoneyFilters(!showMoneyFilters)}
+                        testID="toggle-money-filters"
+                      >
+                        <Filter size={16} color="#6b7280" />
+                        <Text style={styles.toolbarTitle}>{showMoneyFilters ? 'Hide' : 'Show'} Filters</Text>
+                        {showMoneyFilters ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
+                      </TouchableOpacity>
+                    </View>
+                    {showMoneyFilters && (<View style={styles.filtersRow}>
+                      <View style={styles.filterItem}>
+                        <DatePicker value={moneyFilters.startDate ?? ''} onChange={(d) => setMoneyFilters(prev => ({ ...prev, startDate: d }))} label="From" />
+                      </View>
+                      <View style={styles.filterItem}>
+                        <DatePicker value={moneyFilters.endDate ?? ''} onChange={(d) => setMoneyFilters(prev => ({ ...prev, endDate: d }))} label="To" />
+                      </View>
+                      <View style={styles.filterItemSmall}> 
+                        <Text style={styles.filterLabel}>Min $</Text>
+                        <TextInput style={styles.filterInput} keyboardType="decimal-pad" value={moneyFilters.minAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, minAmount: t }))} placeholder="0" />
+                      </View>
+                      <View style={styles.filterItemSmall}> 
+                        <Text style={styles.filterLabel}>Max $</Text>
+                        <TextInput style={styles.filterInput} keyboardType="decimal-pad" value={moneyFilters.maxAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, maxAmount: t }))} placeholder="9999" />
+                      </View>
+                      <View style={styles.filterItemSmall}>
+                        <Text style={styles.filterLabel}>Type</Text>
+                        <TextInput style={styles.filterInput} value={(moneyFilters.type ?? 'all').toString()} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, type: (t === 'income' || t === 'expense' || t === 'all') ? t : 'all' }))} placeholder="income/expense/all" />
+                      </View>
+                      <View style={styles.filterItemNotes}>
+                        <Text style={styles.filterLabel}>Text</Text>
+                        <TextInput style={styles.filterInput} value={moneyFilters.text ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, text: t }))} placeholder="search description" />
+                      </View>
+                      <TouchableOpacity style={styles.clearFiltersBtn} onPress={() => setMoneyFilters({ type: 'all' })} testID="money-clear-filters">
+                        <Text style={styles.clearFiltersText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>)}
+                    <View style={styles.bulkActionsRow}>
+                      <TouchableOpacity accessibilityRole="button" testID="money-select-toggle" style={[styles.bulkBtn, isAllMoneySelected ? styles.bulkBtnActive : null]} onPress={() => {
+                        if (isAllMoneySelected) setSelectedMoneyKeys(new Set()); else setSelectedMoneyKeys(new Set(filteredSortedMoney.map(r => moneyKey(r.isIncome, r.id))));
+                      }}>
+                        <Text style={styles.bulkBtnText}>{isAllMoneySelected ? 'Unselect all' : 'Select all'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity accessibilityRole="button" testID="money-delete-selected" style={[styles.bulkBtn, selectedMoneyKeys.size === 0 && styles.bulkBtnDisabled]} disabled={selectedMoneyKeys.size === 0} onPress={() => { void bulkDeleteMoney(); }}>
+                        <Text style={styles.bulkBtnDangerText}>Delete selected</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={true}>
+                  <View style={styles.table}>
+                    <View style={styles.rowHead}>
+                      <View style={[styles.cell, styles.cellXs]}>
+                        <TouchableOpacity accessibilityRole="checkbox" testID="money-select-all" onPress={() => {
+                          if (isAllMoneySelected) setSelectedMoneyKeys(new Set()); else setSelectedMoneyKeys(new Set(filteredSortedMoney.map(r => moneyKey(r.isIncome, r.id))));
+                        }} style={[styles.checkbox, isAllMoneySelected && styles.checkboxChecked]}>
+                          <View style={[styles.checkboxInner, isAllMoneySelected && styles.checkboxInnerChecked]} />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={[styles.cell, styles.cellActions]}>
+                        <Text style={styles.headText}>Actions</Text>
+                      </View>
+                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setMoneySort(prev => toggleSort(prev, 'type'))} testID="money-sort-type">
+                        <Text style={styles.headText}>Type</Text>
+                        <SortIcon dir={moneySort.dir} active={moneySort.key === 'type'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellMd]} onPress={() => setMoneySort(prev => toggleSort(prev, 'date'))} testID="money-sort-date">
+                        <Text style={styles.headText}>Date</Text>
+                        <SortIcon dir={moneySort.dir} active={moneySort.key === 'date'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setMoneySort(prev => toggleSort(prev, 'amount'))} testID="money-sort-amount">
+                        <Text style={styles.headText}>Amount</Text>
+                        <SortIcon dir={moneySort.dir} active={moneySort.key === 'amount'} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setMoneySort(prev => toggleSort(prev, 'description'))} testID="money-sort-desc">
+                        <Text style={styles.headText}>Description</Text>
+                        <SortIcon dir={moneySort.dir} active={moneySort.key === 'description'} />
+                      </TouchableOpacity>
+                    </View>
+
+                    {filteredSortedMoney.map(record => (
+                      <View key={`${record.isIncome ? 'i' : 'e'}-${record.id}`} style={styles.rowBody} testID={`money-row-${record.isIncome ? 'i' : 'e'}-${record.id}`}>
+                        <View style={[styles.cell, styles.cellXs]}>
+                          <TouchableOpacity accessibilityRole="checkbox" testID={`money-select-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={() => toggleMoneySelected(moneyKey(record.isIncome, record.id))} style={[styles.checkbox, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxChecked]}>
+                            <View style={[styles.checkboxInner, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxInnerChecked]} />
+                          </TouchableOpacity>
+                        </View>
+                        <View style={[styles.cell, styles.cellActions]}>
+                          {editingId === record.id ? (
+                            <View style={styles.actionRow}>
+                              <TouchableOpacity accessibilityRole="button" testID={`money-save-${record.id}`} style={styles.iconButton} onPress={async () => {
+                                try {
+                                  const f = moneyForm ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome };
+                                  const amt = Number(f.amount);
+                                  if (Number.isNaN(amt)) {
+                                    Alert.alert('Invalid', 'Amount must be a number');
+                                    return;
+                                  }
+                                  if (record.isIncome) {
+                                    await updateIncome(record.id, { date: f.date, amount: amt, description: f.description });
+                                  } else {
+                                    await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
+                                  }
+                                  setEditingId(null);
+                                  setMoneyForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save record');
+                                  console.log('save money error', e);
+                                }
+                              }}>
+                                <Save size={18} color="#10b981" />
+                              </TouchableOpacity>
+                              <TouchableOpacity accessibilityRole="button" testID={`money-cancel-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(null); setMoneyForm(null); }}>
+                                <X size={18} color="#6b7280" />
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <View style={styles.actionRow}>
+                              <TouchableOpacity accessibilityRole="button" testID={`money-edit-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(record.id); setMoneyForm({ date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }); }}>
+                                <Edit3 size={18} color="#6b7280" />
+                              </TouchableOpacity>
+                              <TouchableOpacity accessibilityRole="button" testID={`money-delete-${record.id}`} style={styles.iconButton} onPress={() => confirmDelete(async () => { if (record.isIncome) { await deleteIncome(record.id); } else { await deleteExpense(record.id); } })}>
+                                <Trash2 size={18} color="#ef4444" />
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellSm]}>
+                          <Text style={[styles.bodyText, record.isIncome ? styles.incomeText : styles.expenseText]}>{record.isIncome ? 'income' : 'expense'}</Text>
+                        </View>
+                        <View style={[styles.cell, styles.cellMd]}>
+                          {editingId === record.id ? (
+                            <DatePicker value={moneyForm?.date ?? record.date} onChange={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), date: t }))} />
+                          ) : (
+                            <Text style={styles.bodyText}>{record.date}</Text>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellSm]}>
+                          {editingId === record.id ? (
+                            <TextInput testID={`money-amount-${record.id}`} style={styles.inlineInput} keyboardType="decimal-pad" value={moneyForm?.amount ?? String(record.amount)} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), amount: t }))} />
+                          ) : (
+                            <Text style={styles.bodyText}>{(record.isIncome ? '+' : '-')}${record.amount.toFixed(2)}</Text>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellLg]}>
+                          {editingId === record.id ? (
+                            <TextInput testID={`money-desc-${record.id}`} style={styles.inlineInput} value={moneyForm?.description ?? (record.description ?? '')} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), description: t }))} placeholder="optional" />
+                          ) : (
+                            <Text style={styles.bodyText}>{record.description ?? ''}</Text>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tabs: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    gap: 8,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#10b981",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  activeTabText: {
+    color: "#10b981",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#374151",
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 4,
+  },
+  toolbar: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  toolbarTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  filterToggleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 4,
+  },
+  toolbarTitle: {
+    fontSize: 13,
+    color: "#6b7280",
+    fontWeight: "600",
+  },
+  filtersRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  filterItem: {
+    minWidth: 180,
+    flexGrow: 1,
+  },
+  filterItemSmall: {
+    minWidth: 100,
+    maxWidth: 140,
+    flexGrow: 1,
+  },
+  filterItemNotes: {
+    minWidth: 200,
+    flexGrow: 2,
+  },
+  filterLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginBottom: 6,
+  },
+  filterInput: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: "#111827",
+  },
+  clearFiltersBtn: {
+    alignSelf: "flex-end",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+  },
+  clearFiltersText: {
+    color: "#6b7280",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  table: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    overflow: "hidden",
+    minWidth: 800,
+  },
+  rowHead: {
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  rowBody: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+    alignItems: "center",
+  },
+  cell: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  cellXs: {
+    width: 50,
+    paddingHorizontal: 8,
+  },
+  cellSm: {
+    width: 110,
+  },
+  cellMd: {
+    width: 120,
+  },
+  cellLg: {
+    flex: 1,
+  },
+  cellActions: {
+    width: 100,
+    justifyContent: "flex-end",
+  },
+  headText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#374151",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  bodyText: {
+    fontSize: 14,
+    color: "#111827",
+  },
+  subtleText: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 4,
+  },
+  inlineInput: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 14,
+    color: "#111827",
+    width: "100%",
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: "auto",
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconButton: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: "#f3f4f6",
+  },
+  sortIconRow: {
+    marginLeft: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  checkboxChecked: {
+    borderColor: "#10b981",
+    backgroundColor: "#ecfdf5",
+  },
+  checkboxInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: "transparent",
+  },
+  checkboxInnerChecked: {
+    backgroundColor: "#10b981",
+  },
+  bulkActionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  bulkBtn: {
+    backgroundColor: "#eef2ff",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  bulkBtnDisabled: {
+    opacity: 0.5,
+  },
+  bulkBtnActive: {
+    backgroundColor: "#d1fae5",
+  },
+  bulkBtnText: {
+    color: "#111827",
+    fontWeight: "600",
+  },
+  bulkBtnDangerText: {
+    color: "#b91c1c",
+    fontWeight: "700",
+  },
+  incomeText: {
+    color: "#047857",
+    fontWeight: "600",
+  },
+  expenseText: {
+    color: "#b91c1c",
+    fontWeight: "600",
+  },
+  financialSummary: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 8,
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    marginTop: 4,
+  },
+  addRecordButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+    marginBottom: 16,
+  },
+  addRecordButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  addRecordRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+  },
+  addRecordButtonHalf: {
+    flex: 1,
+    marginBottom: 0,
+  },
+});
