@@ -13,23 +13,9 @@ on:
         default: ""
   push:
     branches: [ main ]
-    paths:
-      - "**.js"
-      - "**.ts"
-      - "**.tsx"
-      - "package.json"
-      - "package-lock.json"
-      - "yarn.lock"
-      - "pnpm-lock.yaml"
-      - "eas.json"
-      - "app.json"
-      - "app.config.*"
-      - ".github/workflows/eas-android.yml"
 
 env:
   NODE_VERSION: "20"
-  TRACK: "${{ github.event.inputs.track || 'internal' }}"
-  PROJECT_DIR: "${{ github.event.inputs.project_dir || '' }}"
 
 jobs:
   build-and-submit:
@@ -44,15 +30,15 @@ jobs:
       - name: Resolve working directory
         id: rwd
         run: |
-          if [ -n "${PROJECT_DIR}" ]; then
-            echo "dir=${PROJECT_DIR}" >> $GITHUB_OUTPUT
+          if [ -n "${{ github.event.inputs.project_dir }}" ]; then
+            echo "dir=${{ github.event.inputs.project_dir }}" >> $GITHUB_OUTPUT
           else
             echo "dir=." >> $GITHUB_OUTPUT
           fi
 
       - name: Show project files
-        run: ls -la
         working-directory: ${{ steps.rwd.outputs.dir }}
+        run: ls -la
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -91,34 +77,4 @@ jobs:
             if [ -f package-lock.json ]; then
               npm ci --no-audit --no-fund || npm ci --legacy-peer-deps --no-audit --no-fund || npm i --legacy-peer-deps --no-audit --no-fund
             else
-              npm i --legacy-peer-deps --no-audit --no-fund
-            fi
-          fi
-
-      - name: Install EAS CLI locally
-        working-directory: ${{ steps.rwd.outputs.dir }}
-        run: npm i -D eas-cli
-
-      - name: EAS login (token)
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        working-directory: ${{ steps.rwd.outputs.dir }}
-        run: npx eas whoami || true
-
-      - name: Build Android AAB with EAS
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        working-directory: ${{ steps.rwd.outputs.dir }}
-        run: npx eas build --platform android --profile production --non-interactive --wait
-
-      - name: Check for Play service account key
-        id: playkey
-        run: |
-          if [ -n "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" ]; then
-            echo "has_key=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_key=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Write Play service account JSON
-        if: steps.playkey.outp
+              npm i --legacy-peer-deps --no-audi
