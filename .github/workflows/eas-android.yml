@@ -57,6 +57,13 @@ jobs:
               npm ci --no-fund --legacy-peer-deps
             fi
           fi
+      - name: Pin AJV stack (CI hotfix)
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          npm pkg set "overrides.ajv=^8.12.0"
+          npm pkg set "overrides.ajv-keywords=^5.1.0"
+          npm pkg set "overrides.schema-utils=^4.2.0"
+          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0
 
       - name: Install EAS CLI
         working-directory: ${{ env.PROJECT_DIR }}
