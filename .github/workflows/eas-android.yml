@@ -1,0 +1,40 @@
+name: EAS Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]   # change to [ master ] if your default branch is master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm i
+          fi
+
+      - name: Install EAS CLI locally
+        run: npm i -D eas-cli
+
+      - name: Build AAB with EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build --platform android --profile production --non-interactive --wait
+
+      - name: Show latest build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build:list --limit 1
