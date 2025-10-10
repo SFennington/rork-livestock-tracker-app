@@ -46,12 +46,17 @@ jobs:
             fi
           fi
 
-      # Ensure ajv-keywords v5 (compatible with AJV v8) WITHOUT overrides (avoids EOVERRIDE)
-      - name: Ensure ajv-keywords v5
+      # Ensure AJV v8 + ajv-keywords v5 WITHOUT overrides (avoids EOVERRIDE)
+      - name: Ensure AJV v8 stack
         working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
         run: |
+          set -euo pipefail
+          # remove any stale ajv-keywords so we can re-install cleanly
           npm uninstall ajv-keywords || true
-          npm i -D ajv-keywords@^5.1.0 --no-fund
+          # install the compatible pair explicitly
+          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 --no-fund
+          # sanity print
           npm ls ajv || true
           npm ls ajv-keywords || true
 
