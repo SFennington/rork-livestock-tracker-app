@@ -61,17 +61,69 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: npm i -D eas-cli
 
-      # ---- Normalize eas.json so 'production' is NOT a dev-client build, and pin CLI + appVersionSource
+      # ---- Normalize eas.json (no heredoc) so production isn't a dev-client build; pin CLI/appVersionSource
       - name: Normalize EAS config (cli.version, appVersionSource, production.developmentClient=false)
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f "eas.json" ]; then
-            node - <<'NODE'
-            const fs = require('fs');
-            const p = 'eas.json';
-            let obj = {};
-            try { obj = JSON.parse(fs.readFileSync(p, 'utf8')); } catch {}
-            obj.cli = obj.cli || {};
-            // Pin a
+          test -f eas.json
+          node -e "const fs=require('fs');const p='eas.json';let o={};try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};o.cli=o.cli||{};if(!o.cli.version)o.cli.version='>= 3.20.0';if(!o.cli.appVersionSource)o.cli.appVersionSource='remote';o.build=o.build||{};o.build.production=o.build.production||{};o.build.production.android=Object.assign({buildType:'app-bundle'},o.build.production.android||{});o.build.production.android.developmentClient=false;fs.writeFileSync(p,JSON.stringify(o,null,2));console.log('eas.json normalized');"
+
+      # ---- Associate project with Expo (fixes: 'EAS project not configured')
+      - name: Configure EAS project (non-interactive)
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          NODE_ENV: production
+          APP_ENV: ci
+        run: |
+          npx eas init --non-interactive || true
+          npx --yes expo@latest config --type public
+
+      - name: EAS login (verify)
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas whoami || true
+
+      - name: Build Android AAB
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_DEBUG: "1"
+        run: npx eas build --platform android --profile production --non-interactive --wait
+
+      - name: Show latest EAS build (always)
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build:list --limit 1 || true
+
+      - name: Write Play service account JSON (if provided)
+        if: ${{ env.HAS_PLAY_KEY != '' }}
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          printf "%s" "${HAS_PLAY_KEY}" > google-play-key.json
+          test -s google-play-key.json && echo "Key written."
+
+      - name: Submit to Google Play (auto)
+        if: ${{ env.HAS_PLAY_KEY != '' }}
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas submit --platform android --latest --track "${{ env.TRACK }}" --key google-play-key.json --non-interactive
+
+      - name: Submission skipped note
+        if: ${{ env.HAS_PLAY_KEY == '' }}
+        run: echo "No PLAY_SERVICE_ACCOUNT_JSON secret; submission skipped. Download AAB from the EAS build page."
+
+      - name: Upload npm logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-debug-logs
+          path: /home/runner/.npm/_logs/
+          if-no-files-found: ignore
