@@ -26,4 +26,117 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       # Install deps (works with or without a lockfile)
-      - name: Install depend
+      - name: Install dependencies
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --frozen-lockfile || yarn install
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            pnpm install --frozen-lockfile || pnpm install
+          else
+            if [ -f package-lock.json ]; then
+              npm ci --no-fund || npm i --no-fund
+            else
+              npm i --package-lock-only --no-fund
+              npm i --no-fund
+            fi
+          fi
+
+      # Ensure AJV v8 + ajv-keywords v5 (no overrides to avoid EOVERRIDE)
+      - name: Ensure AJV v8 stack
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm uninstall ajv-keywords || true
+          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 --no-fund
+          npm ls ajv || true
+          npm ls ajv-keywords || true
+
+      - name: Install EAS CLI
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: npm i -D eas-cli
+
+      # Make sure production build is NOT dev-client & set required CLI fields
+      - name: Normalize EAS config
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f eas.json
+          node -e "const fs=require('fs');const p='eas.json';let o={};try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};o.cli=o.cli||{};if(!o.cli.version)o.cli.version='>= 3.20.0';if(!o.cli.appVersionSource)o.cli.appVersionSource='remote';o.build=o.build||{};o.build.production=o.build.production||{};o.build.production.android=Object.assign({buildType:'app-bundle'},o.build.production.android||{});o.build.production.android.developmentClient=false;fs.writeFileSync(p,JSON.stringify(o,null,2));console.log('eas.json normalized');"
+
+      # Install expo-dev-client so EAS won't complain even if a profile toggles it
+      - name: Ensure expo-dev-client present
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: npm i -D expo-dev-client --no-fund || true
+
+      # Set expo.owner in app.json if missing, using your EXPO account from the token
+      - name: Ensure app.json has owner
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          node -e "const fs=require('fs');const cp=require('child_process');const aj='app.json';if(!fs.existsSync(aj)){process.exit(0)};let j=JSON.parse(fs.readFileSync(aj,'utf8'));if(!j.expo)j.expo={};if(!j.expo.owner){try{const out=cp.execSync('npx eas whoami --json',{stdio:['ignore','pipe','pipe']}).toString();const u=JSON.parse(out).username;if(u){j.expo.owner=u;fs.writeFileSync(aj,JSON.stringify(j,null,2));console.log('Set expo.owner to',u)}else{console.log('Could not resolve username from eas whoami')}}catch(e){console.log('eas whoami failed to provide username')}}"
+
+      # Link or create EAS project non-interactively (fixes 'EAS project not configured')
+      - name: Configure EAS project (non-interactive)
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          NODE_ENV: production
+          APP_ENV: ci
+        run: |
+          npx eas init --non-interactive || true
+          npx --yes expo@latest config --type public
+
+      - name: EAS login (verify)
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas whoami || true
+
+      - name: Build Android AAB
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_DEBUG: "1"
+        run: npx eas build --platform android --profile production --non-interactive --wait
+
+      - name: Show latest EAS build (always)
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas build:list --limit 1 || true
+
+      - name: Write Play service account JSON (if provided)
+        if: ${{ env.HAS_PLAY_KEY != '' }}
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          printf "%s" "${HAS_PLAY_KEY}" > google-play-key.json
+          test -s google-play-key.json && echo "Key written."
+
+      - name: Submit to Google Play (auto)
+        if: ${{ env.HAS_PLAY_KEY != '' }}
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas submit --platform android --latest --track "${{ env.TRACK }}" --key google-play-key.json --non-interactive
+
+      - name: Submission skipped note
+        if: ${{ env.HAS_PLAY_KEY == '' }}
+        run: echo "No PLAY_SERVICE_ACCOUNT_JSON secret; submission skipped. Download AAB from the EAS build page."
+
+      - name: Upload npm logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-debug-logs
+          path: /home/runner/.npm/_logs/
+          if-no-files-found: ignore
