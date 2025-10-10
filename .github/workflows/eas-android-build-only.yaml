@@ -1,0 +1,128 @@
+name: EAS Android Build Only
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_VERSION: "20"
+      PROJECT_DIR: "."
+      NPM_CONFIG_LEGACY_PEER_DEPS: "true"
+      NPM_CONFIG_AUDIT: "false"
+      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f yarn.lock ]; then
+            corepack enable
+            yarn install --frozen-lockfile || yarn install
+          elif [ -f pnpm-lock.yaml ]; then
+            corepack enable
+            pnpm install --frozen-lockfile || pnpm install
+          else
+            if [ -f package-lock.json ]; then
+              npm ci --no-fund || npm i --no-fund
+            else
+              npm i --package-lock-only --no-fund
+              npm i --no-fund
+            fi
+          fi
+
+      - name: Ensure EAS CLI
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: npm i -D eas-cli
+
+      - name: Normalize EAS config
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f eas.json
+          node -e "const fs=require('fs');const p='eas.json';let o={};
+          try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};
+          o.cli=o.cli||{};if(!o.cli.version)o.cli.version='>=3.20.0';
+          if(!o.cli.appVersionSource)o.cli.appVersionSource='remote';
+          o.build=o.build||{};o.build.production=o.build.production||{};
+          o.build.production.android=Object.assign({buildType:'app-bundle'},o.build.production.android||{});
+          o.build.production.android.developmentClient=false;
+          fs.writeFileSync(p,JSON.stringify(o,null,2));
+          console.log('eas.json normalized');"
+
+      - name: Verify Expo project and owner
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          npx eas whoami || true
+          if [ -f app.json ]; then
+            node -e "
+              const fs=require('fs');const p='app.json';
+              const cp=require('child_process');
+              let j={};try{j=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};
+              j.expo=j.expo||{};
+              if(!j.expo.slug){
+                const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));
+                j.expo.slug=(pkg.name||'app').replace(/[^a-z0-9-]/gi,'-').toLowerCase();
+              }
+              if(!j.expo.owner){
+                try{
+                  const out=cp.execSync('npx eas whoami --json',{stdio:['ignore','pipe','pipe']}).toString();
+                  const u=JSON.parse(out).username;if(u)j.expo.owner=u;
+                }catch(e){}
+              }
+              const pid=process.env.EXPO_PROJECT_ID;
+              if(pid){
+                j.expo.extra=j.expo.extra||{};
+                j.expo.extra.eas=j.expo.extra.eas||{};
+                j.expo.extra.eas.projectId=pid;
+              }
+              fs.writeFileSync(p,JSON.stringify(j,null,2));
+              console.log('app.json updated');
+            "
+          fi
+
+      - name: Build Android AAB
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_DEBUG: "1"
+        run: npx eas build --platform android --profile production --non-interactive --wait
+
+      - name: Download latest AAB
+        if: always()
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          mkdir -p build-outputs
+          (cd build-outputs && npx eas build:download -p android --latest --non-interactive || true)
+          ls -lh build-outputs || true
+
+      - name: Upload AAB artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: build-outputs/*.aab
+          if-no-files-found: warn
+
+      - name: Output completion message
+        run: echo "✅ Build completed. Download the .AAB from the workflow artifacts in GitHub Actions."
