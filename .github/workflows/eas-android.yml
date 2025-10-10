@@ -10,7 +10,7 @@ jobs:
       contents: read
     env:
       NODE_VERSION: "20"
-      PROJECT_DIR: "app"         # your app lives in ./app
+      PROJECT_DIR: "."         # your app lives in ./app
       TRACK: "internal"          # internal | alpha | beta | production
       HAS_PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}  # expose secret for if: checks
       NPM_CONFIG_LEGACY_PEER_DEPS: "true"
