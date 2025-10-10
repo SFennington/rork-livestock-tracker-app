@@ -5,7 +5,7 @@ on:
 
 env:
   NODE_VERSION: "20"
-  PROJECT_DIR: "."       # change to subfolder if your app isn't at repo root
+  PROJECT_DIR: "app"       # change to subfolder if your app isn't at repo root
   TRACK: "internal"      # internal | alpha | beta | production
 
 jobs:
