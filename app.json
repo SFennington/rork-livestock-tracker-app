@@ -2,6 +2,7 @@
   "expo": {
     "name": "Livestock Tracker App",
     "slug": "livestock-tracker-app",
+    "owner": "SFennington",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,9 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.livestock-tracker-app",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio"
-        ],
+        "UIBackgroundModes": ["audio"],
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
       },
       "usesIcloudStorage": true
@@ -30,6 +29,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "app.rork.livestock-tracker-app",
+      "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
@@ -43,25 +43,24 @@
     "plugins": [
       [
         "expo-router",
-        {
-          "origin": "https://rork.com/"
-        }
+        { "origin": "https://rork.com/" }
       ],
       [
         "expo-av",
-        {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
-        }
+        { "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone" }
       ],
       [
         "expo-document-picker",
-        {
-          "iCloudContainerEnvironment": "Production"
-        }
+        { "iCloudContainerEnvironment": "Production" }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d02531cc-d3e2-4c06-adac-b4ab74cba703"
+      }
     }
   }
 }
