@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme, type ThemePalette } from "@/hooks/theme-store";
+import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store";
 import { useLivestock } from "@/hooks/livestock-store";
-import { Palette, Check, Download, Upload, Database, FileSpreadsheet } from "lucide-react-native";
+import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -26,7 +26,7 @@ const PALETTE_DESCRIPTIONS: Record<ThemePalette, string> = {
 };
 
 export default function SettingsScreen() {
-  const { colors, palette, availablePalettes, changePalette } = useTheme();
+  const { colors, palette, mode, availablePalettes, changePalette, changeMode } = useTheme();
   const livestock = useLivestock();
   const insets = useSafeAreaInsets();
   const [isExporting, setIsExporting] = useState(false);
@@ -578,12 +578,45 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Palette size={20} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme Palette</Text>
+            {mode === 'dark' ? <Moon size={20} color={colors.primary} /> : <Sun size={20} color={colors.primary} />}
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
           </View>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Choose your preferred color scheme
+            Customize your app theme
           </Text>
+
+          <View style={styles.modeToggle}>
+            <TouchableOpacity
+              style={[
+                styles.modeButton,
+                { 
+                  backgroundColor: mode === 'light' ? colors.primary : colors.card,
+                  borderColor: colors.border,
+                }
+              ]}
+              onPress={() => changeMode('light')}
+              testID="mode-light"
+            >
+              <Sun size={20} color={mode === 'light' ? '#fff' : colors.textMuted} />
+              <Text style={[styles.modeButtonText, { color: mode === 'light' ? '#fff' : colors.textMuted }]}>Light</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modeButton,
+                { 
+                  backgroundColor: mode === 'dark' ? colors.primary : colors.card,
+                  borderColor: colors.border,
+                }
+              ]}
+              onPress={() => changeMode('dark')}
+              testID="mode-dark"
+            >
+              <Moon size={20} color={mode === 'dark' ? '#fff' : colors.textMuted} />
+              <Text style={[styles.modeButtonText, { color: mode === 'dark' ? '#fff' : colors.textMuted }]}>Dark</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.subsectionTitle, { color: colors.text }]}>Color Palette</Text>
 
           <View style={styles.paletteGrid}>
             {availablePalettes.map((paletteOption) => (
@@ -946,6 +979,31 @@ const styles = StyleSheet.create({
   sectionDescription: {
     fontSize: 14,
     marginBottom: 16,
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  modeToggle: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 8,
+  },
+  modeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  modeButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
   },
   paletteGrid: {
     gap: 12,

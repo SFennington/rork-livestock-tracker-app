@@ -56,14 +56,14 @@ export default function LivestockScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.tabs}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.tabs, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'chickens' && styles.activeTab]}
           onPress={() => setActiveTab('chickens')}
         >
-          <Bird size={20} color={activeTab === 'chickens' ? '#10b981' : '#6b7280'} />
-          <Text style={[styles.tabText, activeTab === 'chickens' && styles.activeTabText]}>
+          <Bird size={20} color={activeTab === 'chickens' ? colors.primary : colors.textMuted} />
+          <Text style={[styles.tabText, { color: activeTab === 'chickens' ? colors.primary : colors.textMuted }]}>
             Chickens ({currentChickenCount})
           </Text>
         </TouchableOpacity>
@@ -71,26 +71,26 @@ export default function LivestockScreen() {
           style={[styles.tab, activeTab === 'rabbits' && styles.activeTab]}
           onPress={() => setActiveTab('rabbits')}
         >
-          <Rabbit size={20} color={activeTab === 'rabbits' ? '#10b981' : '#6b7280'} />
-          <Text style={[styles.tabText, activeTab === 'rabbits' && styles.activeTabText]}>
+          <Rabbit size={20} color={activeTab === 'rabbits' ? colors.primary : colors.textMuted} />
+          <Text style={[styles.tabText, { color: activeTab === 'rabbits' ? colors.primary : colors.textMuted }]}>
             Rabbits (0)
           </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         {activeTab === 'chickens' ? (
           <>
             <View style={styles.historyHeader}>
-              <View style={styles.currentCountCard}>
-                <Text style={styles.currentCountLabel}>Current Chicken Count</Text>
-                <Text style={styles.currentCountValue}>{currentChickenCount}</Text>
+              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Chicken Count</Text>
+                <Text style={[styles.currentCountValue, { color: colors.primary }]}>{currentChickenCount}</Text>
                 {chickenBreedBreakdown.length > 0 && (
-                  <View style={styles.breedBreakdown}>
+                  <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}>
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={styles.breedName}>{breed}</Text>
-                        <Text style={styles.breedCount}>{count}</Text>
+                        <Text style={[styles.breedName, { color: colors.textSecondary }]}>{breed}</Text>
+                        <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                       </View>
                     ))}
                   </View>
@@ -104,9 +104,9 @@ export default function LivestockScreen() {
 
             {sortedChickenHistory.length === 0 ? (
               <View style={styles.emptyState}>
-                <Calendar size={48} color="#d1d5db" />
-                <Text style={styles.emptyText}>No chicken events</Text>
-                <Text style={styles.emptySubtext}>Log acquisitions, deaths, or sales</Text>
+                <Calendar size={48} color={colors.textMuted} />
+                <Text style={[styles.emptyText, { color: colors.text }]}>No chicken events</Text>
+                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Log acquisitions, deaths, or sales</Text>
               </View>
             ) : (
               <View style={styles.list}>
@@ -116,16 +116,16 @@ export default function LivestockScreen() {
                   const typeLabel = event.type === 'acquired' ? 'Acquired' : event.type === 'sold' ? 'Sold' : event.type === 'consumed' ? 'Consumed' : 'Death/Loss';
                   
                   return (
-                    <View key={event.id} style={styles.historyCard}>
+                    <View key={event.id} style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                       <View style={styles.historyCardHeader}>
-                        <View style={styles.historyIconContainer}>
+                        <View style={[styles.historyIconContainer, { backgroundColor: colors.surface }]}>
                           <Icon size={20} color={iconColor} />
                         </View>
                         <View style={styles.historyCardContent}>
-                          <Text style={styles.historyCardTitle}>{typeLabel}</Text>
-                          <Text style={styles.historyCardDate}>{event.date}</Text>
+                          <Text style={[styles.historyCardTitle, { color: colors.text }]}>{typeLabel}</Text>
+                          <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
                           {event.breed && (
-                            <Text style={styles.historyCardBreed}>{event.breed}</Text>
+                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{event.breed}</Text>
                           )}
                         </View>
                         <View style={styles.historyCardRight}>
@@ -136,12 +136,12 @@ export default function LivestockScreen() {
                             style={styles.editButton}
                             onPress={() => router.push(`/edit-chicken-event/${event.id}`)}
                           >
-                            <Edit2 size={16} color="#6b7280" />
+                            <Edit2 size={16} color={colors.textMuted} />
                           </TouchableOpacity>
                         </View>
                       </View>
                       {event.notes && (
-                        <Text style={styles.historyCardNotes}>{event.notes}</Text>
+                        <Text style={[styles.historyCardNotes, { color: colors.textSecondary, borderTopColor: colors.border }]}>{event.notes}</Text>
                       )}
                     </View>
                   );
@@ -152,9 +152,9 @@ export default function LivestockScreen() {
         ) : (
           <>
             <View style={styles.historyHeader}>
-              <View style={styles.currentCountCard}>
-                <Text style={styles.currentCountLabel}>Current Rabbit Count</Text>
-                <Text style={styles.currentCountValue}>0</Text>
+              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Rabbit Count</Text>
+                <Text style={[styles.currentCountValue, { color: colors.primary }]}>0</Text>
               </View>
               <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-rabbit')}>
                 <Plus size={20} color="#fff" />
@@ -163,9 +163,9 @@ export default function LivestockScreen() {
             </View>
 
             <View style={styles.emptyState}>
-              <Rabbit size={48} color="#d1d5db" />
-              <Text style={styles.emptyText}>No rabbit events</Text>
-              <Text style={styles.emptySubtext}>Rabbit event tracking coming soon</Text>
+              <Rabbit size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.text }]}>No rabbit events</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Rabbit event tracking coming soon</Text>
             </View>
           </>
         )}
@@ -177,7 +177,6 @@ export default function LivestockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
   },
   loadingContainer: {
     flex: 1,
@@ -186,9 +185,7 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
   },
   tab: {
     flex: 1,
@@ -200,15 +197,10 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: "#10b981",
   },
   tabText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#6b7280",
-  },
-  activeTabText: {
-    color: "#10b981",
+    fontWeight: "500" as const,
   },
   content: {
     flex: 1,
@@ -233,13 +225,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: "600" as const,
     marginTop: 16,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#6b7280",
     marginTop: 4,
   },
   list: {
@@ -249,31 +239,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   currentCountCard: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
     alignItems: "center",
   },
   currentCountLabel: {
     fontSize: 14,
-    color: "#6b7280",
     marginBottom: 8,
   },
   currentCountValue: {
     fontSize: 32,
-    fontWeight: "700",
-    color: "#10b981",
+    fontWeight: "700" as const,
   },
   historyCard: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
   },
   historyCardHeader: {
     flexDirection: "row",
@@ -284,7 +268,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f3f4f6",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -293,12 +276,10 @@ const styles = StyleSheet.create({
   },
   historyCardTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: "600" as const,
   },
   historyCardDate: {
     fontSize: 14,
-    color: "#6b7280",
     marginTop: 2,
   },
   historyCardRight: {
@@ -311,7 +292,6 @@ const styles = StyleSheet.create({
   },
   historyCardBreed: {
     fontSize: 12,
-    color: "#9ca3af",
     marginTop: 2,
   },
   editButton: {
@@ -319,17 +299,14 @@ const styles = StyleSheet.create({
   },
   historyCardNotes: {
     fontSize: 14,
-    color: "#6b7280",
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
   },
   breedBreakdown: {
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
     gap: 8,
   },
   breedItem: {
@@ -340,12 +317,10 @@ const styles = StyleSheet.create({
   },
   breedName: {
     fontSize: 14,
-    color: "#6b7280",
     flex: 1,
   },
   breedCount: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#10b981",
+    fontWeight: "600" as const,
   },
 });
