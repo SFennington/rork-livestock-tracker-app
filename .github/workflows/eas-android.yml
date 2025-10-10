@@ -59,6 +59,24 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas whoami || true
+        
+      - name: Show Expo versions
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          node -v
+          npm -v
+          npx expo --version || npx --yes expo@latest --version
+          node -e "try{console.log('expo dep:', require('./package.json').dependencies.expo)}catch(e){console.log('no expo in package.json')}"
+
+      - name: Validate & print resolved Expo config
+        working-directory: ${{ env.PROJECT_DIR }}
+        env:
+          # Provide safe defaults in CI to avoid env-based crashes in app.config.*
+          NODE_ENV: production
+          APP_ENV: ci
+        run: |
+          # This will fail early if your config throws (missing env, bad JSON, etc.)
+          npx --yes expo@latest config --type public
 
       - name: Build Android AAB
         working-directory: ${{ env.PROJECT_DIR }}
