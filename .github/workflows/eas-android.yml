@@ -3,16 +3,16 @@ name: EAS Android Build & Submit
 on:
   workflow_dispatch:
 
-env:
-  NODE_VERSION: "20"
-  PROJECT_DIR: "app"       # change to subfolder if your app isn't at repo root
-  TRACK: "internal"      # internal | alpha | beta | production
-
 jobs:
   build-and-submit:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      NODE_VERSION: "20"
+      PROJECT_DIR: "app"         # your app lives in ./app
+      TRACK: "internal"          # internal | alpha | beta | production
+      HAS_PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}  # expose secret for if: checks
 
     steps:
       - name: Checkout
@@ -63,21 +63,20 @@ jobs:
         run: npx eas build --platform android --profile production --non-interactive --wait
 
       - name: Write Play service account JSON (if provided)
-        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.HAS_PLAY_KEY != '' }}
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
         run: |
-          # Write the JSON exactly as stored in the secret
-          printf "%s" "${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}" > google-play-key.json
+          printf "%s" "${HAS_PLAY_KEY}" > google-play-key.json
           test -s google-play-key.json && echo "Key written."
 
       - name: Submit to Google Play (auto)
-        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.HAS_PLAY_KEY != '' }}
         working-directory: ${{ env.PROJECT_DIR }}
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx eas submit --platform android --latest --track "${{ env.TRACK }}" --key google-play-key.json --non-interactive
 
       - name: Submission skipped note
-        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON == '' }}
+        if: ${{ env.HAS_PLAY_KEY == '' }}
         run: echo "No PLAY_SERVICE_ACCOUNT_JSON secret; submission skipped. Download AAB from the EAS build page."
