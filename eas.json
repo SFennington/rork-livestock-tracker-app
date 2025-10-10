@@ -1,9 +1,23 @@
 {
-  "cli": { "version": ">= 13.0.0" },
+  "cli": {
+    "version": ">=3.20.0",
+    "appVersionSource": "remote"
+  },
   "build": {
     "production": {
-      "android": { "buildType": "app-bundle" }
+      "android": {
+        "buildType": "app-bundle",
+        "developmentClient": false,
+        "credentialsSource": "remote"
+      }
     }
   },
-  "submit": { "production": { "android": {} } }
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "google-play-key.json",
+        "track": "internal"
+      }
+    }
+  }
 }
