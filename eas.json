@@ -10,6 +10,13 @@
         "developmentClient": false,
         "credentialsSource": "remote"
       }
+    },
+    "preview": {
+      "android": {
+        "buildType": "app-bundle",
+        "developmentClient": false,
+        "credentialsSource": "remote"
+      }
     }
   },
   "submit": {
