@@ -5,10 +5,14 @@
   },
   "build": {
     "production": {
+      "node": "22.20.0",
       "android": {
         "buildType": "app-bundle",
         "developmentClient": false,
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "env": {
+          "NODE_ENV": "production"
+        }
       }
     },
     "preview": {
