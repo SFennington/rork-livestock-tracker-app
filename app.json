@@ -5,15 +5,9 @@
     "owner": "sfennington",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.sfennington.livestocktracker",
@@ -26,12 +20,7 @@
       "usesIcloudStorage": true
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
       "package": "com.sfennington.livestocktracker",
-      "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
@@ -39,9 +28,7 @@
         "INTERNET"
       ]
     },
-    "web": {
-      "favicon": "./assets/images/favicon.png"
-    },
+    "web": {},
     "plugins": [
       [
         "expo-router",
