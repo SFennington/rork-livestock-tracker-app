@@ -49,7 +49,6 @@
           "origin": "https://rork.com/"
         }
       ],
-      "nativewind/expo",
       [
         "expo-av",
         {
