@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2 } from "lucide-react-native";
+import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,7 +21,9 @@ export default function LivestockScreen() {
   }, [getChickenCountOnDate]);
 
   const activeRabbitCount = useMemo(() => {
-    return rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
+    const count = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
+    console.log('[Livestock] activeRabbitCount computed', { count, rabbitsCount: rabbits.length });
+    return count;
   }, [rabbits]);
 
   const chickenBreedBreakdown = useMemo(() => {
@@ -49,6 +51,20 @@ export default function LivestockScreen() {
       .sort((a, b) => b[1] - a[1]);
   }, [chickenHistory]);
 
+  const rabbitBreedBreakdown = useMemo(() => {
+    const breakdown: { [breed: string]: number } = {};
+    for (const r of rabbits) {
+      if (r.status !== 'active') continue;
+      const breed = r.breed || 'Unknown';
+      breakdown[breed] = (breakdown[breed] ?? 0) + (r.quantity ?? 0);
+    }
+    const result = Object.entries(breakdown)
+      .filter(([_, count]) => (count ?? 0) > 0)
+      .sort((a, b) => b[1] - a[1]);
+    console.log('[Livestock] rabbitBreedBreakdown', result);
+    return result;
+  }, [rabbits]);
+
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -65,6 +81,7 @@ export default function LivestockScreen() {
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'chickens' && styles.activeTab]}
           onPress={() => setActiveTab('chickens')}
+          testID="tab-chickens"
         >
           <Bird size={20} color={activeTab === 'chickens' ? colors.primary : colors.textMuted} />
           <Text style={[styles.tabText, { color: activeTab === 'chickens' ? colors.primary : colors.textMuted }]}>
@@ -74,6 +91,7 @@ export default function LivestockScreen() {
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'rabbits' && styles.activeTab]}
           onPress={() => setActiveTab('rabbits')}
+          testID="tab-rabbits"
         >
           <Rabbit size={20} color={activeTab === 'rabbits' ? colors.primary : colors.textMuted} />
           <Text style={[styles.tabText, { color: activeTab === 'rabbits' ? colors.primary : colors.textMuted }]}>
@@ -86,11 +104,11 @@ export default function LivestockScreen() {
         {activeTab === 'chickens' ? (
           <>
             <View style={styles.historyHeader}>
-              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="chicken-count-card">
                 <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Chicken Count</Text>
                 <Text style={[styles.currentCountValue, { color: colors.primary }]}>{currentChickenCount}</Text>
                 {chickenBreedBreakdown.length > 0 && (
-                  <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}>
+                  <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
                         <Text style={[styles.breedName, { color: colors.textSecondary }]}>{breed}</Text>
@@ -100,7 +118,7 @@ export default function LivestockScreen() {
                   </View>
                 )}
               </View>
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-chicken-event')}>
+              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
                 <Plus size={20} color="#fff" />
                 <Text style={styles.addButtonText}>Add Event</Text>
               </TouchableOpacity>
@@ -120,7 +138,7 @@ export default function LivestockScreen() {
                   const typeLabel = event.type === 'acquired' ? 'Acquired' : event.type === 'sold' ? 'Sold' : event.type === 'consumed' ? 'Consumed' : 'Death/Loss';
                   
                   return (
-                    <View key={event.id} style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View key={event.id} style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID={`chicken-event-${event.id}`}>
                       <View style={styles.historyCardHeader}>
                         <View style={[styles.historyIconContainer, { backgroundColor: colors.surface }]}>
                           <Icon size={20} color={iconColor} />
@@ -139,6 +157,7 @@ export default function LivestockScreen() {
                           <TouchableOpacity 
                             style={styles.editButton}
                             onPress={() => router.push(`/edit-chicken-event/${event.id}`)}
+                            testID={`edit-chicken-event-${event.id}`}
                           >
                             <Edit2 size={16} color={colors.textMuted} />
                           </TouchableOpacity>
@@ -156,21 +175,66 @@ export default function LivestockScreen() {
         ) : (
           <>
             <View style={styles.historyHeader}>
-              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="rabbit-count-card">
                 <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Rabbit Count</Text>
                 <Text style={[styles.currentCountValue, { color: colors.primary }]}>{activeRabbitCount}</Text>
+                {rabbitBreedBreakdown.length > 0 && (
+                  <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]} testID="rabbit-breed-breakdown">
+                    {rabbitBreedBreakdown.map(([breed, count]) => (
+                      <View key={breed} style={styles.breedItem}>
+                        <Text style={[styles.breedName, { color: colors.textSecondary }]}>{breed}</Text>
+                        <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-rabbit')}>
+              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-rabbit')} testID="add-rabbit-btn">
                 <Plus size={20} color="#fff" />
-                <Text style={styles.addButtonText}>Add Event</Text>
+                <Text style={styles.addButtonText}>Add Rabbit</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.emptyState}>
-              <Rabbit size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.text }]}>No rabbit events</Text>
-              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Rabbit event tracking coming soon</Text>
-            </View>
+            {rabbits.length === 0 ? (
+              <View style={styles.emptyState} testID="rabbits-empty-state">
+                <Rabbit size={48} color={colors.textMuted} />
+                <Text style={[styles.emptyText, { color: colors.text }]}>No rabbits yet</Text>
+                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your first rabbit to get started</Text>
+              </View>
+            ) : (
+              <View style={styles.list}>
+                {rabbits.filter(r => r.status === 'active').map((r) => (
+                  <View key={r.id} style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID={`rabbit-${r.id}`}>
+                    <View style={styles.historyCardHeader}>
+                      <View style={[styles.historyIconContainer, { backgroundColor: colors.surface }]}> 
+                        <User2 size={20} color={colors.primary} />
+                      </View>
+                      <View style={styles.historyCardContent}>
+                        <Text style={[styles.historyCardTitle, { color: colors.text }]}>{r.name || 'Rabbit'}</Text>
+                        <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>Acquired {r.dateAcquired}</Text>
+                        <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{r.breed} • {r.gender === 'buck' ? 'Buck' : 'Doe'}</Text>
+                      </View>
+                      <View style={styles.historyCardRight}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Hash size={14} color={colors.textMuted} />
+                          <Text style={[styles.historyCardQuantityText, { color: colors.primary }]}>{r.quantity}</Text>
+                        </View>
+                        <TouchableOpacity 
+                          style={styles.editButton}
+                          onPress={() => router.push(`/edit-rabbit/${r.id}`)}
+                          testID={`edit-rabbit-${r.id}`}
+                        >
+                          <Edit2 size={16} color={colors.textMuted} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    {r.notes && (
+                      <Text style={[styles.historyCardNotes, { color: colors.textSecondary, borderTopColor: colors.border }]}>{r.notes}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
           </>
         )}
       </ScrollView>
