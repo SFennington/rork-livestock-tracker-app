@@ -60,6 +60,7 @@ export default function SettingsScreen() {
           feedRecords: livestock.feedRecords,
           expenses: livestock.expenses,
           income: livestock.income,
+          chickenHistory: livestock.chickenHistory,
         }
       };
 
@@ -169,20 +170,22 @@ export default function SettingsScreen() {
               FEED_RECORDS: 'livestock_feed_records',
               EXPENSES: 'livestock_expenses',
               INCOME: 'livestock_income',
+              CHICKEN_HISTORY: 'livestock_chicken_history',
             } as const;
 
             await Promise.all([
-              AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.VACCINATIONS, JSON.stringify(importedData.data.vaccinations || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.HEALTH_RECORDS, JSON.stringify(importedData.data.healthRecords || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.WEIGHT_RECORDS, JSON.stringify(importedData.data.weightRecords || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses || [])),
-              AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income || [])),
+              AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.VACCINATIONS, JSON.stringify(importedData.data.vaccinations ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.HEALTH_RECORDS, JSON.stringify(importedData.data.healthRecords ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.WEIGHT_RECORDS, JSON.stringify(importedData.data.weightRecords ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(importedData.data.chickenHistory ?? [])),
             ]);
 
             console.log('Import completed successfully (web)');
@@ -219,20 +222,22 @@ export default function SettingsScreen() {
                     FEED_RECORDS: 'livestock_feed_records',
                     EXPENSES: 'livestock_expenses',
                     INCOME: 'livestock_income',
+                    CHICKEN_HISTORY: 'livestock_chicken_history',
                   } as const;
 
                   await Promise.all([
-                    AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.VACCINATIONS, JSON.stringify(importedData.data.vaccinations || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.HEALTH_RECORDS, JSON.stringify(importedData.data.healthRecords || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.WEIGHT_RECORDS, JSON.stringify(importedData.data.weightRecords || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses || [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income || [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.VACCINATIONS, JSON.stringify(importedData.data.vaccinations ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.HEALTH_RECORDS, JSON.stringify(importedData.data.healthRecords ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.WEIGHT_RECORDS, JSON.stringify(importedData.data.weightRecords ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(importedData.data.chickenHistory ?? [])),
                   ]);
 
                   console.log('Import completed successfully');
