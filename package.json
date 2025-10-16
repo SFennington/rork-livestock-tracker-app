@@ -1,7 +1,7 @@
 {
   "name": "expo-app",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "start": "bunx rork start -p 48xkwishdka7nwu5yaav2 --tunnel",
@@ -21,6 +21,7 @@
     "expo": "^53.0.4",
     "expo-av": "~15.1.7",
     "expo-blur": "~14.1.4",
+    "expo-build-properties": "~0.14.8",
     "expo-constants": "~17.1.4",
     "expo-document-picker": "~13.1.6",
     "expo-file-system": "~18.1.11",
@@ -56,8 +57,7 @@
     "@types/react": "~19.0.10",
     "eslint": "^9.31.0",
     "eslint-config-expo": "^9.2.0",
-    "typescript": "~5.8.3",
-    "eas-cli": "^16.20.4",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "typescript": "~5.8.3"
   }
 }

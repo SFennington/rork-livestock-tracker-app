@@ -22,7 +22,11 @@
   },
   "submit": {
     "production": {
-      "android": {}
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "production",
+        "releaseStatus": "draft"
+      }
     }
   }
 }
