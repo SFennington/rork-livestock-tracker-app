@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, TextInput } from "react-native";
 import { useLivestock, useRabbitBreeding } from "@/hooks/livestock-store";
-import { Calendar, AlertTriangle, Plus, Baby, Heart, CheckCircle2 } from "lucide-react-native";
+import { Calendar, AlertTriangle, Plus, Baby, Heart, CheckCircle2, MinusCircle, PlusCircle, Edit2 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMemo, useState, useCallback } from "react";
@@ -34,6 +34,42 @@ export default function BreedingCalendarScreen() {
       },
     }));
   }, []);
+
+  const addAttempt = useCallback(async (id: string, outcome: 'falloff' | 'missed' | 'successful') => {
+    try {
+      const record = breedingRecords.find(b => b.id === id);
+      const attempts = record?.attempts ?? [];
+      const newAttempts = [...attempts, { id: `${id}-att-${attempts.length + 1}-${Date.now()}`, date: new Date().toISOString().split('T')[0], outcome }];
+      const falloffCount = newAttempts.filter(a => a.outcome === 'falloff').length;
+      await updateBreedingRecord(id, { attempts: newAttempts, falloffCount });
+    } catch (e) {
+      console.log('addAttempt error', e);
+      Alert.alert('Error', 'Could not add attempt');
+    }
+  }, [breedingRecords, updateBreedingRecord]);
+
+  const removeLastAttempt = useCallback(async (id: string) => {
+    try {
+      const record = breedingRecords.find(b => b.id === id);
+      const attempts = record?.attempts ?? [];
+      if (attempts.length === 0) return;
+      const newAttempts = attempts.slice(0, -1);
+      const falloffCount = newAttempts.filter(a => a.outcome === 'falloff').length;
+      await updateBreedingRecord(id, { attempts: newAttempts, falloffCount });
+    } catch (e) {
+      console.log('removeLastAttempt error', e);
+      Alert.alert('Error', 'Could not remove attempt');
+    }
+  }, [breedingRecords, updateBreedingRecord]);
+
+  const setStatus = useCallback(async (id: string, status: 'bred' | 'confirmed' | 'failed') => {
+    try {
+      await updateBreedingRecord(id, { status });
+    } catch (e) {
+      console.log('setStatus error', e);
+      Alert.alert('Error', 'Could not update status');
+    }
+  }, [updateBreedingRecord]);
 
   const livingRabbitsSummary = useMemo(() => {
     const today = new Date();
@@ -215,6 +251,48 @@ export default function BreedingCalendarScreen() {
                         </Text>
                       </View>
                     )}
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Falloffs:</Text>
+                      <Text style={styles.detailValue}>{breeding.falloffCount ?? 0}</Text>
+                    </View>
+                    {(breeding.attempts ?? []).length > 0 && (
+                      <Text style={styles.detailText}>Attempts: {(breeding.attempts ?? []).map(a => a.outcome).join(', ')}</Text>
+                    )}
+
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity testID={`attempt-falloff-${breeding.id}`} style={styles.attemptButton} onPress={() => addAttempt(breeding.id, 'falloff')}>
+                        <PlusCircle size={18} color="#111827" />
+                        <Text style={styles.attemptButtonText}>Add Falloff</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity testID={`attempt-missed-${breeding.id}`} style={styles.attemptButton} onPress={() => addAttempt(breeding.id, 'missed')}>
+                        <PlusCircle size={18} color="#111827" />
+                        <Text style={styles.attemptButtonText}>Add Missed</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity testID={`attempt-success-${breeding.id}`} style={styles.attemptButton} onPress={() => addAttempt(breeding.id, 'successful')}>
+                        <PlusCircle size={18} color="#111827" />
+                        <Text style={styles.attemptButtonText}>Add Successful</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity testID={`attempt-remove-${breeding.id}`} style={styles.removeAttemptButton} onPress={() => removeLastAttempt(breeding.id)}>
+                        <MinusCircle size={18} color="#ef4444" />
+                        <Text style={styles.removeAttemptButtonText}>Undo</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity testID={`status-bred-${breeding.id}`} style={styles.statusButton} onPress={() => setStatus(breeding.id, 'bred')}>
+                        <Edit2 size={16} color="#111827" />
+                        <Text style={styles.statusButtonText}>Mark Bred</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity testID={`status-confirmed-${breeding.id}`} style={styles.statusButton} onPress={() => setStatus(breeding.id, 'confirmed')}>
+                        <Edit2 size={16} color="#111827" />
+                        <Text style={styles.statusButtonText}>Confirm</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity testID={`status-failed-${breeding.id}`} style={styles.statusButton} onPress={() => setStatus(breeding.id, 'failed')}>
+                        <Edit2 size={16} color="#111827" />
+                        <Text style={styles.statusButtonText}>Fail</Text>
+                      </TouchableOpacity>
+                    </View>
+
                     <View style={styles.actionsRow}>
                       <TouchableOpacity
                         testID={`complete-${breeding.id}`}
@@ -468,7 +546,51 @@ const styles = StyleSheet.create({
   actionsRow: {
     marginTop: 8,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-start',
+  },
+  attemptButton: {
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  attemptButtonText: {
+    color: '#111827',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  removeAttemptButton: {
+    backgroundColor: '#fee2e2',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  removeAttemptButtonText: {
+    color: '#ef4444',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  statusButton: {
+    backgroundColor: '#e5e7eb',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusButtonText: {
+    color: '#111827',
+    fontWeight: '600',
+    fontSize: 12,
   },
   completeButton: {
     backgroundColor: '#10b981',
