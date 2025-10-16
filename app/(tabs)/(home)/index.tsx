@@ -120,38 +120,6 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Rabbit Management Section */}
-      {rabbits.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Rabbit Management</Text>
-          <View style={styles.rabbitActions}>
-            <TouchableOpacity 
-              style={[styles.rabbitActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/breeding-calendar')}
-            >
-              <Calendar size={20} color={colors.primary} />
-              <Text style={[styles.rabbitActionText, { color: colors.text }]}>Breeding Calendar</Text>
-              {activeBreedings.length > 0 && (
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.badgeText}>{activeBreedings.length}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.rabbitActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/rabbit-health')}
-            >
-              <Rabbit size={20} color={colors.error} />
-              <Text style={[styles.rabbitActionText, { color: colors.text }]}>Health Tracking</Text>
-              {dueVaccinations.length > 0 && (
-                <View style={[styles.badge, { backgroundColor: colors.error }]}>
-                  <Text style={styles.badgeText}>{dueVaccinations.length}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
       <View style={styles.statsGrid}>
         <View style={[styles.statCard, { backgroundColor: colors.accent }]}>
@@ -163,7 +131,7 @@ export default function DashboardScreen() {
           <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day</Text>
         </View>
 
-        <View style={[styles.statCard, { backgroundColor: colors.secondary }]}>
+        <TouchableOpacity testID="stat-active-breedings" style={[styles.statCard, { backgroundColor: colors.secondary }]} onPress={() => router.push('/breeding-calendar')}>
           <View style={styles.statHeader}>
             <Heart size={24} color="#fff" />
             <Text style={styles.statValue}>{activeBreedings.length}</Text>
@@ -172,7 +140,7 @@ export default function DashboardScreen() {
           <Text style={styles.statSubtext}>
             {upcomingKindlings.length > 0 ? `${upcomingKindlings.length} due soon` : 'In progress'}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <View style={[styles.statCard, { backgroundColor: colors.primary }]}>
           <View style={styles.statHeader}>
@@ -436,38 +404,5 @@ const styles = StyleSheet.create({
   alertSubtext: {
     fontSize: 12,
     marginTop: 2,
-  },
-  rabbitActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  rabbitActionCard: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    position: "relative",
-  },
-  rabbitActionText: {
-    fontSize: 12,
-    fontWeight: "500" as const,
-    textAlign: "center",
-  },
-  badge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600" as const,
   },
 });

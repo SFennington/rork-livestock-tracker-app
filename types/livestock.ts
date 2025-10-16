@@ -88,6 +88,13 @@ export interface EggProduction {
   notes?: string;
 }
 
+export interface BreedingAttempt {
+  id: string;
+  date: string;
+  outcome: 'falloff' | 'missed' | 'successful';
+  notes?: string;
+}
+
 export interface BreedingRecord {
   id: string;
   buckId: string;
@@ -110,6 +117,11 @@ export interface BreedingRecord {
   femaleCount?: number;
   retainedKits?: string[];
   soldKits?: SoldKit[];
+  harvestCount?: number;
+  saleCount?: number;
+  retainedForBreedingCount?: number;
+  attempts?: BreedingAttempt[];
+  falloffCount?: number;
   complications?: string;
   doeCondition?: 'excellent' | 'good' | 'fair' | 'poor';
   milkProduction?: 'excellent' | 'good' | 'fair' | 'poor';
