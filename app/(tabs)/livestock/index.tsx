@@ -7,7 +7,7 @@ import { useState, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function LivestockScreen() {
-  const { chickenHistory, isLoading, getChickenCountOnDate } = useLivestock();
+  const { chickenHistory, rabbits, isLoading, getChickenCountOnDate } = useLivestock();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'rabbits'>('chickens');
   const insets = useSafeAreaInsets();
@@ -19,6 +19,10 @@ export default function LivestockScreen() {
   const currentChickenCount = useMemo(() => {
     return getChickenCountOnDate(new Date().toISOString().split('T')[0]);
   }, [getChickenCountOnDate]);
+
+  const activeRabbitCount = useMemo(() => {
+    return rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
+  }, [rabbits]);
 
   const chickenBreedBreakdown = useMemo(() => {
     const breakdown: { [breed: string]: number } = {};
@@ -73,7 +77,7 @@ export default function LivestockScreen() {
         >
           <Rabbit size={20} color={activeTab === 'rabbits' ? colors.primary : colors.textMuted} />
           <Text style={[styles.tabText, { color: activeTab === 'rabbits' ? colors.primary : colors.textMuted }]}>
-            Rabbits (0)
+            Rabbits ({activeRabbitCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -154,7 +158,7 @@ export default function LivestockScreen() {
             <View style={styles.historyHeader}>
               <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Rabbit Count</Text>
-                <Text style={[styles.currentCountValue, { color: colors.primary }]}>0</Text>
+                <Text style={[styles.currentCountValue, { color: colors.primary }]}>{activeRabbitCount}</Text>
               </View>
               <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-rabbit')}>
                 <Plus size={20} color="#fff" />
