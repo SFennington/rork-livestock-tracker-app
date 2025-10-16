@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMemo, useState, useCallback } from "react";
 
 export default function BreedingCalendarScreen() {
-  const { rabbits, breedingRecords, updateBreedingRecord } = useLivestock();
+  const { rabbits, breedingRecords, updateBreedingRecord, addRabbit } = useLivestock();
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const insets = useSafeAreaInsets();
 
@@ -124,6 +124,7 @@ export default function BreedingCalendarScreen() {
         Alert.alert('Check counts', 'Destinations exceed litter size.');
         return;
       }
+      const record = breedingRecords.find(b => b.id === id);
       const todayIso = new Date().toISOString().split('T')[0];
       await updateBreedingRecord(id, {
         actualKindlingDate: todayIso,
@@ -137,13 +138,60 @@ export default function BreedingCalendarScreen() {
         weanedCount: litterSize ? Math.max(0, Math.min(litterSize, sumDest)) : undefined,
         status: 'weaned',
       });
+
+      if (record) {
+        const doe = rabbits.find(r => r.id === record.doeId);
+        const buck = rabbits.find(r => r.id === record.buckId);
+        const baseName = `${getRabbitName(record.doeId)} × ${getRabbitName(record.buckId)}`;
+        const baseBreed = doe?.breed ?? buck?.breed ?? 'Mixed';
+
+        const addBatch = async (qty: number, gender: 'buck' | 'doe', purpose: 'retained' | 'sale' | 'harvest') => {
+          if (qty <= 0) return;
+          await addRabbit({
+            name: `${baseName} (${purpose === 'retained' ? 'Retained' : purpose === 'sale' ? 'For Sale' : 'Harvest'}) ${gender === 'buck' ? '♂' : '♀'}`,
+            breed: baseBreed,
+            gender,
+            dateOfBirth: todayIso,
+            dateAcquired: todayIso,
+            cost: 0,
+            quantity: qty,
+            status: 'active',
+            color: doe?.color ?? buck?.color,
+            parentBuckId: record.buckId,
+            parentDoeId: record.doeId,
+            notes: `Born from ${baseName} on ${todayIso}. Destination: ${purpose}.`
+          });
+        };
+
+        const retainedBucks = Math.min(maleCount, retainedForBreedingCount);
+        const retainedDoes = Math.min(femaleCount, Math.max(0, retainedForBreedingCount - retainedBucks));
+        await addBatch(retainedBucks, 'buck', 'retained');
+        await addBatch(retainedDoes, 'doe', 'retained');
+
+        const remainingMalesAfterRetain = Math.max(0, maleCount - retainedBucks);
+        const remainingFemalesAfterRetain = Math.max(0, femaleCount - retainedDoes);
+
+        const saleBucks = Math.min(remainingMalesAfterRetain, saleCount);
+        const saleDoes = Math.min(remainingFemalesAfterRetain, Math.max(0, saleCount - saleBucks));
+        await addBatch(saleBucks, 'buck', 'sale');
+        await addBatch(saleDoes, 'doe', 'sale');
+
+        const remMalesAfterSale = Math.max(0, remainingMalesAfterRetain - saleBucks);
+        const remFemalesAfterSale = Math.max(0, remainingFemalesAfterRetain - saleDoes);
+
+        const harvestBucks = Math.min(remMalesAfterSale, harvestCount);
+        const harvestDoes = Math.min(remFemalesAfterSale, Math.max(0, harvestCount - harvestBucks));
+        await addBatch(harvestBucks, 'buck', 'harvest');
+        await addBatch(harvestDoes, 'doe', 'harvest');
+      }
+
       setExpandedId(null);
-      Alert.alert('Saved', 'Breeding completed.', [{ text: 'OK' }]);
+      Alert.alert('Saved', 'Breeding completed and kits added to herd.', [{ text: 'OK' }]);
     } catch (e) {
       Alert.alert('Error', 'Failed to complete breeding.');
       console.log('completeBreeding error', e);
     }
-  }, [form, updateBreedingRecord]);
+  }, [form, updateBreedingRecord, breedingRecords, rabbits, addRabbit]);
 
   return (
     <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>

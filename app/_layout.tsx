@@ -34,6 +34,8 @@ function RootLayoutNav() {
       <Stack.Screen name="add-breeding" options={{ presentation: "modal", title: "Record Breeding" }} />
       <Stack.Screen name="breeding-calendar" options={{ title: "Breeding Calendar" }} />
       <Stack.Screen name="rabbit-health" options={{ title: "Rabbit Health" }} />
+      <Stack.Screen name="rabbit-offspring-summary" options={{ title: "Offspring Summary" }} />
+      <Stack.Screen name="rabbit-offspring/[id]" options={{ title: "Offspring Details" }} />
     </Stack>
   );
 }

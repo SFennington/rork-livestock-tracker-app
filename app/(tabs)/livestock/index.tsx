@@ -151,6 +151,14 @@ export default function LivestockScreen() {
                 </View>
               )}
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/rabbit-offspring-summary')}
+              testID="manage-rabbits-offspring"
+            >
+              <Calendar size={20} color={colors.accent} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Offspring Summary</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -274,13 +282,22 @@ export default function LivestockScreen() {
                           <Hash size={14} color={colors.textMuted} />
                           <Text style={[styles.historyCardQuantityText, { color: colors.primary }]}>{r.quantity}</Text>
                         </View>
-                        <TouchableOpacity 
-                          style={styles.editButton}
-                          onPress={() => router.push(`/edit-rabbit/${r.id}`)}
-                          testID={`edit-rabbit-${r.id}`}
-                        >
-                          <Edit2 size={16} color={colors.textMuted} />
-                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          <TouchableOpacity 
+                            style={styles.editButton}
+                            onPress={() => router.push(`/edit-rabbit/${r.id}`)}
+                            testID={`edit-rabbit-${r.id}`}
+                          >
+                            <Edit2 size={16} color={colors.textMuted} />
+                          </TouchableOpacity>
+                          <TouchableOpacity 
+                            style={styles.editButton}
+                            onPress={() => router.push((`/rabbit-offspring/${r.id}` as unknown) as any)}
+                            testID={`offspring-${r.id}`}
+                          >
+                            <Calendar size={16} color={colors.textMuted} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                     {r.notes && (
