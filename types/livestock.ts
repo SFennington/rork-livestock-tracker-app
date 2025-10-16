@@ -110,6 +110,9 @@ export interface BreedingRecord {
   femaleCount?: number;
   retainedKits?: string[];
   soldKits?: SoldKit[];
+  harvestCount?: number;
+  saleCount?: number;
+  retainedForBreedingCount?: number;
   complications?: string;
   doeCondition?: 'excellent' | 'good' | 'fair' | 'poor';
   milkProduction?: 'excellent' | 'good' | 'fair' | 'poor';

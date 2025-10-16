@@ -131,7 +131,7 @@ export default function DashboardScreen() {
           <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day</Text>
         </View>
 
-        <View style={[styles.statCard, { backgroundColor: colors.secondary }]}>
+        <TouchableOpacity testID="stat-active-breedings" style={[styles.statCard, { backgroundColor: colors.secondary }]} onPress={() => router.push('/breeding-calendar')}>
           <View style={styles.statHeader}>
             <Heart size={24} color="#fff" />
             <Text style={styles.statValue}>{activeBreedings.length}</Text>
@@ -140,7 +140,7 @@ export default function DashboardScreen() {
           <Text style={styles.statSubtext}>
             {upcomingKindlings.length > 0 ? `${upcomingKindlings.length} due soon` : 'In progress'}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <View style={[styles.statCard, { backgroundColor: colors.primary }]}>
           <View style={styles.statHeader}>
