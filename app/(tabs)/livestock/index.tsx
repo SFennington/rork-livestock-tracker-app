@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useLivestock } from "@/hooks/livestock-store";
+import { useLivestock, useRabbitBreeding, useRabbitHealth } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash } from "lucide-react-native";
+import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Egg, Syringe } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,6 +11,8 @@ export default function LivestockScreen() {
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'rabbits'>('chickens');
   const insets = useSafeAreaInsets();
+  const { activeBreedings } = useRabbitBreeding();
+  const { dueVaccinations } = useRabbitHealth();
 
   const sortedChickenHistory = useMemo(() => {
     return [...chickenHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -98,6 +100,59 @@ export default function LivestockScreen() {
             Rabbits ({activeRabbitCount})
           </Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Management header per animal */}
+      <View style={styles.managementHeader}>
+        {activeTab === 'chickens' ? (
+          <View style={styles.managementActions}>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/log-eggs')}
+              testID="manage-chickens-log-eggs"
+            >
+              <Egg size={20} color={colors.accent} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Log Eggs</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/chicken-history')}
+              testID="manage-chickens-history"
+            >
+              <Calendar size={20} color={colors.primary} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Chicken History</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.managementActions}>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/breeding-calendar')}
+              testID="manage-rabbits-breeding"
+            >
+              <Calendar size={20} color={colors.primary} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Breeding Calendar</Text>
+              {activeBreedings.length > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.badgeText}>{activeBreedings.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/rabbit-health')}
+              testID="manage-rabbits-health"
+            >
+              <Syringe size={20} color={colors.error} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Health Tracking</Text>
+              {dueVaccinations.length > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.error }]}>
+                  <Text style={styles.badgeText}>{dueVaccinations.length}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
@@ -269,6 +324,45 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     fontWeight: "500" as const,
+  },
+  managementHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  managementActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  managementActionCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    position: 'relative',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  managementActionText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+  badge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700' as const,
   },
   content: {
     flex: 1,
