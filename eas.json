@@ -9,7 +9,8 @@
       "android": {
         "buildType": "app-bundle",
         "developmentClient": false,
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "versionCode": 2
       }
     },
     "preview": {

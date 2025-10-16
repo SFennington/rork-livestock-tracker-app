@@ -3,7 +3,7 @@
     "name": "Livestock Tracker App",
     "slug": "livestock-tracker-app",
     "owner": "sfennington",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
