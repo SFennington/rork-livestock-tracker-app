@@ -55,9 +55,7 @@
           "android": {
             "minSdkVersion": 21,
             "targetSdkVersion": 34,
-            "compileSdkVersion": 34,
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "compileSdkVersion": 34
           }
         }
       ]
