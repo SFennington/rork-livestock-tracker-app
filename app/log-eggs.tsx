@@ -16,6 +16,17 @@ export default function LogEggsScreen() {
   const [consumed, setConsumed] = useState("");
   const [notes, setNotes] = useState("");
 
+  const quickSelectOptions = [
+    { label: 'Today', date: new Date().toISOString().split('T')[0] },
+    { label: 'Yesterday', date: new Date(Date.now() - 86400000).toISOString().split('T')[0] },
+    { label: '2 Days Ago', date: new Date(Date.now() - 172800000).toISOString().split('T')[0] },
+    { label: '3 Days Ago', date: new Date(Date.now() - 259200000).toISOString().split('T')[0] },
+  ];
+
+  const handleQuickSelect = (option: { label: string; date: string }) => {
+    setDate(option.date);
+  };
+
   const handleSave = async () => {
     if (!date) {
       if (Platform.OS === 'web') {
@@ -88,6 +99,21 @@ export default function LogEggsScreen() {
       <View style={styles.form}>
         <Text style={styles.screenTitle}>Log Egg Records</Text>
         
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Quick Select Date</Text>
+          <View style={styles.quickSelectGrid}>
+            {quickSelectOptions.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.quickSelectButton}
+                onPress={() => handleQuickSelect(option)}
+              >
+                <Text style={styles.quickSelectText}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <View style={styles.inputGroup}>
           <DatePicker
             label="Date *"
