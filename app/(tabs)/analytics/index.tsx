@@ -373,7 +373,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   barLabel: {
-    fontSize: 11,
+    fontSize: 9,
+    marginTop: 4,
   },
 
   statsGrid: {
