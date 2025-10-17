@@ -1,13 +1,13 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
-import { DollarSign, Weight, Hash, FileText, Award, Heart } from "lucide-react-native";
+import { DollarSign, Weight, Hash, FileText, Award, Heart, Trash2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function EditRabbitScreen() {
-  const { updateRabbit, rabbits } = useLivestock();
+  const { updateRabbit, deleteRabbit, rabbits } = useLivestock();
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
@@ -78,6 +78,34 @@ export default function EditRabbitScreen() {
     });
 
     router.back();
+  };
+
+  const handleDelete = () => {
+    if (Platform.OS === 'web') {
+      if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+        deleteRabbit(id as string);
+        router.back();
+      }
+    } else {
+      Alert.alert(
+        "Delete Rabbit",
+        `Are you sure you want to delete ${name}? This action cannot be undone.`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              deleteRabbit(id as string);
+              router.back();
+            }
+          }
+        ]
+      );
+    }
   };
 
   return (
@@ -342,6 +370,11 @@ export default function EditRabbitScreen() {
           />
         </View>
 
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Trash2 size={20} color="#dc2626" />
+          <Text style={styles.deleteButtonText}>Delete Rabbit</Text>
+        </TouchableOpacity>
+
         <View style={styles.buttons}>
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -503,5 +536,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#fca5a5",
+    backgroundColor: "#fef2f2",
+    marginBottom: 12,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#dc2626",
   },
 });
