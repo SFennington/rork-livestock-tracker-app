@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LivestockProvider } from "@/hooks/livestock-store";
 import { ThemeProvider } from "@/hooks/theme-store";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, StatusBar, Platform } from "react-native";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   console.log('SplashScreen.preventAutoHideAsync failed');
@@ -107,6 +107,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <LivestockProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
+              {Platform.OS === 'android' && (
+                <StatusBar backgroundColor="#10b981" barStyle="light-content" translucent={false} />
+              )}
               <RootLayoutNav />
             </GestureHandlerRootView>
           </LivestockProvider>
