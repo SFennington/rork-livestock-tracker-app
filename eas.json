@@ -1,7 +1,6 @@
 {
   "cli": {
-    "version": ">=16.0.0",
-    "appVersionSource": "remote"
+    "version": ">=16.0.0"
   },
   "build": {
     "production": {
@@ -10,7 +9,8 @@
         "buildType": "app-bundle",
         "developmentClient": false,
         "credentialsSource": "remote",
-        "versionCode": 2
+        "autoSubmit": true,
+        "gradleCommand": ":app:bundleRelease"
       }
     },
     "preview": {
