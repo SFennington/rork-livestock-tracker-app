@@ -1,16 +1,20 @@
 name: Build and Submit to Google Play Store
 
+# DISABLED - Manual builds only to prevent concurrent builds
+# on:
+#   push:
+#     branches: [ main ]
+#     paths:
+#       - 'app/**'
+#       - 'components/**'
+#       - 'hooks/**'
+#       - 'types/**'
+#       - 'app.json'
+#       - 'package.json'
+#       - 'eas.json'
+
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'app/**'
-      - 'components/**'
-      - 'hooks/**'
-      - 'types/**'
-      - 'app.json'
-      - 'package.json'
-      - 'eas.json'
+  workflow_dispatch: # Only run manually
 
 jobs:
   build-and-submit:
