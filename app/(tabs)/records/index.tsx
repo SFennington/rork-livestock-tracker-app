@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Egg, Heart, DollarSign, TrendingUp, Edit3, Trash2, Save, X, ChevronUp, ChevronDown, Filter, Plus } from "lucide-react-native";
+import { Egg, Heart, DollarSign, TrendingUp, ChevronUp, ChevronDown, Filter, Plus } from "lucide-react-native";
 import { router } from "expo-router";
 import { useMemo, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -207,22 +207,6 @@ export default function RecordsScreen() {
   const isAllBreedingSelected = selectedBreedingIds.size > 0 && selectedBreedingIds.size === filteredSortedBreeding.length;
   const isAllMoneySelected = selectedMoneyKeys.size > 0 && selectedMoneyKeys.size === filteredSortedMoney.length;
 
-  const confirmDelete = useCallback(async (onConfirm: () => Promise<void> | void) => {
-    try {
-      if (Platform.OS === 'web') {
-        const ok = (globalThis as any).confirm ? (globalThis as any).confirm('Delete this record?') : true;
-        if (ok) await onConfirm();
-        return;
-      }
-      Alert.alert('Delete', 'Delete this record?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => { void onConfirm(); } },
-      ]);
-    } catch (err) {
-      console.log('confirmDelete error', err);
-    }
-  }, []);
-
   const toggleSort = useCallback(<K extends string>(cur: { key: K; dir: SortDirection }, key: K): { key: K; dir: SortDirection } => {
     if (cur.key === key) {
       return { key, dir: cur.dir === "asc" ? "desc" : "asc" };
@@ -403,9 +387,6 @@ export default function RecordsScreen() {
                           <View style={[styles.checkboxInner, isAllEggsSelected && styles.checkboxInnerChecked]} />
                         </TouchableOpacity>
                       </View>
-                      <View style={[styles.cell, styles.cellActions]}>
-                        <Text style={styles.headText}>Actions</Text>
-                      </View>
                       <TouchableOpacity style={[styles.cell, styles.cellMd]} onPress={() => setEggSort(prev => toggleSort(prev, 'date'))} testID="eggs-sort-date">
                         <Text style={styles.headText}>Date</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'date'} />
@@ -421,47 +402,34 @@ export default function RecordsScreen() {
                     </View>
 
                     {filteredSortedEggs.map(record => (
-                      <View key={record.id} style={styles.rowBody} testID={`egg-row-${record.id}`}>
+                      <TouchableOpacity key={record.id} style={styles.rowBody} testID={`egg-row-${record.id}`} onPress={() => {
+                        if (editingId === record.id) {
+                          const saveEdit = async () => {
+                            try {
+                              const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
+                              const parsed = parseInt(payload.count, 10);
+                              if (Number.isNaN(parsed)) {
+                                Alert.alert('Invalid', 'Count must be a number');
+                                return;
+                              }
+                              await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
+                              setEditingId(null);
+                              setEggForm(null);
+                            } catch (e) {
+                              Alert.alert('Error', 'Failed to save egg record');
+                              console.log('save egg error', e);
+                            }
+                          };
+                          void saveEdit();
+                        } else {
+                          setEditingId(record.id);
+                          setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' });
+                        }
+                      }} activeOpacity={0.7}>
                         <View style={[styles.cell, styles.cellXs]}>
-                          <TouchableOpacity accessibilityRole="checkbox" testID={`egg-select-${record.id}`} onPress={() => toggleEggSelected(record.id)} style={[styles.checkbox, selectedEggIds.has(record.id) && styles.checkboxChecked]}>
+                          <TouchableOpacity accessibilityRole="checkbox" testID={`egg-select-${record.id}`} onPress={(e) => { e.stopPropagation(); toggleEggSelected(record.id); }} style={[styles.checkbox, selectedEggIds.has(record.id) && styles.checkboxChecked]}>
                             <View style={[styles.checkboxInner, selectedEggIds.has(record.id) && styles.checkboxInnerChecked]} />
                           </TouchableOpacity>
-                        </View>
-                        <View style={[styles.cell, styles.cellActions]}>
-                          {editingId === record.id ? (
-                            <View style={styles.actionRow}>
-                              <TouchableOpacity accessibilityRole="button" testID={`egg-save-${record.id}`} style={styles.iconButton} onPress={async () => {
-                                try {
-                                  const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
-                                  const parsed = parseInt(payload.count, 10);
-                                  if (Number.isNaN(parsed)) {
-                                    Alert.alert('Invalid', 'Count must be a number');
-                                    return;
-                                  }
-                                  await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
-                                  setEditingId(null);
-                                  setEggForm(null);
-                                } catch (e) {
-                                  Alert.alert('Error', 'Failed to save egg record');
-                                  console.log('save egg error', e);
-                                }
-                              }}>
-                                <Save size={18} color="#10b981" />
-                              </TouchableOpacity>
-                              <TouchableOpacity accessibilityRole="button" testID={`egg-cancel-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(null); setEggForm(null); }}>
-                                <X size={18} color="#6b7280" />
-                              </TouchableOpacity>
-                            </View>
-                          ) : (
-                            <View style={styles.actionRow}>
-                              <TouchableOpacity accessibilityRole="button" testID={`egg-edit-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(record.id); setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' }); }}>
-                                <Edit3 size={18} color="#6b7280" />
-                              </TouchableOpacity>
-                              <TouchableOpacity accessibilityRole="button" testID={`egg-delete-${record.id}`} style={styles.iconButton} onPress={() => confirmDelete(async () => { await deleteEggProduction(record.id); })}>
-                                <Trash2 size={18} color="#ef4444" />
-                              </TouchableOpacity>
-                            </View>
-                          )}
                         </View>
                         <View style={[styles.cell, styles.cellMd]}>
                           {editingId === record.id ? (
@@ -484,7 +452,7 @@ export default function RecordsScreen() {
                             <Text style={styles.bodyText}>{record.notes ?? ''}</Text>
                           )}
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                   </ScrollView>
@@ -556,9 +524,6 @@ export default function RecordsScreen() {
                           <View style={[styles.checkboxInner, isAllBreedingSelected && styles.checkboxInnerChecked]} />
                         </TouchableOpacity>
                       </View>
-                      <View style={[styles.cell, styles.cellActions]}>
-                        <Text style={styles.headText}>Actions</Text>
-                      </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setBreedSort(prev => toggleSort(prev, 'breedingDate'))} testID="breed-sort-bred">
                         <Text style={styles.headText}>Bred</Text>
                         <SortIcon dir={breedSort.dir} active={breedSort.key === 'breedingDate'} />
@@ -581,47 +546,34 @@ export default function RecordsScreen() {
                       const buck = rabbits.find(r => r.id === record.buckId);
                       const doe = rabbits.find(r => r.id === record.doeId);
                       return (
-                        <View key={record.id} style={styles.rowBody} testID={`breed-row-${record.id}`}>
+                        <TouchableOpacity key={record.id} style={styles.rowBody} testID={`breed-row-${record.id}`} onPress={() => {
+                          if (editingId === record.id) {
+                            const saveEdit = async () => {
+                              try {
+                                const f = breedForm ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined };
+                                const litter = f.litterSize ? parseInt(f.litterSize, 10) : undefined;
+                                if (f.litterSize && Number.isNaN(litter)) {
+                                  Alert.alert('Invalid', 'Litter size must be a number');
+                                  return;
+                                }
+                                await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
+                                setEditingId(null);
+                                setBreedForm(null);
+                              } catch (e) {
+                                Alert.alert('Error', 'Failed to save breeding record');
+                                console.log('save breeding error', e);
+                              }
+                            };
+                            void saveEdit();
+                          } else {
+                            setEditingId(record.id);
+                            setBreedForm({ breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined });
+                          }
+                        }} activeOpacity={0.7}>
                           <View style={[styles.cell, styles.cellXs]}>
-                            <TouchableOpacity accessibilityRole="checkbox" testID={`breed-select-${record.id}`} onPress={() => toggleBreedingSelected(record.id)} style={[styles.checkbox, selectedBreedingIds.has(record.id) && styles.checkboxChecked]}>
+                            <TouchableOpacity accessibilityRole="checkbox" testID={`breed-select-${record.id}`} onPress={(e) => { e.stopPropagation(); toggleBreedingSelected(record.id); }} style={[styles.checkbox, selectedBreedingIds.has(record.id) && styles.checkboxChecked]}>
                               <View style={[styles.checkboxInner, selectedBreedingIds.has(record.id) && styles.checkboxInnerChecked]} />
                             </TouchableOpacity>
-                          </View>
-                          <View style={[styles.cell, styles.cellActions]}>
-                            {editingId === record.id ? (
-                              <View style={styles.actionRow}>
-                                <TouchableOpacity accessibilityRole="button" testID={`breed-save-${record.id}`} style={styles.iconButton} onPress={async () => {
-                                  try {
-                                    const f = breedForm ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined };
-                                    const litter = f.litterSize ? parseInt(f.litterSize, 10) : undefined;
-                                    if (f.litterSize && Number.isNaN(litter)) {
-                                      Alert.alert('Invalid', 'Litter size must be a number');
-                                      return;
-                                    }
-                                    await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
-                                    setEditingId(null);
-                                    setBreedForm(null);
-                                  } catch (e) {
-                                    Alert.alert('Error', 'Failed to save breeding record');
-                                    console.log('save breeding error', e);
-                                  }
-                                }}>
-                                  <Save size={18} color="#10b981" />
-                                </TouchableOpacity>
-                                <TouchableOpacity accessibilityRole="button" testID={`breed-cancel-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(null); setBreedForm(null); }}>
-                                  <X size={18} color="#6b7280" />
-                                </TouchableOpacity>
-                              </View>
-                            ) : (
-                              <View style={styles.actionRow}>
-                                <TouchableOpacity accessibilityRole="button" testID={`breed-edit-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(record.id); setBreedForm({ breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }); }}>
-                                  <Edit3 size={18} color="#6b7280" />
-                                </TouchableOpacity>
-                                <TouchableOpacity accessibilityRole="button" testID={`breed-delete-${record.id}`} style={styles.iconButton} onPress={() => confirmDelete(async () => { await deleteBreedingRecord(record.id); })}>
-                                  <Trash2 size={18} color="#ef4444" />
-                                </TouchableOpacity>
-                              </View>
-                            )}
                           </View>
                           <View style={[styles.cell, styles.cellLg]}>
                             {editingId === record.id ? (
@@ -652,7 +604,7 @@ export default function RecordsScreen() {
                               <Text style={styles.bodyText}>{record.litterSize ?? ''}</Text>
                             )}
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       );
                     })}
                   </View>
@@ -760,9 +712,6 @@ export default function RecordsScreen() {
                           <View style={[styles.checkboxInner, isAllMoneySelected && styles.checkboxInnerChecked]} />
                         </TouchableOpacity>
                       </View>
-                      <View style={[styles.cell, styles.cellActions]}>
-                        <Text style={styles.headText}>Actions</Text>
-                      </View>
                       <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setMoneySort(prev => toggleSort(prev, 'type'))} testID="money-sort-type">
                         <Text style={styles.headText}>Type</Text>
                         <SortIcon dir={moneySort.dir} active={moneySort.key === 'type'} />
@@ -782,51 +731,38 @@ export default function RecordsScreen() {
                     </View>
 
                     {filteredSortedMoney.map(record => (
-                      <View key={`${record.isIncome ? 'i' : 'e'}-${record.id}`} style={styles.rowBody} testID={`money-row-${record.isIncome ? 'i' : 'e'}-${record.id}`}>
+                      <TouchableOpacity key={`${record.isIncome ? 'i' : 'e'}-${record.id}`} style={styles.rowBody} testID={`money-row-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={() => {
+                        if (editingId === record.id) {
+                          const saveEdit = async () => {
+                            try {
+                              const f = moneyForm ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome };
+                              const amt = Number(f.amount);
+                              if (Number.isNaN(amt)) {
+                                Alert.alert('Invalid', 'Amount must be a number');
+                                return;
+                              }
+                              if (record.isIncome) {
+                                await updateIncome(record.id, { date: f.date, amount: amt, description: f.description });
+                              } else {
+                                await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
+                              }
+                              setEditingId(null);
+                              setMoneyForm(null);
+                            } catch (e) {
+                              Alert.alert('Error', 'Failed to save record');
+                              console.log('save money error', e);
+                            }
+                          };
+                          void saveEdit();
+                        } else {
+                          setEditingId(record.id);
+                          setMoneyForm({ date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome });
+                        }
+                      }} activeOpacity={0.7}>
                         <View style={[styles.cell, styles.cellXs]}>
-                          <TouchableOpacity accessibilityRole="checkbox" testID={`money-select-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={() => toggleMoneySelected(moneyKey(record.isIncome, record.id))} style={[styles.checkbox, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxChecked]}>
+                          <TouchableOpacity accessibilityRole="checkbox" testID={`money-select-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={(e) => { e.stopPropagation(); toggleMoneySelected(moneyKey(record.isIncome, record.id)); }} style={[styles.checkbox, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxChecked]}>
                             <View style={[styles.checkboxInner, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxInnerChecked]} />
                           </TouchableOpacity>
-                        </View>
-                        <View style={[styles.cell, styles.cellActions]}>
-                          {editingId === record.id ? (
-                            <View style={styles.actionRow}>
-                              <TouchableOpacity accessibilityRole="button" testID={`money-save-${record.id}`} style={styles.iconButton} onPress={async () => {
-                                try {
-                                  const f = moneyForm ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome };
-                                  const amt = Number(f.amount);
-                                  if (Number.isNaN(amt)) {
-                                    Alert.alert('Invalid', 'Amount must be a number');
-                                    return;
-                                  }
-                                  if (record.isIncome) {
-                                    await updateIncome(record.id, { date: f.date, amount: amt, description: f.description });
-                                  } else {
-                                    await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
-                                  }
-                                  setEditingId(null);
-                                  setMoneyForm(null);
-                                } catch (e) {
-                                  Alert.alert('Error', 'Failed to save record');
-                                  console.log('save money error', e);
-                                }
-                              }}>
-                                <Save size={18} color="#10b981" />
-                              </TouchableOpacity>
-                              <TouchableOpacity accessibilityRole="button" testID={`money-cancel-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(null); setMoneyForm(null); }}>
-                                <X size={18} color="#6b7280" />
-                              </TouchableOpacity>
-                            </View>
-                          ) : (
-                            <View style={styles.actionRow}>
-                              <TouchableOpacity accessibilityRole="button" testID={`money-edit-${record.id}`} style={styles.iconButton} onPress={() => { setEditingId(record.id); setMoneyForm({ date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }); }}>
-                                <Edit3 size={18} color="#6b7280" />
-                              </TouchableOpacity>
-                              <TouchableOpacity accessibilityRole="button" testID={`money-delete-${record.id}`} style={styles.iconButton} onPress={() => confirmDelete(async () => { if (record.isIncome) { await deleteIncome(record.id); } else { await deleteExpense(record.id); } })}>
-                                <Trash2 size={18} color="#ef4444" />
-                              </TouchableOpacity>
-                            </View>
-                          )}
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
                           <Text style={[styles.bodyText, record.isIncome ? styles.incomeText : styles.expenseText]}>{record.isIncome ? 'income' : 'expense'}</Text>
@@ -852,7 +788,7 @@ export default function RecordsScreen() {
                             <Text style={styles.bodyText}>{record.description ?? ''}</Text>
                           )}
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                   </ScrollView>
@@ -1029,10 +965,7 @@ const styles = StyleSheet.create({
   cellLg: {
     flex: 1,
   },
-  cellActions: {
-    width: 100,
-    justifyContent: "flex-end",
-  },
+
   headText: {
     fontSize: 12,
     fontWeight: "700",
