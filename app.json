@@ -48,18 +48,6 @@
         {
           "iCloudContainerEnvironment": "Production"
         }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "minSdkVersion": 21,
-            "targetSdkVersion": 34,
-            "compileSdkVersion": 34,
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
-          }
-        }
       ]
     ],
     "experiments": {

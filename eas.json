@@ -8,8 +8,7 @@
       "android": {
         "buildType": "app-bundle",
         "developmentClient": false,
-        "credentialsSource": "remote",
-        "gradleCommand": ":app:bundleRelease"
+        "credentialsSource": "remote"
       }
     },
     "preview": {
