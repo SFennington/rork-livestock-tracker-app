@@ -3,7 +3,7 @@
     "name": "Livestock Tracker App",
     "slug": "livestock-tracker-app",
     "owner": "sfennington",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.sfennington.livestocktracker",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
