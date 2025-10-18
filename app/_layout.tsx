@@ -5,8 +5,9 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LivestockProvider } from "@/hooks/livestock-store";
-import { ThemeProvider } from "@/hooks/theme-store";
-import { View, Text, StyleSheet, ActivityIndicator, StatusBar, Platform } from "react-native";
+import { ThemeProvider, useTheme } from "@/hooks/theme-store";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import * as SystemUI from 'expo-system-ui';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   console.log('SplashScreen.preventAutoHideAsync failed');
@@ -22,8 +23,25 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutNav() {
+  const { colors } = useTheme();
+  
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.primary);
+  }, [colors.primary]);
+  
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }}>
+    <Stack 
+      screenOptions={{ 
+        headerBackTitle: "Back",
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: '#ffffff',
+        headerTitleStyle: {
+          color: '#ffffff',
+        },
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="add-chicken" options={{ presentation: "modal", title: "Add Chicken" }} />
       <Stack.Screen name="add-rabbit" options={{ presentation: "modal", title: "Add Rabbit" }} />
@@ -107,9 +125,6 @@ export default function RootLayout() {
         <ThemeProvider>
           <LivestockProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
-              {Platform.OS === 'android' && (
-                <StatusBar backgroundColor="#10b981" barStyle="light-content" translucent={false} />
-              )}
               <RootLayoutNav />
             </GestureHandlerRootView>
           </LivestockProvider>
