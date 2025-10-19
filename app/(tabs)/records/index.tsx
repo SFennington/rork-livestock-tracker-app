@@ -58,6 +58,9 @@ export default function RecordsScreen() {
   const [showEggFilters, setShowEggFilters] = useState(false);
   const [showBreedFilters, setShowBreedFilters] = useState(false);
   const [showMoneyFilters, setShowMoneyFilters] = useState(false);
+  const [showEggDatePicker, setShowEggDatePicker] = useState<'start' | 'end' | null>(null);
+  const [showBreedDatePicker, setShowBreedDatePicker] = useState<'start' | 'end' | null>(null);
+  const [showMoneyDatePicker, setShowMoneyDatePicker] = useState<'start' | 'end' | null>(null);
 
   const toggleEggSelected = useCallback((id: string) => {
     setSelectedEggIds(prev => {
@@ -344,26 +347,36 @@ export default function RecordsScreen() {
                       </TouchableOpacity>
                     </View>
                     {showEggFilters && (<View style={styles.filtersRow}>
-                      <View style={styles.filterItem}>
-                        <DatePicker value={eggFilters.startDate ?? ''} onChange={(d) => setEggFilters(prev => ({ ...prev, startDate: d }))} label="From" />
+                      <TouchableOpacity style={styles.filterItemCompact} onPress={() => setShowEggDatePicker(showEggDatePicker === 'start' ? null : 'start')}>
+                        <Text style={styles.filterLabelCompact}>From: {eggFilters.startDate || 'All'}</Text>
+                      </TouchableOpacity>
+                      {showEggDatePicker === 'start' && (
+                        <View style={styles.datePickerOverlay}>
+                          <DatePicker value={eggFilters.startDate ?? ''} onChange={(d) => { setEggFilters(prev => ({ ...prev, startDate: d })); setShowEggDatePicker(null); }} label="From" />
+                        </View>
+                      )}
+                      <TouchableOpacity style={styles.filterItemCompact} onPress={() => setShowEggDatePicker(showEggDatePicker === 'end' ? null : 'end')}>
+                        <Text style={styles.filterLabelCompact}>To: {eggFilters.endDate || 'All'}</Text>
+                      </TouchableOpacity>
+                      {showEggDatePicker === 'end' && (
+                        <View style={styles.datePickerOverlay}>
+                          <DatePicker value={eggFilters.endDate ?? ''} onChange={(d) => { setEggFilters(prev => ({ ...prev, endDate: d })); setShowEggDatePicker(null); }} label="To" />
+                        </View>
+                      )}
+                      <View style={styles.filterItemTiny}> 
+                        <Text style={styles.filterLabelCompact}>Min</Text>
+                        <TextInput style={styles.filterInputCompact} keyboardType="numeric" value={eggFilters.minCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, minCount: t }))} placeholder="0" />
                       </View>
-                      <View style={styles.filterItem}>
-                        <DatePicker value={eggFilters.endDate ?? ''} onChange={(d) => setEggFilters(prev => ({ ...prev, endDate: d }))} label="To" />
+                      <View style={styles.filterItemTiny}>
+                        <Text style={styles.filterLabelCompact}>Max</Text>
+                        <TextInput style={styles.filterInputCompact} keyboardType="numeric" value={eggFilters.maxCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, maxCount: t }))} placeholder="999" />
                       </View>
-                      <View style={styles.filterItemSmall}> 
-                        <Text style={styles.filterLabel}>Min</Text>
-                        <TextInput style={styles.filterInput} keyboardType="numeric" value={eggFilters.minCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, minCount: t }))} placeholder="0" />
+                      <View style={styles.filterItemMedium}>
+                        <Text style={styles.filterLabelCompact}>Notes</Text>
+                        <TextInput style={styles.filterInputCompact} value={eggFilters.notes ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, notes: t }))} placeholder="search" />
                       </View>
-                      <View style={styles.filterItemSmall}>
-                        <Text style={styles.filterLabel}>Max</Text>
-                        <TextInput style={styles.filterInput} keyboardType="numeric" value={eggFilters.maxCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, maxCount: t }))} placeholder="999" />
-                      </View>
-                      <View style={styles.filterItemNotes}>
-                        <Text style={styles.filterLabel}>Notes</Text>
-                        <TextInput style={styles.filterInput} value={eggFilters.notes ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, notes: t }))} placeholder="search notes" />
-                      </View>
-                      <TouchableOpacity style={styles.clearFiltersBtn} onPress={() => setEggFilters({})} testID="eggs-clear-filters">
-                        <Text style={styles.clearFiltersText}>Clear</Text>
+                      <TouchableOpacity style={styles.clearFiltersBtnCompact} onPress={() => { setEggFilters({}); setShowEggDatePicker(null); }} testID="eggs-clear-filters">
+                        <Text style={styles.clearFiltersTextCompact}>Clear</Text>
                       </TouchableOpacity>
                     </View>)}
                     <View style={styles.bulkActionsRow}>
@@ -542,18 +555,28 @@ export default function RecordsScreen() {
                       </TouchableOpacity>
                     </View>
                     {showBreedFilters && (<View style={styles.filtersRow}>
-                      <View style={styles.filterItem}>
-                        <DatePicker value={breedFilters.startDate ?? ''} onChange={(d) => setBreedFilters(prev => ({ ...prev, startDate: d }))} label="From" />
+                      <TouchableOpacity style={styles.filterItemCompact} onPress={() => setShowBreedDatePicker(showBreedDatePicker === 'start' ? null : 'start')}>
+                        <Text style={styles.filterLabelCompact}>From: {breedFilters.startDate || 'All'}</Text>
+                      </TouchableOpacity>
+                      {showBreedDatePicker === 'start' && (
+                        <View style={styles.datePickerOverlay}>
+                          <DatePicker value={breedFilters.startDate ?? ''} onChange={(d) => { setBreedFilters(prev => ({ ...prev, startDate: d })); setShowBreedDatePicker(null); }} label="From" />
+                        </View>
+                      )}
+                      <TouchableOpacity style={styles.filterItemCompact} onPress={() => setShowBreedDatePicker(showBreedDatePicker === 'end' ? null : 'end')}>
+                        <Text style={styles.filterLabelCompact}>To: {breedFilters.endDate || 'All'}</Text>
+                      </TouchableOpacity>
+                      {showBreedDatePicker === 'end' && (
+                        <View style={styles.datePickerOverlay}>
+                          <DatePicker value={breedFilters.endDate ?? ''} onChange={(d) => { setBreedFilters(prev => ({ ...prev, endDate: d })); setShowBreedDatePicker(null); }} label="To" />
+                        </View>
+                      )}
+                      <View style={styles.filterItemMedium}>
+                        <Text style={styles.filterLabelCompact}>Status</Text>
+                        <TextInput style={styles.filterInputCompact} value={breedFilters.status ?? ''} onChangeText={(t) => setBreedFilters(prev => ({ ...prev, status: t }))} placeholder="bred/kindled" />
                       </View>
-                      <View style={styles.filterItem}>
-                        <DatePicker value={breedFilters.endDate ?? ''} onChange={(d) => setBreedFilters(prev => ({ ...prev, endDate: d }))} label="To" />
-                      </View>
-                      <View style={styles.filterItemNotes}>
-                        <Text style={styles.filterLabel}>Status</Text>
-                        <TextInput style={styles.filterInput} value={breedFilters.status ?? ''} onChangeText={(t) => setBreedFilters(prev => ({ ...prev, status: t }))} placeholder="bred/kindled/weaned" />
-                      </View>
-                      <TouchableOpacity style={styles.clearFiltersBtn} onPress={() => setBreedFilters({})} testID="breed-clear-filters">
-                        <Text style={styles.clearFiltersText}>Clear</Text>
+                      <TouchableOpacity style={styles.clearFiltersBtnCompact} onPress={() => { setBreedFilters({}); setShowBreedDatePicker(null); }} testID="breed-clear-filters">
+                        <Text style={styles.clearFiltersTextCompact}>Clear</Text>
                       </TouchableOpacity>
                     </View>)}
                     <View style={styles.bulkActionsRow}>
@@ -767,30 +790,40 @@ export default function RecordsScreen() {
                       </TouchableOpacity>
                     </View>
                     {showMoneyFilters && (<View style={styles.filtersRow}>
-                      <View style={styles.filterItem}>
-                        <DatePicker value={moneyFilters.startDate ?? ''} onChange={(d) => setMoneyFilters(prev => ({ ...prev, startDate: d }))} label="From" />
+                      <TouchableOpacity style={styles.filterItemCompact} onPress={() => setShowMoneyDatePicker(showMoneyDatePicker === 'start' ? null : 'start')}>
+                        <Text style={styles.filterLabelCompact}>From: {moneyFilters.startDate || 'All'}</Text>
+                      </TouchableOpacity>
+                      {showMoneyDatePicker === 'start' && (
+                        <View style={styles.datePickerOverlay}>
+                          <DatePicker value={moneyFilters.startDate ?? ''} onChange={(d) => { setMoneyFilters(prev => ({ ...prev, startDate: d })); setShowMoneyDatePicker(null); }} label="From" />
+                        </View>
+                      )}
+                      <TouchableOpacity style={styles.filterItemCompact} onPress={() => setShowMoneyDatePicker(showMoneyDatePicker === 'end' ? null : 'end')}>
+                        <Text style={styles.filterLabelCompact}>To: {moneyFilters.endDate || 'All'}</Text>
+                      </TouchableOpacity>
+                      {showMoneyDatePicker === 'end' && (
+                        <View style={styles.datePickerOverlay}>
+                          <DatePicker value={moneyFilters.endDate ?? ''} onChange={(d) => { setMoneyFilters(prev => ({ ...prev, endDate: d })); setShowMoneyDatePicker(null); }} label="To" />
+                        </View>
+                      )}
+                      <View style={styles.filterItemTiny}> 
+                        <Text style={styles.filterLabelCompact}>Min $</Text>
+                        <TextInput style={styles.filterInputCompact} keyboardType="decimal-pad" value={moneyFilters.minAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, minAmount: t }))} placeholder="0" />
                       </View>
-                      <View style={styles.filterItem}>
-                        <DatePicker value={moneyFilters.endDate ?? ''} onChange={(d) => setMoneyFilters(prev => ({ ...prev, endDate: d }))} label="To" />
+                      <View style={styles.filterItemTiny}> 
+                        <Text style={styles.filterLabelCompact}>Max $</Text>
+                        <TextInput style={styles.filterInputCompact} keyboardType="decimal-pad" value={moneyFilters.maxAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, maxAmount: t }))} placeholder="9999" />
                       </View>
-                      <View style={styles.filterItemSmall}> 
-                        <Text style={styles.filterLabel}>Min $</Text>
-                        <TextInput style={styles.filterInput} keyboardType="decimal-pad" value={moneyFilters.minAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, minAmount: t }))} placeholder="0" />
+                      <View style={styles.filterItemTiny}>
+                        <Text style={styles.filterLabelCompact}>Type</Text>
+                        <TextInput style={styles.filterInputCompact} value={(moneyFilters.type ?? 'all').toString()} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, type: (t === 'income' || t === 'expense' || t === 'all') ? t : 'all' }))} placeholder="all" />
                       </View>
-                      <View style={styles.filterItemSmall}> 
-                        <Text style={styles.filterLabel}>Max $</Text>
-                        <TextInput style={styles.filterInput} keyboardType="decimal-pad" value={moneyFilters.maxAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, maxAmount: t }))} placeholder="9999" />
+                      <View style={styles.filterItemMedium}>
+                        <Text style={styles.filterLabelCompact}>Text</Text>
+                        <TextInput style={styles.filterInputCompact} value={moneyFilters.text ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, text: t }))} placeholder="search" />
                       </View>
-                      <View style={styles.filterItemSmall}>
-                        <Text style={styles.filterLabel}>Type</Text>
-                        <TextInput style={styles.filterInput} value={(moneyFilters.type ?? 'all').toString()} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, type: (t === 'income' || t === 'expense' || t === 'all') ? t : 'all' }))} placeholder="income/expense/all" />
-                      </View>
-                      <View style={styles.filterItemNotes}>
-                        <Text style={styles.filterLabel}>Text</Text>
-                        <TextInput style={styles.filterInput} value={moneyFilters.text ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, text: t }))} placeholder="search description" />
-                      </View>
-                      <TouchableOpacity style={styles.clearFiltersBtn} onPress={() => setMoneyFilters({ type: 'all' })} testID="money-clear-filters">
-                        <Text style={styles.clearFiltersText}>Clear</Text>
+                      <TouchableOpacity style={styles.clearFiltersBtnCompact} onPress={() => { setMoneyFilters({ type: 'all' }); setShowMoneyDatePicker(null); }} testID="money-clear-filters">
+                        <Text style={styles.clearFiltersTextCompact}>Clear</Text>
                       </TouchableOpacity>
                     </View>)}
                     <View style={styles.bulkActionsRow}>
@@ -1021,7 +1054,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e5e7eb",
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     marginBottom: 12,
   },
   toolbarTitleRow: {
@@ -1036,14 +1069,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   toolbarTitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#6b7280",
     fontWeight: "600",
   },
   filtersRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 6,
+    marginTop: 8,
   },
   filterItem: {
     minWidth: 180,
@@ -1058,10 +1092,32 @@ const styles = StyleSheet.create({
     minWidth: 200,
     flexGrow: 2,
   },
+  filterItemCompact: {
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  filterItemTiny: {
+    minWidth: 60,
+    maxWidth: 80,
+  },
+  filterItemMedium: {
+    minWidth: 100,
+    maxWidth: 140,
+  },
   filterLabel: {
     fontSize: 12,
     color: "#6b7280",
     marginBottom: 6,
+  },
+  filterLabelCompact: {
+    fontSize: 11,
+    color: "#6b7280",
+    marginBottom: 3,
+    fontWeight: "500",
   },
   filterInput: {
     backgroundColor: "#fff",
@@ -1071,6 +1127,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 14,
+    color: "#111827",
+  },
+  filterInputCompact: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    fontSize: 12,
     color: "#111827",
   },
   clearFiltersBtn: {
@@ -1084,6 +1150,34 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontWeight: "600",
     fontSize: 13,
+  },
+  clearFiltersBtnCompact: {
+    alignSelf: "flex-end",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 6,
+  },
+  clearFiltersTextCompact: {
+    color: "#6b7280",
+    fontWeight: "600",
+    fontSize: 11,
+  },
+  datePickerOverlay: {
+    position: "absolute",
+    top: 30,
+    left: 0,
+    zIndex: 1000,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   table: {
     backgroundColor: "#fff",
@@ -1117,13 +1211,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   cellSm: {
-    width: 110,
+    minWidth: 90,
+    maxWidth: 110,
   },
   cellMd: {
-    width: 120,
+    minWidth: 100,
+    maxWidth: 120,
   },
   cellLg: {
-    width: 140,
+    minWidth: 120,
+    flex: 1,
   },
   cellActions: {
     width: 160,
@@ -1248,15 +1345,17 @@ const styles = StyleSheet.create({
   bulkActionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 8,
+    marginTop: 6,
+    gap: 6,
   },
   bulkBtn: {
     backgroundColor: "#eef2ff",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    flex: 1,
   },
   bulkBtnDisabled: {
     opacity: 0.5,
@@ -1267,10 +1366,14 @@ const styles = StyleSheet.create({
   bulkBtnText: {
     color: "#111827",
     fontWeight: "600",
+    fontSize: 12,
+    textAlign: "center",
   },
   bulkBtnDangerText: {
     color: "#b91c1c",
     fontWeight: "700",
+    fontSize: 12,
+    textAlign: "center",
   },
   incomeText: {
     color: "#047857",
