@@ -1,13 +1,15 @@
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInput } from "react-native";
 import { useState, useMemo } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import DatePicker from "@/components/DatePicker";
 
 export default function LogEggsScreen() {
   const { addEggProduction, eggProduction } = useLivestock();
   const insets = useSafeAreaInsets();
   const [quantity, setQuantity] = useState<number | null>(null);
+  const [quantityInput, setQuantityInput] = useState("");
   const [type, setType] = useState<'laid' | 'broken' | 'consumed'>('laid');
   const [date, setDate] = useState(getLocalDateString());
 
@@ -86,7 +88,7 @@ export default function LogEggsScreen() {
                   <TouchableOpacity
                     key={qty}
                     style={[styles.quantityButton, quantity === qty && styles.quantityButtonActive]}
-                    onPress={() => setQuantity(qty)}
+                    onPress={() => { setQuantity(qty); setQuantityInput(qty.toString()); }}
                   >
                     <Text style={[styles.quantityButtonText, quantity === qty && styles.quantityButtonTextActive]}>
                       {qty}
@@ -98,7 +100,7 @@ export default function LogEggsScreen() {
                   <TouchableOpacity
                     key={qty}
                     style={[styles.quantityButton, quantity === parseInt(qty) && styles.quantityButtonActive]}
-                    onPress={() => setQuantity(parseInt(qty))}
+                    onPress={() => { setQuantity(parseInt(qty)); setQuantityInput(qty); }}
                   >
                     <Text style={[styles.quantityButtonText, quantity === parseInt(qty) && styles.quantityButtonTextActive]}>
                       {qty}
@@ -107,6 +109,17 @@ export default function LogEggsScreen() {
                 ))
               )}
             </View>
+            <TextInput
+              style={styles.quantityInput}
+              placeholder="Or enter quantity"
+              keyboardType="numeric"
+              value={quantityInput}
+              onChangeText={(text) => {
+                setQuantityInput(text);
+                const parsed = parseInt(text);
+                setQuantity(isNaN(parsed) ? null : parsed);
+              }}
+            />
           </View>
 
           <View style={styles.section}>
@@ -167,6 +180,11 @@ export default function LogEggsScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+            <DatePicker
+              value={date}
+              onChange={(value: string) => setDate(value)}
+              placeholder="Or pick a date"
+            />
           </View>
 
           <View style={styles.buttons}>
@@ -197,36 +215,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   form: {
-    padding: 20,
+    padding: 16,
   },
   screenTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "700" as const,
     color: "#111827",
-    marginBottom: 32,
+    marginBottom: 20,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: "#111827",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   buttonGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 8,
   },
   quantityButton: {
     flex: 1,
-    minWidth: 80,
+    minWidth: 60,
     backgroundColor: "#fff",
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingVertical: 20,
+    borderRadius: 8,
+    paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -235,8 +253,8 @@ const styles = StyleSheet.create({
     borderColor: "#10b981",
   },
   quantityButtonText: {
-    fontSize: 24,
-    fontWeight: "700" as const,
+    fontSize: 18,
+    fontWeight: "600" as const,
     color: "#6b7280",
   },
   quantityButtonTextActive: {
@@ -244,12 +262,12 @@ const styles = StyleSheet.create({
   },
   typeButton: {
     flex: 1,
-    minWidth: 100,
+    minWidth: 80,
     backgroundColor: "#fff",
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 8,
+    paddingVertical: 10,
     alignItems: "center",
   },
   typeButtonActive: {
@@ -257,7 +275,7 @@ const styles = StyleSheet.create({
     borderColor: "#10b981",
   },
   typeButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: "#6b7280",
   },
@@ -266,12 +284,12 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     flex: 1,
-    minWidth: 100,
+    minWidth: 80,
     backgroundColor: "#fff",
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 8,
+    paddingVertical: 10,
     alignItems: "center",
   },
   dateButtonActive: {
@@ -279,7 +297,7 @@ const styles = StyleSheet.create({
     borderColor: "#10b981",
   },
   dateButtonText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "600" as const,
     color: "#6b7280",
   },
@@ -288,36 +306,47 @@ const styles = StyleSheet.create({
   },
   buttons: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 32,
+    gap: 8,
+    marginTop: 20,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 2,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
     alignItems: "center",
     backgroundColor: "#fff",
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: "#6b7280",
   },
   saveButton: {
     flex: 1,
     backgroundColor: "#10b981",
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: "center",
   },
   saveButtonDisabled: {
     backgroundColor: "#9ca3af",
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600" as const,
     color: "#fff",
+  },
+  quantityInput: {
+    marginTop: 8,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: "#111827",
   },
 });
