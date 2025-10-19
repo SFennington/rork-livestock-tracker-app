@@ -36,6 +36,7 @@ export default function RecordsScreen() {
 
   const [activeTab, setActiveTab] = useState<'eggs' | 'breeding' | 'financial'>('eggs');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
   const [eggForm, setEggForm] = useState<{ date: string; count: string; notes: string } | null>(null);
   const [breedForm, setBreedForm] = useState<{ breedingDate: string; expectedKindlingDate?: string; status?: string; litterSize?: string } | null>(null);
   const [moneyForm, setMoneyForm] = useState<{ date: string; amount: string; description?: string; isIncome: boolean; type?: string } | null>(null);
@@ -401,10 +402,11 @@ export default function RecordsScreen() {
                       </TouchableOpacity>
                     </View>
 
-                    {filteredSortedEggs.map(record => (
-                      <TouchableOpacity key={record.id} style={styles.rowBody} testID={`egg-row-${record.id}`} onPress={() => {
+                    {filteredSortedEggs.map((record, index) => (
+                      <TouchableOpacity key={record.id} style={[styles.rowBody, index % 2 === 0 ? { backgroundColor: '#fff' } : { backgroundColor: colors.secondary + '0D' }]} testID={`egg-row-${record.id}`} onPress={() => {
                         if (editingId !== record.id) {
                           setEditingId(record.id);
+                          setEditingField(null);
                           setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' });
                         }
                       }} activeOpacity={0.7}>
@@ -417,7 +419,7 @@ export default function RecordsScreen() {
                           <Text style={styles.bodyText}>{record.date}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
-                          {editingId === record.id ? (
+                          {editingId === record.id && editingField === 'count' ? (
                             <View style={styles.inlineEditContainer}>
                               <TextInput testID={`egg-count-${record.id}`} style={styles.inlineInputSmall} keyboardType="numeric" value={eggForm?.count ?? String(record.count)} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), count: t }))} />
                               <TouchableOpacity testID={`egg-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -431,6 +433,7 @@ export default function RecordsScreen() {
                                   }
                                   await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
                                   setEditingId(null);
+                                  setEditingField(null);
                                   setEggForm(null);
                                 } catch (e) {
                                   Alert.alert('Error', 'Failed to save egg record');
@@ -442,17 +445,25 @@ export default function RecordsScreen() {
                               <TouchableOpacity testID={`egg-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
                                 e.stopPropagation();
                                 setEditingId(null);
+                                setEditingField(null);
                                 setEggForm(null);
                               }}>
                                 <Text style={styles.inlineCancelText}>✕</Text>
                               </TouchableOpacity>
                             </View>
                           ) : (
-                            <Text style={styles.bodyText}>{record.count}</Text>
+                            <TouchableOpacity onPress={(e) => {
+                              e.stopPropagation();
+                              setEditingId(record.id);
+                              setEditingField('count');
+                              setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' });
+                            }}>
+                              <Text style={styles.bodyText}>{record.count}</Text>
+                            </TouchableOpacity>
                           )}
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
-                          {editingId === record.id ? (
+                          {editingId === record.id && editingField === 'notes' ? (
                             <View style={styles.inlineEditContainer}>
                               <TextInput testID={`egg-notes-${record.id}`} style={styles.inlineInputSmall} value={eggForm?.notes ?? (record.notes ?? '')} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), notes: t }))} placeholder="optional" />
                               <TouchableOpacity testID={`egg-save-notes-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -466,6 +477,7 @@ export default function RecordsScreen() {
                                   }
                                   await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
                                   setEditingId(null);
+                                  setEditingField(null);
                                   setEggForm(null);
                                 } catch (e) {
                                   Alert.alert('Error', 'Failed to save egg record');
@@ -477,13 +489,21 @@ export default function RecordsScreen() {
                               <TouchableOpacity testID={`egg-cancel-notes-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
                                 e.stopPropagation();
                                 setEditingId(null);
+                                setEditingField(null);
                                 setEggForm(null);
                               }}>
                                 <Text style={styles.inlineCancelText}>✕</Text>
                               </TouchableOpacity>
                             </View>
                           ) : (
-                            <Text style={styles.bodyText}>{record.notes ?? ''}</Text>
+                            <TouchableOpacity onPress={(e) => {
+                              e.stopPropagation();
+                              setEditingId(record.id);
+                              setEditingField('notes');
+                              setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' });
+                            }}>
+                              <Text style={styles.bodyText}>{record.notes ?? ''}</Text>
+                            </TouchableOpacity>
                           )}
                         </View>
                       </TouchableOpacity>
@@ -576,13 +596,14 @@ export default function RecordsScreen() {
                       </TouchableOpacity>
                     </View>
 
-                    {filteredSortedBreeding.map(record => {
+                    {filteredSortedBreeding.map((record, index) => {
                       const buck = rabbits.find(r => r.id === record.buckId);
                       const doe = rabbits.find(r => r.id === record.doeId);
                       return (
-                        <TouchableOpacity key={record.id} style={styles.rowBody} testID={`breed-row-${record.id}`} onPress={() => {
+                        <TouchableOpacity key={record.id} style={[styles.rowBody, index % 2 === 0 ? { backgroundColor: '#fff' } : { backgroundColor: colors.secondary + '0D' }]} testID={`breed-row-${record.id}`} onPress={() => {
                           if (editingId !== record.id) {
                             setEditingId(record.id);
+                            setEditingField(null);
                             setBreedForm({ breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined });
                           }
                         }} activeOpacity={0.7}>
@@ -598,7 +619,7 @@ export default function RecordsScreen() {
                             <Text style={styles.bodyText}>{record.expectedKindlingDate || ''}</Text>
                           </View>
                           <View style={[styles.cell, styles.cellMd]}>
-                            {editingId === record.id ? (
+                            {editingId === record.id && editingField === 'status' ? (
                               <View style={styles.inlineEditContainer}>
                                 <TextInput testID={`breed-status-${record.id}`} style={styles.inlineInputSmall} value={breedForm?.status ?? (record.status ?? '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), status: t }))} placeholder="status" />
                                 <TouchableOpacity testID={`breed-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -612,6 +633,7 @@ export default function RecordsScreen() {
                                     }
                                     await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
                                     setEditingId(null);
+                                    setEditingField(null);
                                     setBreedForm(null);
                                   } catch (e) {
                                     Alert.alert('Error', 'Failed to save breeding record');
@@ -623,18 +645,26 @@ export default function RecordsScreen() {
                                 <TouchableOpacity testID={`breed-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
                                   e.stopPropagation();
                                   setEditingId(null);
+                                  setEditingField(null);
                                   setBreedForm(null);
                                 }}>
                                   <Text style={styles.inlineCancelText}>✕</Text>
                                 </TouchableOpacity>
                               </View>
                             ) : (
-                              <Text style={styles.bodyText}>{record.status}</Text>
+                              <TouchableOpacity onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(record.id);
+                                setEditingField('status');
+                                setBreedForm({ breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined });
+                              }}>
+                                <Text style={styles.bodyText}>{record.status}</Text>
+                              </TouchableOpacity>
                             )}
                             <Text style={styles.subtleText}>{(buck?.name || 'Unknown') + ' × ' + (doe?.name || 'Unknown')}</Text>
                           </View>
                           <View style={[styles.cell, styles.cellSm]}>
-                            {editingId === record.id ? (
+                            {editingId === record.id && editingField === 'litter' ? (
                               <View style={styles.inlineEditContainer}>
                                 <TextInput testID={`breed-litter-${record.id}`} style={styles.inlineInputSmall} keyboardType="numeric" value={breedForm?.litterSize ?? (record.litterSize ? String(record.litterSize) : '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), litterSize: t }))} placeholder="#" />
                                 <TouchableOpacity testID={`breed-save-litter-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -648,6 +678,7 @@ export default function RecordsScreen() {
                                     }
                                     await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
                                     setEditingId(null);
+                                    setEditingField(null);
                                     setBreedForm(null);
                                   } catch (e) {
                                     Alert.alert('Error', 'Failed to save breeding record');
@@ -659,13 +690,21 @@ export default function RecordsScreen() {
                                 <TouchableOpacity testID={`breed-cancel-litter-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
                                   e.stopPropagation();
                                   setEditingId(null);
+                                  setEditingField(null);
                                   setBreedForm(null);
                                 }}>
                                   <Text style={styles.inlineCancelText}>✕</Text>
                                 </TouchableOpacity>
                               </View>
                             ) : (
-                              <Text style={styles.bodyText}>{record.litterSize ?? ''}</Text>
+                              <TouchableOpacity onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(record.id);
+                                setEditingField('litter');
+                                setBreedForm({ breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined });
+                              }}>
+                                <Text style={styles.bodyText}>{record.litterSize ?? ''}</Text>
+                              </TouchableOpacity>
                             )}
                           </View>
                         </TouchableOpacity>
@@ -794,10 +833,11 @@ export default function RecordsScreen() {
                       </TouchableOpacity>
                     </View>
 
-                    {filteredSortedMoney.map(record => (
-                      <TouchableOpacity key={`${record.isIncome ? 'i' : 'e'}-${record.id}`} style={styles.rowBody} testID={`money-row-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={() => {
+                    {filteredSortedMoney.map((record, index) => (
+                      <TouchableOpacity key={`${record.isIncome ? 'i' : 'e'}-${record.id}`} style={[styles.rowBody, index % 2 === 0 ? { backgroundColor: '#fff' } : { backgroundColor: colors.secondary + '0D' }]} testID={`money-row-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={() => {
                         if (editingId !== record.id) {
                           setEditingId(record.id);
+                          setEditingField(null);
                           setMoneyForm({ date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome });
                         }
                       }} activeOpacity={0.7}>
@@ -813,7 +853,7 @@ export default function RecordsScreen() {
                           <Text style={styles.bodyText}>{record.date}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
-                          {editingId === record.id ? (
+                          {editingId === record.id && editingField === 'amount' ? (
                             <View style={styles.inlineEditContainer}>
                               <TextInput testID={`money-amount-${record.id}`} style={styles.inlineInputSmall} keyboardType="decimal-pad" value={moneyForm?.amount ?? String(record.amount)} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), amount: t }))} />
                               <TouchableOpacity testID={`money-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -831,6 +871,7 @@ export default function RecordsScreen() {
                                     await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
                                   }
                                   setEditingId(null);
+                                  setEditingField(null);
                                   setMoneyForm(null);
                                 } catch (e) {
                                   Alert.alert('Error', 'Failed to save record');
@@ -842,17 +883,25 @@ export default function RecordsScreen() {
                               <TouchableOpacity testID={`money-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
                                 e.stopPropagation();
                                 setEditingId(null);
+                                setEditingField(null);
                                 setMoneyForm(null);
                               }}>
                                 <Text style={styles.inlineCancelText}>✕</Text>
                               </TouchableOpacity>
                             </View>
                           ) : (
-                            <Text style={styles.bodyText}>{(record.isIncome ? '+' : '-')}${record.amount.toFixed(2)}</Text>
+                            <TouchableOpacity onPress={(e) => {
+                              e.stopPropagation();
+                              setEditingId(record.id);
+                              setEditingField('amount');
+                              setMoneyForm({ date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome });
+                            }}>
+                              <Text style={styles.bodyText}>{(record.isIncome ? '+' : '-')}${record.amount.toFixed(2)}</Text>
+                            </TouchableOpacity>
                           )}
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
-                          {editingId === record.id ? (
+                          {editingId === record.id && editingField === 'description' ? (
                             <View style={styles.inlineEditContainer}>
                               <TextInput testID={`money-desc-${record.id}`} style={styles.inlineInputSmall} value={moneyForm?.description ?? (record.description ?? '')} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), description: t }))} placeholder="optional" />
                               <TouchableOpacity testID={`money-save-desc-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -870,6 +919,7 @@ export default function RecordsScreen() {
                                     await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
                                   }
                                   setEditingId(null);
+                                  setEditingField(null);
                                   setMoneyForm(null);
                                 } catch (e) {
                                   Alert.alert('Error', 'Failed to save record');
@@ -881,13 +931,21 @@ export default function RecordsScreen() {
                               <TouchableOpacity testID={`money-cancel-desc-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
                                 e.stopPropagation();
                                 setEditingId(null);
+                                setEditingField(null);
                                 setMoneyForm(null);
                               }}>
                                 <Text style={styles.inlineCancelText}>✕</Text>
                               </TouchableOpacity>
                             </View>
                           ) : (
-                            <Text style={styles.bodyText}>{record.description ?? ''}</Text>
+                            <TouchableOpacity onPress={(e) => {
+                              e.stopPropagation();
+                              setEditingId(record.id);
+                              setEditingField('description');
+                              setMoneyForm({ date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome });
+                            }}>
+                              <Text style={styles.bodyText}>{record.description ?? ''}</Text>
+                            </TouchableOpacity>
                           )}
                         </View>
                       </TouchableOpacity>
