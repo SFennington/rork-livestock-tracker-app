@@ -453,7 +453,35 @@ export default function RecordsScreen() {
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id ? (
-                            <TextInput testID={`egg-notes-${record.id}`} style={styles.inlineInput} value={eggForm?.notes ?? (record.notes ?? '')} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), notes: t }))} placeholder="optional" />
+                            <View style={styles.inlineEditContainer}>
+                              <TextInput testID={`egg-notes-${record.id}`} style={styles.inlineInputSmall} value={eggForm?.notes ?? (record.notes ?? '')} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), notes: t }))} placeholder="optional" />
+                              <TouchableOpacity testID={`egg-save-notes-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
+                                  const parsed = parseInt(payload.count, 10);
+                                  if (Number.isNaN(parsed)) {
+                                    Alert.alert('Invalid', 'Count must be a number');
+                                    return;
+                                  }
+                                  await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
+                                  setEditingId(null);
+                                  setEggForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save egg record');
+                                  console.log('save egg error', e);
+                                }
+                              }}>
+                                <Text style={styles.inlineSaveText}>✓</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity testID={`egg-cancel-notes-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(null);
+                                setEggForm(null);
+                              }}>
+                                <Text style={styles.inlineCancelText}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
                           ) : (
                             <Text style={styles.bodyText}>{record.notes ?? ''}</Text>
                           )}
@@ -571,7 +599,35 @@ export default function RecordsScreen() {
                           </View>
                           <View style={[styles.cell, styles.cellMd]}>
                             {editingId === record.id ? (
-                              <TextInput testID={`breed-status-${record.id}`} style={styles.inlineInput} value={breedForm?.status ?? (record.status ?? '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), status: t }))} placeholder="status" />
+                              <View style={styles.inlineEditContainer}>
+                                <TextInput testID={`breed-status-${record.id}`} style={styles.inlineInputSmall} value={breedForm?.status ?? (record.status ?? '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), status: t }))} placeholder="status" />
+                                <TouchableOpacity testID={`breed-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const f = breedForm ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined };
+                                    const litter = f.litterSize ? parseInt(f.litterSize, 10) : undefined;
+                                    if (f.litterSize && Number.isNaN(litter)) {
+                                      Alert.alert('Invalid', 'Litter size must be a number');
+                                      return;
+                                    }
+                                    await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
+                                    setEditingId(null);
+                                    setBreedForm(null);
+                                  } catch (e) {
+                                    Alert.alert('Error', 'Failed to save breeding record');
+                                    console.log('save breeding error', e);
+                                  }
+                                }}>
+                                  <Text style={styles.inlineSaveText}>✓</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity testID={`breed-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
+                                  e.stopPropagation();
+                                  setEditingId(null);
+                                  setBreedForm(null);
+                                }}>
+                                  <Text style={styles.inlineCancelText}>✕</Text>
+                                </TouchableOpacity>
+                              </View>
                             ) : (
                               <Text style={styles.bodyText}>{record.status}</Text>
                             )}
@@ -579,41 +635,39 @@ export default function RecordsScreen() {
                           </View>
                           <View style={[styles.cell, styles.cellSm]}>
                             {editingId === record.id ? (
-                              <TextInput testID={`breed-litter-${record.id}`} style={styles.inlineInput} keyboardType="numeric" value={breedForm?.litterSize ?? (record.litterSize ? String(record.litterSize) : '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), litterSize: t }))} placeholder="#" />
+                              <View style={styles.inlineEditContainer}>
+                                <TextInput testID={`breed-litter-${record.id}`} style={styles.inlineInputSmall} keyboardType="numeric" value={breedForm?.litterSize ?? (record.litterSize ? String(record.litterSize) : '')} onChangeText={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), litterSize: t }))} placeholder="#" />
+                                <TouchableOpacity testID={`breed-save-litter-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const f = breedForm ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined };
+                                    const litter = f.litterSize ? parseInt(f.litterSize, 10) : undefined;
+                                    if (f.litterSize && Number.isNaN(litter)) {
+                                      Alert.alert('Invalid', 'Litter size must be a number');
+                                      return;
+                                    }
+                                    await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
+                                    setEditingId(null);
+                                    setBreedForm(null);
+                                  } catch (e) {
+                                    Alert.alert('Error', 'Failed to save breeding record');
+                                    console.log('save breeding error', e);
+                                  }
+                                }}>
+                                  <Text style={styles.inlineSaveText}>✓</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity testID={`breed-cancel-litter-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
+                                  e.stopPropagation();
+                                  setEditingId(null);
+                                  setBreedForm(null);
+                                }}>
+                                  <Text style={styles.inlineCancelText}>✕</Text>
+                                </TouchableOpacity>
+                              </View>
                             ) : (
                               <Text style={styles.bodyText}>{record.litterSize ?? ''}</Text>
                             )}
                           </View>
-                          {editingId === record.id && (
-                            <View style={[styles.cell, styles.cellActions]}>
-                              <TouchableOpacity testID={`breed-save-${record.id}`} style={styles.saveIconButton} onPress={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const f = breedForm ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined };
-                                  const litter = f.litterSize ? parseInt(f.litterSize, 10) : undefined;
-                                  if (f.litterSize && Number.isNaN(litter)) {
-                                    Alert.alert('Invalid', 'Litter size must be a number');
-                                    return;
-                                  }
-                                  await updateBreedingRecord(record.id, { breedingDate: f.breedingDate, expectedKindlingDate: f.expectedKindlingDate, status: f.status as any, litterSize: litter });
-                                  setEditingId(null);
-                                  setBreedForm(null);
-                                } catch (e) {
-                                  Alert.alert('Error', 'Failed to save breeding record');
-                                  console.log('save breeding error', e);
-                                }
-                              }}>
-                                <Text style={styles.saveButtonText}>Save</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity testID={`breed-cancel-${record.id}`} style={styles.cancelIconButton} onPress={(e) => {
-                                e.stopPropagation();
-                                setEditingId(null);
-                                setBreedForm(null);
-                              }}>
-                                <Text style={styles.cancelButtonTextSmall}>Cancel</Text>
-                              </TouchableOpacity>
-                            </View>
-                          )}
                         </TouchableOpacity>
                       );
                     })}
@@ -760,52 +814,82 @@ export default function RecordsScreen() {
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
                           {editingId === record.id ? (
-                            <TextInput testID={`money-amount-${record.id}`} style={styles.inlineInput} keyboardType="decimal-pad" value={moneyForm?.amount ?? String(record.amount)} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), amount: t }))} />
+                            <View style={styles.inlineEditContainer}>
+                              <TextInput testID={`money-amount-${record.id}`} style={styles.inlineInputSmall} keyboardType="decimal-pad" value={moneyForm?.amount ?? String(record.amount)} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), amount: t }))} />
+                              <TouchableOpacity testID={`money-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const f = moneyForm ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome };
+                                  const amt = Number(f.amount);
+                                  if (Number.isNaN(amt)) {
+                                    Alert.alert('Invalid', 'Amount must be a number');
+                                    return;
+                                  }
+                                  if (record.isIncome) {
+                                    await updateIncome(record.id, { date: f.date, amount: amt, description: f.description });
+                                  } else {
+                                    await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
+                                  }
+                                  setEditingId(null);
+                                  setMoneyForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save record');
+                                  console.log('save money error', e);
+                                }
+                              }}>
+                                <Text style={styles.inlineSaveText}>✓</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity testID={`money-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(null);
+                                setMoneyForm(null);
+                              }}>
+                                <Text style={styles.inlineCancelText}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
                           ) : (
                             <Text style={styles.bodyText}>{(record.isIncome ? '+' : '-')}${record.amount.toFixed(2)}</Text>
                           )}
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id ? (
-                            <TextInput testID={`money-desc-${record.id}`} style={styles.inlineInput} value={moneyForm?.description ?? (record.description ?? '')} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), description: t }))} placeholder="optional" />
+                            <View style={styles.inlineEditContainer}>
+                              <TextInput testID={`money-desc-${record.id}`} style={styles.inlineInputSmall} value={moneyForm?.description ?? (record.description ?? '')} onChangeText={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), description: t }))} placeholder="optional" />
+                              <TouchableOpacity testID={`money-save-desc-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const f = moneyForm ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome };
+                                  const amt = Number(f.amount);
+                                  if (Number.isNaN(amt)) {
+                                    Alert.alert('Invalid', 'Amount must be a number');
+                                    return;
+                                  }
+                                  if (record.isIncome) {
+                                    await updateIncome(record.id, { date: f.date, amount: amt, description: f.description });
+                                  } else {
+                                    await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
+                                  }
+                                  setEditingId(null);
+                                  setMoneyForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save record');
+                                  console.log('save money error', e);
+                                }
+                              }}>
+                                <Text style={styles.inlineSaveText}>✓</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity testID={`money-cancel-desc-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(null);
+                                setMoneyForm(null);
+                              }}>
+                                <Text style={styles.inlineCancelText}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
                           ) : (
                             <Text style={styles.bodyText}>{record.description ?? ''}</Text>
                           )}
                         </View>
-                        {editingId === record.id && (
-                          <View style={[styles.cell, styles.cellActions]}>
-                            <TouchableOpacity testID={`money-save-${record.id}`} style={styles.saveIconButton} onPress={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const f = moneyForm ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome };
-                                const amt = Number(f.amount);
-                                if (Number.isNaN(amt)) {
-                                  Alert.alert('Invalid', 'Amount must be a number');
-                                  return;
-                                }
-                                if (record.isIncome) {
-                                  await updateIncome(record.id, { date: f.date, amount: amt, description: f.description });
-                                } else {
-                                  await updateExpense(record.id, { date: f.date, amount: amt, description: f.description });
-                                }
-                                setEditingId(null);
-                                setMoneyForm(null);
-                              } catch (e) {
-                                Alert.alert('Error', 'Failed to save record');
-                                console.log('save money error', e);
-                              }
-                            }}>
-                              <Text style={styles.saveButtonText}>Save</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity testID={`money-cancel-${record.id}`} style={styles.cancelIconButton} onPress={(e) => {
-                              e.stopPropagation();
-                              setEditingId(null);
-                              setMoneyForm(null);
-                            }}>
-                              <Text style={styles.cancelButtonTextSmall}>Cancel</Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -981,7 +1065,7 @@ const styles = StyleSheet.create({
     width: 120,
   },
   cellLg: {
-    flex: 1,
+    width: 140,
   },
   cellActions: {
     width: 160,
