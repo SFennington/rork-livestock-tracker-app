@@ -289,6 +289,7 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     textAlignVertical: "top",
+    maxWidth: "100%",
   },
   eventTypeButtons: {
     flexDirection: "row",
