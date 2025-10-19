@@ -18,20 +18,17 @@ export default function LogEggsScreen() {
   };
 
   const recentQuantities = useMemo(() => {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+    const sortedRecords = [...eggProduction].sort((a, b) => b.date.localeCompare(a.date));
     
-    const recentRecords = eggProduction.filter(e => e.date >= oneWeekAgoStr);
-    const quantities = recentRecords.map(e => {
+    const quantities = sortedRecords.map(e => {
       if (type === 'laid' && e.laid) return e.laid;
       if (type === 'broken' && e.broken) return e.broken;
       if (type === 'consumed' && e.consumed) return e.consumed;
       return null;
     }).filter((q): q is number => q !== null && q > 0);
     
-    const uniqueQty = Array.from(new Set(quantities)).sort((a, b) => b - a);
-    return uniqueQty.slice(0, 3);
+    const uniqueQty = Array.from(new Set(quantities)).slice(0, 5).sort((a, b) => a - b);
+    return uniqueQty;
   }, [eggProduction, type]);
 
   const handleSave = async () => {
