@@ -414,11 +414,7 @@ export default function RecordsScreen() {
                           </TouchableOpacity>
                         </View>
                         <View style={[styles.cell, styles.cellMd]}>
-                          {editingId === record.id ? (
-                            <DatePicker value={eggForm?.date ?? record.date} onChange={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), date: t }))} />
-                          ) : (
-                            <Text style={styles.bodyText}>{record.date}</Text>
-                          )}
+                          <Text style={styles.bodyText}>{record.date}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
                           {editingId === record.id ? (
@@ -570,18 +566,10 @@ export default function RecordsScreen() {
                             </TouchableOpacity>
                           </View>
                           <View style={[styles.cell, styles.cellLg]}>
-                            {editingId === record.id ? (
-                              <DatePicker value={breedForm?.breedingDate ?? record.breedingDate} onChange={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), breedingDate: t }))} />
-                            ) : (
-                              <Text style={styles.bodyText}>{record.breedingDate}</Text>
-                            )}
+                            <Text style={styles.bodyText}>{record.breedingDate}</Text>
                           </View>
                           <View style={[styles.cell, styles.cellLg]}>
-                            {editingId === record.id ? (
-                              <DatePicker value={breedForm?.expectedKindlingDate ?? (record.expectedKindlingDate ?? '')} onChange={(t) => setBreedForm(prev => ({ ...(prev ?? { breedingDate: record.breedingDate, expectedKindlingDate: record.expectedKindlingDate, status: record.status, litterSize: record.litterSize ? String(record.litterSize) : undefined }), expectedKindlingDate: t }))} />
-                            ) : (
-                              <Text style={styles.bodyText}>{record.expectedKindlingDate || ''}</Text>
-                            )}
+                            <Text style={styles.bodyText}>{record.expectedKindlingDate || ''}</Text>
                           </View>
                           <View style={[styles.cell, styles.cellMd]}>
                             {editingId === record.id ? (
@@ -770,11 +758,7 @@ export default function RecordsScreen() {
                           <Text style={[styles.bodyText, record.isIncome ? styles.incomeText : styles.expenseText]}>{record.isIncome ? 'income' : 'expense'}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellMd]}>
-                          {editingId === record.id ? (
-                            <DatePicker value={moneyForm?.date ?? record.date} onChange={(t) => setMoneyForm(prev => ({ ...(prev ?? { date: record.date, amount: String(record.amount), description: record.description, isIncome: record.isIncome }), date: t }))} />
-                          ) : (
-                            <Text style={styles.bodyText}>{record.date}</Text>
-                          )}
+                          <Text style={styles.bodyText}>{record.date}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
                           {editingId === record.id ? (
