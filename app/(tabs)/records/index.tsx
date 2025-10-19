@@ -418,7 +418,35 @@ export default function RecordsScreen() {
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
                           {editingId === record.id ? (
-                            <TextInput testID={`egg-count-${record.id}`} style={styles.inlineInput} keyboardType="numeric" value={eggForm?.count ?? String(record.count)} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), count: t }))} />
+                            <View style={styles.inlineEditContainer}>
+                              <TextInput testID={`egg-count-${record.id}`} style={styles.inlineInputSmall} keyboardType="numeric" value={eggForm?.count ?? String(record.count)} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), count: t }))} />
+                              <TouchableOpacity testID={`egg-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
+                                  const parsed = parseInt(payload.count, 10);
+                                  if (Number.isNaN(parsed)) {
+                                    Alert.alert('Invalid', 'Count must be a number');
+                                    return;
+                                  }
+                                  await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
+                                  setEditingId(null);
+                                  setEggForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save egg record');
+                                  console.log('save egg error', e);
+                                }
+                              }}>
+                                <Text style={styles.inlineSaveText}>✓</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity testID={`egg-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(null);
+                                setEggForm(null);
+                              }}>
+                                <Text style={styles.inlineCancelText}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
                           ) : (
                             <Text style={styles.bodyText}>{record.count}</Text>
                           )}
@@ -430,36 +458,6 @@ export default function RecordsScreen() {
                             <Text style={styles.bodyText}>{record.notes ?? ''}</Text>
                           )}
                         </View>
-                        {editingId === record.id && (
-                          <View style={[styles.cell, styles.cellActions]}>
-                            <TouchableOpacity testID={`egg-save-${record.id}`} style={styles.saveIconButton} onPress={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
-                                const parsed = parseInt(payload.count, 10);
-                                if (Number.isNaN(parsed)) {
-                                  Alert.alert('Invalid', 'Count must be a number');
-                                  return;
-                                }
-                                await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
-                                setEditingId(null);
-                                setEggForm(null);
-                              } catch (e) {
-                                Alert.alert('Error', 'Failed to save egg record');
-                                console.log('save egg error', e);
-                              }
-                            }}>
-                              <Text style={styles.saveButtonText}>Save</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity testID={`egg-cancel-${record.id}`} style={styles.cancelIconButton} onPress={(e) => {
-                              e.stopPropagation();
-                              setEditingId(null);
-                              setEggForm(null);
-                            }}>
-                              <Text style={styles.cancelButtonTextSmall}>Cancel</Text>
-                            </TouchableOpacity>
-                          </View>
-                        )}
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -1018,6 +1016,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#111827",
     width: "100%",
+  },
+  inlineEditContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    width: "100%",
+  },
+  inlineInputSmall: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    fontSize: 14,
+    color: "#111827",
+    flex: 1,
+    minWidth: 40,
+  },
+  inlineSaveButton: {
+    backgroundColor: "#10b981",
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inlineCancelButton: {
+    backgroundColor: "#f3f4f6",
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inlineSaveText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700" as const,
+  },
+  inlineCancelText: {
+    color: "#6b7280",
+    fontSize: 14,
+    fontWeight: "700" as const,
   },
   actionRow: {
     flexDirection: "row",
