@@ -80,9 +80,14 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
     onChange(newDate);
   };
 
+  const displayValue = `${months.find(m => m.value === selectedMonth)?.label} ${selectedDay}, ${selectedYear}`;
+
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
+      <View style={styles.displayValueContainer}>
+        <Text style={styles.displayValue}>{displayValue}</Text>
+      </View>
       <View style={styles.pickersRow}>
         <View style={styles.pickerContainer}>
           <Text style={styles.pickerLabel}>Month</Text>
@@ -166,5 +171,19 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
     color: '#111827',
+  },
+  displayValueContainer: {
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  displayValue: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#111827",
   },
 });

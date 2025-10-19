@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useLivestock } from "@/hooks/livestock-store";
+import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { Hash, FileText, DollarSign, Trash2, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -16,7 +16,7 @@ export default function EditChickenEventScreen() {
   const event = chickenHistory.find(e => e.id === id);
   
   const [eventType, setEventType] = useState<'acquired' | 'death' | 'sold' | 'consumed'>(event?.type || 'acquired');
-  const [date, setDate] = useState(event?.date || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(event?.date || getLocalDateString());
   const [quantity, setQuantity] = useState(String(event?.quantity || 1));
   const [breed, setBreed] = useState(event?.breed || "");
   const [cost, setCost] = useState(event?.cost ? String(event.cost) : "");

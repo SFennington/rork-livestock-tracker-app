@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
-import { useLivestock } from "@/hooks/livestock-store";
+import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { Egg, FileText } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -9,18 +9,24 @@ import DatePicker from "@/components/DatePicker";
 export default function LogEggsScreen() {
   const { addEggProduction, eggProduction } = useLivestock();
   const insets = useSafeAreaInsets();
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getLocalDateString());
   const [sold, setSold] = useState("");
   const [laid, setLaid] = useState("");
   const [broken, setBroken] = useState("");
   const [consumed, setConsumed] = useState("");
   const [notes, setNotes] = useState("");
 
+  const getDateString = (daysAgo: number): string => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
   const quickSelectOptions = [
-    { label: 'Today', date: new Date().toISOString().split('T')[0] },
-    { label: 'Yesterday', date: new Date(Date.now() - 86400000).toISOString().split('T')[0] },
-    { label: '2 Days Ago', date: new Date(Date.now() - 172800000).toISOString().split('T')[0] },
-    { label: '3 Days Ago', date: new Date(Date.now() - 259200000).toISOString().split('T')[0] },
+    { label: 'Today', date: getDateString(0) },
+    { label: 'Yesterday', date: getDateString(1) },
+    { label: '2 Days Ago', date: getDateString(2) },
+    { label: '3 Days Ago', date: getDateString(3) },
   ];
 
   const handleQuickSelect = (option: { label: string; date: string }) => {

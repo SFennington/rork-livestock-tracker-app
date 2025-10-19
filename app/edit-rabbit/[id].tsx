@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useLivestock } from "@/hooks/livestock-store";
+import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { DollarSign, Weight, Hash, FileText, Award, Heart, Trash2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -13,8 +13,8 @@ export default function EditRabbitScreen() {
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
   const [gender, setGender] = useState<'buck' | 'doe'>('doe');
-  const [dateOfBirth, setDateOfBirth] = useState(new Date().toISOString().split('T')[0]);
-  const [dateAcquired, setDateAcquired] = useState(new Date().toISOString().split('T')[0]);
+  const [dateOfBirth, setDateOfBirth] = useState(getLocalDateString());
+  const [dateAcquired, setDateAcquired] = useState(getLocalDateString());
   const [cost, setCost] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [color, setColor] = useState("");
@@ -73,7 +73,7 @@ export default function EditRabbitScreen() {
       showQuality,
       temperament,
       feedingNotes: feedingNotes || undefined,
-      lastWeightDate: weight ? new Date().toISOString().split('T')[0] : undefined,
+      lastWeightDate: weight ? getLocalDateString() : undefined,
       notes: notes || undefined,
     });
 

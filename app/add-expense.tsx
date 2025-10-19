@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
-import { useLivestock } from "@/hooks/livestock-store";
+import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { DollarSign, FileText, TrendingUp, TrendingDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -17,7 +17,7 @@ export default function AddTransactionScreen() {
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('feed');
   const [incomeType, setIncomeType] = useState<IncomeType>('eggs');
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'general'>('general');
   const [description, setDescription] = useState("");
 

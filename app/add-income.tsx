@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
-import { useLivestock } from "@/hooks/livestock-store";
+import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { DollarSign, FileText, Hash } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -11,7 +11,7 @@ export default function AddIncomeScreen() {
   const insets = useSafeAreaInsets();
   const [type, setType] = useState<'eggs' | 'meat' | 'livestock' | 'breeding' | 'other'>('eggs');
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit'>('chicken');
   const [quantity, setQuantity] = useState("");
   const [description, setDescription] = useState("");

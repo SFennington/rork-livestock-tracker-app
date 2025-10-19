@@ -1,6 +1,14 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export const getLocalDateString = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 import type { 
   Chicken, 
   Rabbit, 
