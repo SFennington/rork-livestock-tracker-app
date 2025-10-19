@@ -1,20 +1,15 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
-import { useState } from "react";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform } from "react-native";
+import { useState, useMemo } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
-import { Egg, FileText } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import DatePicker from "@/components/DatePicker";
 
 export default function LogEggsScreen() {
   const { addEggProduction, eggProduction } = useLivestock();
   const insets = useSafeAreaInsets();
+  const [quantity, setQuantity] = useState<number | null>(null);
+  const [type, setType] = useState<'laid' | 'broken' | 'consumed'>('laid');
   const [date, setDate] = useState(getLocalDateString());
-  const [sold, setSold] = useState("");
-  const [laid, setLaid] = useState("");
-  const [broken, setBroken] = useState("");
-  const [consumed, setConsumed] = useState("");
-  const [notes, setNotes] = useState("");
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -22,77 +17,54 @@ export default function LogEggsScreen() {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
-  const quickSelectOptions = [
-    { label: 'Today', date: getDateString(0) },
-    { label: 'Yesterday', date: getDateString(1) },
-    { label: '2 Days Ago', date: getDateString(2) },
-    { label: '3 Days Ago', date: getDateString(3) },
-  ];
-
-  const handleQuickSelect = (option: { label: string; date: string }) => {
-    setDate(option.date);
-  };
+  const recentQuantities = useMemo(() => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+    
+    const recentRecords = eggProduction.filter(e => e.date >= oneWeekAgoStr);
+    const quantities = recentRecords.map(e => {
+      if (type === 'laid' && e.laid) return e.laid;
+      if (type === 'broken' && e.broken) return e.broken;
+      if (type === 'consumed' && e.consumed) return e.consumed;
+      return null;
+    }).filter((q): q is number => q !== null && q > 0);
+    
+    const uniqueQty = Array.from(new Set(quantities)).sort((a, b) => b - a);
+    return uniqueQty.slice(0, 3);
+  }, [eggProduction, type]);
 
   const handleSave = async () => {
-    if (!date) {
+    if (!date || quantity === null) {
       if (Platform.OS === 'web') {
-        alert("Please enter date");
-      }
-      return;
-    }
-
-    const soldCount = sold ? parseInt(sold) : 0;
-    const laidCount = laid ? parseInt(laid) : 0;
-    const brokenCount = broken ? parseInt(broken) : 0;
-    const consumedCount = consumed ? parseInt(consumed) : 0;
-    
-    if (isNaN(soldCount) || isNaN(laidCount) || isNaN(brokenCount) || isNaN(consumedCount)) {
-      if (Platform.OS === 'web') {
-        alert("Please enter valid numbers");
-      }
-      return;
-    }
-    
-    const totalCount = soldCount + laidCount + brokenCount + consumedCount;
-    
-    if (totalCount === 0) {
-      if (Platform.OS === 'web') {
-        alert("Please enter at least one egg count");
+        alert("Please select quantity and date");
       }
       return;
     }
 
     const existingEntry = eggProduction.find(e => e.date === date);
+    let newData: { laid?: number; broken?: number; consumed?: number } = {};
+    
     if (existingEntry) {
-      const [year, month, day] = date.split('-');
-      const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      const confirmMsg = `An entry for ${localDate.toLocaleDateString()} already exists. Do you want to overwrite it?`;
-      const shouldOverwrite = Platform.OS === 'web' 
-        ? ((globalThis as any).confirm ? (globalThis as any).confirm(confirmMsg) : true)
-        : await new Promise<boolean>((resolve) => {
-            Alert.alert(
-              'Duplicate Entry',
-              confirmMsg,
-              [
-                { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-                { text: 'Overwrite', style: 'destructive', onPress: () => resolve(true) }
-              ]
-            );
-          });
-      
-      if (!shouldOverwrite) {
-        return;
-      }
+      newData = {
+        laid: existingEntry.laid,
+        broken: existingEntry.broken,
+        consumed: existingEntry.consumed,
+      };
     }
+    
+    if (type === 'laid') newData.laid = quantity;
+    else if (type === 'broken') newData.broken = quantity;
+    else if (type === 'consumed') newData.consumed = quantity;
+    
+    const totalCount = (newData.laid || 0) + (newData.broken || 0) + (newData.consumed || 0);
 
     await addEggProduction({
       date,
       count: totalCount,
-      sold: soldCount || undefined,
-      laid: laidCount || undefined,
-      broken: brokenCount || undefined,
-      consumed: consumedCount || undefined,
-      notes: notes || undefined,
+      laid: newData.laid || undefined,
+      broken: newData.broken || undefined,
+      consumed: newData.consumed || undefined,
     });
 
     router.back();
@@ -101,127 +73,125 @@ export default function LogEggsScreen() {
 
 
   return (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
-      <View style={styles.form}>
-        <Text style={styles.screenTitle}>Log Egg Records</Text>
-        
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Quick Select Date</Text>
-          <View style={styles.quickSelectGrid}>
-            {quickSelectOptions.map((option, index) => (
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.form}>
+          <Text style={styles.screenTitle}>Log Egg Record</Text>
+          
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quantity</Text>
+            <View style={styles.buttonGrid}>
+              {recentQuantities.length > 0 ? (
+                recentQuantities.map((qty) => (
+                  <TouchableOpacity
+                    key={qty}
+                    style={[styles.quantityButton, quantity === qty && styles.quantityButtonActive]}
+                    onPress={() => setQuantity(qty)}
+                  >
+                    <Text style={[styles.quantityButtonText, quantity === qty && styles.quantityButtonTextActive]}>
+                      {qty}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                ['10', '12', '15'].map((qty) => (
+                  <TouchableOpacity
+                    key={qty}
+                    style={[styles.quantityButton, quantity === parseInt(qty) && styles.quantityButtonActive]}
+                    onPress={() => setQuantity(parseInt(qty))}
+                  >
+                    <Text style={[styles.quantityButtonText, quantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                      {qty}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Type</Text>
+            <View style={styles.buttonGrid}>
               <TouchableOpacity
-                key={index}
-                style={styles.quickSelectButton}
-                onPress={() => handleQuickSelect(option)}
+                style={[styles.typeButton, type === 'laid' && styles.typeButtonActive]}
+                onPress={() => setType('laid')}
               >
-                <Text style={styles.quickSelectText}>{option.label}</Text>
+                <Text style={[styles.typeButtonText, type === 'laid' && styles.typeButtonTextActive]}>
+                  Laid
+                </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <DatePicker
-            label="Date *"
-            value={date}
-            onChange={setDate}
-          />
-        </View>
-
-        <View style={styles.eggCountsRow}>
-          <View style={styles.eggCountItem}>
-            <View style={styles.labelRow}>
-              <Egg size={14} color="#10b981" style={{ marginRight: 4 }} />
-              <Text style={styles.labelSmall}>Laid</Text>
+              <TouchableOpacity
+                style={[styles.typeButton, type === 'broken' && styles.typeButtonActive]}
+                onPress={() => setType('broken')}
+              >
+                <Text style={[styles.typeButtonText, type === 'broken' && styles.typeButtonTextActive]}>
+                  Broken
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.typeButton, type === 'consumed' && styles.typeButtonActive]}
+                onPress={() => setType('consumed')}
+              >
+                <Text style={[styles.typeButtonText, type === 'consumed' && styles.typeButtonTextActive]}>
+                  Consumed
+                </Text>
+              </TouchableOpacity>
             </View>
-            <TextInput
-              style={styles.inputSmall}
-              value={laid}
-              onChangeText={setLaid}
-              placeholder="0"
-              placeholderTextColor="#9ca3af"
-              keyboardType="number-pad"
-            />
           </View>
-          
-          <View style={styles.eggCountItem}>
-            <View style={styles.labelRow}>
-              <Egg size={14} color="#3b82f6" style={{ marginRight: 4 }} />
-              <Text style={styles.labelSmall}>Sold</Text>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Date</Text>
+            <View style={styles.buttonGrid}>
+              <TouchableOpacity
+                style={[styles.dateButton, date === getDateString(0) && styles.dateButtonActive]}
+                onPress={() => setDate(getDateString(0))}
+              >
+                <Text style={[styles.dateButtonText, date === getDateString(0) && styles.dateButtonTextActive]}>
+                  Today
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dateButton, date === getDateString(1) && styles.dateButtonActive]}
+                onPress={() => setDate(getDateString(1))}
+              >
+                <Text style={[styles.dateButtonText, date === getDateString(1) && styles.dateButtonTextActive]}>
+                  Yesterday
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dateButton, date === getDateString(2) && styles.dateButtonActive]}
+                onPress={() => setDate(getDateString(2))}
+              >
+                <Text style={[styles.dateButtonText, date === getDateString(2) && styles.dateButtonTextActive]}>
+                  2 Days Ago
+                </Text>
+              </TouchableOpacity>
             </View>
-            <TextInput
-              style={styles.inputSmall}
-              value={sold}
-              onChangeText={setSold}
-              placeholder="0"
-              placeholderTextColor="#9ca3af"
-              keyboardType="number-pad"
-            />
           </View>
-          
-          <View style={styles.eggCountItem}>
-            <View style={styles.labelRow}>
-              <Egg size={14} color="#ef4444" style={{ marginRight: 4 }} />
-              <Text style={styles.labelSmall}>Broken</Text>
-            </View>
-            <TextInput
-              style={styles.inputSmall}
-              value={broken}
-              onChangeText={setBroken}
-              placeholder="0"
-              placeholderTextColor="#9ca3af"
-              keyboardType="number-pad"
-            />
-          </View>
-          
-          <View style={styles.eggCountItem}>
-            <View style={styles.labelRow}>
-              <Egg size={14} color="#8b5cf6" style={{ marginRight: 4 }} />
-              <Text style={styles.labelSmall}>Consumed</Text>
-            </View>
-            <TextInput
-              style={styles.inputSmall}
-              value={consumed}
-              onChangeText={setConsumed}
-              placeholder="0"
-              placeholderTextColor="#9ca3af"
-              keyboardType="number-pad"
-            />
+
+          <View style={styles.buttons}>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.saveButton, quantity === null && styles.saveButtonDisabled]} 
+              onPress={handleSave}
+              disabled={quantity === null}
+            >
+              <Text style={styles.saveButtonText}>Save Record</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.inputGroup}>
-          <View style={styles.labelRow}>
-            <FileText size={16} color="#6b7280" style={{ marginRight: 6 }} />
-            <Text style={styles.label}>Notes (optional)</Text>
-          </View>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Any observations or notes"
-            placeholderTextColor="#9ca3af"
-            multiline
-            numberOfLines={4}
-          />
-        </View>
-
-
-
-        <View style={styles.buttons}>
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save Record</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+    backgroundColor: "#10b981",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",
@@ -231,107 +201,123 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "700" as const,
     color: "#111827",
-    marginBottom: 20,
+    marginBottom: 32,
   },
-  inputGroup: {
-    marginBottom: 20,
+  section: {
+    marginBottom: 32,
   },
-  labelRow: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600" as const,
+    color: "#111827",
+    marginBottom: 12,
+  },
+  buttonGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 12,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  input: {
+  quantityButton: {
+    flex: 1,
+    minWidth: 80,
     backgroundColor: "#fff",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#e5e7eb",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: "#111827",
+    borderRadius: 12,
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: "top",
+  quantityButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  quantityButtonText: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+    color: "#6b7280",
+  },
+  quantityButtonTextActive: {
+    color: "#fff",
+  },
+  typeButton: {
+    flex: 1,
+    minWidth: 100,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  typeButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  typeButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: "#6b7280",
+  },
+  typeButtonTextActive: {
+    color: "#fff",
+  },
+  dateButton: {
+    flex: 1,
+    minWidth: 100,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  dateButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  dateButtonText: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    color: "#6b7280",
+  },
+  dateButtonTextActive: {
+    color: "#fff",
   },
   buttons: {
     flexDirection: "row",
     gap: 12,
-    marginTop: 20,
+    marginTop: 32,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: "#e5e7eb",
     alignItems: "center",
+    backgroundColor: "#fff",
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "600" as const,
     color: "#6b7280",
   },
   saveButton: {
     flex: 1,
     backgroundColor: "#10b981",
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#9ca3af",
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "600" as const,
     color: "#fff",
-  },
-  quickSelectGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  quickSelectButton: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  quickSelectText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  eggCountsRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 20,
-  },
-  eggCountItem: {
-    flex: 1,
-  },
-  labelSmall: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  inputSmall: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    fontSize: 14,
-    color: "#111827",
-    textAlign: "center",
   },
 });
