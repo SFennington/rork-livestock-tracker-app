@@ -181,7 +181,7 @@ export default function LivestockScreen() {
                   </View>
                 )}
               </View>
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
+              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
                 <Plus size={20} color="#fff" />
                 <Text style={styles.addButtonText}>Add Event</Text>
               </TouchableOpacity>
@@ -252,7 +252,7 @@ export default function LivestockScreen() {
                   </View>
                 )}
               </View>
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-rabbit')} testID="add-rabbit-btn">
+              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-rabbit')} testID="add-rabbit-btn">
                 <Plus size={20} color="#fff" />
                 <Text style={styles.addButtonText}>Add Rabbit</Text>
               </TouchableOpacity>

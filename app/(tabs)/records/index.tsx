@@ -318,7 +318,7 @@ export default function RecordsScreen() {
         <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
           {activeTab === 'eggs' && (
             <View>
-              <TouchableOpacity style={[styles.addRecordButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/log-eggs')}>
+              <TouchableOpacity style={[styles.addRecordButton, { backgroundColor: colors.secondary }]} onPress={() => router.push('/log-eggs')}>
                 <Plus size={20} color="#fff" />
                 <Text style={styles.addRecordButtonText}>Add Egg Record</Text>
               </TouchableOpacity>
@@ -641,11 +641,11 @@ export default function RecordsScreen() {
           {activeTab === 'financial' && (
             <View>
               <View style={styles.addRecordRow}>
-                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf]} onPress={() => router.push('/add-income')}>
+                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-income')}>
                   <Plus size={20} color="#fff" />
                   <Text style={styles.addRecordButtonText}>Add Income</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf]} onPress={() => router.push('/add-expense')}>
+                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-expense')}>
                   <Plus size={20} color="#fff" />
                   <Text style={styles.addRecordButtonText}>Add Expense</Text>
                 </TouchableOpacity>
