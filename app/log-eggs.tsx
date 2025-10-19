@@ -2,12 +2,10 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInp
 import { useState, useMemo } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function LogEggsScreen() {
   const { addEggProduction, eggProduction } = useLivestock();
-  const insets = useSafeAreaInsets();
   const [quantity, setQuantity] = useState<number | null>(null);
   const [quantityInput, setQuantityInput] = useState("");
   const [type, setType] = useState<'laid' | 'broken' | 'consumed'>('laid');
@@ -75,7 +73,7 @@ export default function LogEggsScreen() {
 
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+    <View style={styles.backgroundContainer}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           <Text style={styles.screenTitle}>Log Egg Record</Text>

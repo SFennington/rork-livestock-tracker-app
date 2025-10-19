@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { useState, useEffect } from "react";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
 interface DatePickerProps {
   value: string;
@@ -23,115 +23,115 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
     return { year, month, day };
   };
 
-  const { year: initialYear, month: initialMonth, day: initialDay } = parseDate(value);
-  
-  const [selectedYear, setSelectedYear] = useState(initialYear);
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
-  const [selectedDay, setSelectedDay] = useState(initialDay);
+  const { year: selectedYear, month: selectedMonth, day: selectedDay } = parseDate(value);
+  const [displayYear, setDisplayYear] = useState(selectedYear);
+  const [displayMonth, setDisplayMonth] = useState(selectedMonth);
 
-  useEffect(() => {
-    const { year, month, day } = parseDate(value);
-    setSelectedYear(year);
-    setSelectedMonth(month);
-    setSelectedDay(day);
-  }, [value]);
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i);
   const months = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' },
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
 
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month, 0).getDate();
-  };
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(displayYear, displayMonth - 1, 1);
+    const lastDay = new Date(displayYear, displayMonth, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
 
-  const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const days: (number | null)[] = [];
+    
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(day);
+    }
 
-  const handleYearChange = (year: number) => {
-    setSelectedYear(year);
-    const newDate = `${year}-${String(selectedMonth).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    return days;
+  }, [displayYear, displayMonth]);
+
+  const handleDayPress = (day: number) => {
+    const newDate = `${displayYear}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     onChange(newDate);
   };
 
-  const handleMonthChange = (month: number) => {
-    setSelectedMonth(month);
-    const maxDay = getDaysInMonth(selectedYear, month);
-    const adjustedDay = selectedDay > maxDay ? maxDay : selectedDay;
-    setSelectedDay(adjustedDay);
-    const newDate = `${selectedYear}-${String(month).padStart(2, '0')}-${String(adjustedDay).padStart(2, '0')}`;
-    onChange(newDate);
+  const handlePrevMonth = () => {
+    if (displayMonth === 1) {
+      setDisplayMonth(12);
+      setDisplayYear(displayYear - 1);
+    } else {
+      setDisplayMonth(displayMonth - 1);
+    }
   };
 
-  const handleDayChange = (day: number) => {
-    setSelectedDay(day);
-    const newDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    onChange(newDate);
+  const handleNextMonth = () => {
+    if (displayMonth === 12) {
+      setDisplayMonth(1);
+      setDisplayYear(displayYear + 1);
+    } else {
+      setDisplayMonth(displayMonth + 1);
+    }
   };
-
-  const displayValue = `${months.find(m => m.value === selectedMonth)?.label} ${selectedDay}, ${selectedYear}`;
 
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <View style={styles.displayValueContainer}>
-        <Text style={styles.displayValue}>{displayValue}</Text>
-      </View>
-      <View style={styles.pickersRow}>
-        <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>Month</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedMonth}
-              onValueChange={handleMonthChange}
-              style={styles.picker}
-            >
-              {months.map((month) => (
-                <Picker.Item key={month.value} label={month.label} value={month.value} />
-              ))}
-            </Picker>
-          </View>
+      
+      <View style={styles.calendar}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handlePrevMonth} style={styles.navButton}>
+            <ChevronLeft size={20} color="#6b7280" />
+          </TouchableOpacity>
+          <Text style={styles.monthYear}>
+            {months[displayMonth - 1]} {displayYear}
+          </Text>
+          <TouchableOpacity onPress={handleNextMonth} style={styles.navButton}>
+            <ChevronRight size={20} color="#6b7280" />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>Day</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedDay}
-              onValueChange={handleDayChange}
-              style={styles.picker}
-            >
-              {days.map((day) => (
-                <Picker.Item key={day} label={String(day)} value={day} />
-              ))}
-            </Picker>
-          </View>
+        <View style={styles.weekdays}>
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <Text key={i} style={styles.weekday}>{day}</Text>
+          ))}
         </View>
 
-        <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>Year</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedYear}
-              onValueChange={handleYearChange}
-              style={styles.picker}
-            >
-              {years.map((year) => (
-                <Picker.Item key={year} label={String(year)} value={year} />
-              ))}
-            </Picker>
-          </View>
+        <View style={styles.days}>
+          {calendarDays.map((day, i) => {
+            if (day === null) {
+              return <View key={`empty-${i}`} style={styles.dayCell} />;
+            }
+
+            const dateStr = `${displayYear}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isSelected = dateStr === value;
+            const isToday = dateStr === todayStr;
+
+            return (
+              <TouchableOpacity
+                key={i}
+                style={styles.dayCell}
+                onPress={() => handleDayPress(day)}
+              >
+                <View style={[
+                  styles.dayButton,
+                  isSelected && styles.dayButtonSelected,
+                  isToday && !isSelected && styles.dayButtonToday,
+                ]}>
+                  <Text style={[
+                    styles.dayText,
+                    isSelected && styles.dayTextSelected,
+                    isToday && !isSelected && styles.dayTextToday,
+                  ]}>
+                    {day}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </View>
@@ -140,7 +140,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 0,
+    marginTop: 8,
   },
   label: {
     fontSize: 14,
@@ -148,42 +148,71 @@ const styles = StyleSheet.create({
     color: "#374151",
     marginBottom: 8,
   },
-  pickersRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  pickerContainer: {
-    flex: 1,
-  },
-  pickerLabel: {
-    fontSize: 12,
-    fontWeight: "500" as const,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-  pickerWrapper: {
+  calendar: {
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#e5e7eb",
     borderRadius: 8,
-    overflow: "hidden",
+    padding: 12,
   },
-  picker: {
-    height: 50,
-    color: '#111827',
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
-  displayValueContainer: {
-    backgroundColor: "#f3f4f6",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 8,
+  navButton: {
+    padding: 4,
   },
-  displayValue: {
+  monthYear: {
     fontSize: 14,
     fontWeight: "600" as const,
     color: "#111827",
+  },
+  weekdays: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  weekday: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    fontWeight: "600" as const,
+    color: "#9ca3af",
+  },
+  days: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  dayCell: {
+    width: "14.28%",
+    aspectRatio: 1,
+    padding: 2,
+  },
+  dayButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 6,
+  },
+  dayButtonSelected: {
+    backgroundColor: "#10b981",
+  },
+  dayButtonToday: {
+    borderWidth: 2,
+    borderColor: "#10b981",
+  },
+  dayText: {
+    fontSize: 13,
+    fontWeight: "500" as const,
+    color: "#111827",
+  },
+  dayTextSelected: {
+    color: "#fff",
+    fontWeight: "600" as const,
+  },
+  dayTextToday: {
+    color: "#10b981",
+    fontWeight: "600" as const,
   },
 });
