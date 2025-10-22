@@ -5,11 +5,26 @@ Write-Host "Copying AAB file to Google Drive..." -ForegroundColor Green
 
 # Define source and destination paths
 $sourcePath = "android\app\build\outputs\bundle\release\app-release.aab"
-$destinationPath = "G:\My Drive\Business\Apps\livestock Tracker\app-release-v1.0.5.aab"
+
+# Get app name from app.json
+$appJson = Get-Content "app.json" | ConvertFrom-Json
+$appName = $appJson.expo.name -replace " ", "-"
+$version = $appJson.expo.version
+
+# Create timestamp
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+
+# Create filename with app name, timestamp, and version
+$fileName = "${appName}_v${version}_${timestamp}.aab"
+$destinationPath = "G:\My Drive\Business\Apps\livestock Tracker\$fileName"
 
 # Check if source file exists
 if (Test-Path $sourcePath) {
     Write-Host "Source file found: $sourcePath" -ForegroundColor Yellow
+    Write-Host "App: $appName" -ForegroundColor Cyan
+    Write-Host "Version: $version" -ForegroundColor Cyan
+    Write-Host "Timestamp: $timestamp" -ForegroundColor Cyan
+    Write-Host "Target filename: $fileName" -ForegroundColor Cyan
     
     # Check if destination directory exists
     $destinationDir = Split-Path $destinationPath -Parent
