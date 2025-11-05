@@ -104,26 +104,7 @@ export default function LivestockScreen() {
 
       {/* Management header per animal */}
       <View style={styles.managementHeader}>
-        {activeTab === 'chickens' ? (
-          <View style={styles.managementActions}>
-            <TouchableOpacity
-              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/log-eggs')}
-              testID="manage-chickens-log-eggs"
-            >
-              <Egg size={20} color={colors.accent} />
-              <Text style={[styles.managementActionText, { color: colors.text }]}>Log Eggs</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/chicken-history')}
-              testID="manage-chickens-history"
-            >
-              <Calendar size={20} color={colors.primary} />
-              <Text style={[styles.managementActionText, { color: colors.text }]}>Chicken History</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+        {activeTab === 'rabbits' && (
           <View style={styles.managementActions}>
             <TouchableOpacity
               style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -174,7 +155,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.textSecondary }]}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]}>{breed}</Text>
                         <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                       </View>
                     ))}
@@ -245,7 +226,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]} testID="rabbit-breed-breakdown">
                     {rabbitBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.textSecondary }]}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]}>{breed}</Text>
                         <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                       </View>
                     ))}

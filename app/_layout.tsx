@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LivestockProvider } from "@/hooks/livestock-store";
 import { ThemeProvider, useTheme } from "@/hooks/theme-store";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import * as SystemUI from 'expo-system-ui';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -26,22 +27,24 @@ function RootLayoutNav() {
   const { colors } = useTheme();
   
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync(colors.primary);
-  }, [colors.primary]);
+    SystemUI.setBackgroundColorAsync(colors.background);
+  }, [colors.background]);
   
   return (
-    <Stack 
-      screenOptions={{ 
-        headerBackTitle: "Back",
-        headerStyle: {
-          backgroundColor: colors.primary,
-        },
-        headerTintColor: '#ffffff',
-        headerTitleStyle: {
-          color: '#ffffff',
-        },
-      }}
-    >
+    <>
+      <StatusBar style="dark" backgroundColor={colors.background} />
+      <Stack 
+        screenOptions={{ 
+          headerBackTitle: "Back",
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: '#ffffff',
+          headerTitleStyle: {
+            color: '#ffffff',
+          },
+        }}
+      >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="add-chicken" options={{ presentation: "modal", title: "Add Chicken" }} />
       <Stack.Screen name="add-rabbit" options={{ presentation: "modal", title: "Add Rabbit" }} />
@@ -54,7 +57,8 @@ function RootLayoutNav() {
       <Stack.Screen name="rabbit-health" options={{ title: "Rabbit Health" }} />
       <Stack.Screen name="rabbit-offspring-summary" options={{ title: "Offspring Summary" }} />
       <Stack.Screen name="rabbit-offspring/[id]" options={{ title: "Offspring Details" }} />
-    </Stack>
+      </Stack>
+    </>
   );
 }
 

@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
-  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading } = useLivestock();
+  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount } = useLivestock();
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
   const { colors } = useTheme();
@@ -21,6 +21,7 @@ export default function DashboardScreen() {
     const activeBreedings = breedingRecords.filter(b => b.status === 'bred').length;
     const activeChickens = chickens.filter(c => c.status === 'active').reduce((sum, c) => sum + c.quantity, 0);
     const activeRabbits = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
+    const { roosters, hens } = getRoostersAndHensCount(today);
     
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
@@ -38,8 +39,10 @@ export default function DashboardScreen() {
       activeRabbits,
       recentEggs,
       avgEggsPerDay: recentEggs / 30,
+      roosters,
+      hens,
     };
-  }, [chickens, rabbits, eggProduction, breedingRecords, expenses, income]);
+  }, [chickens, rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount]);
 
   if (isLoading) {
     return (
@@ -164,6 +167,11 @@ export default function DashboardScreen() {
           <Text style={[styles.statSubtext, { color: colors.textMuted }]}>
             {stats.activeChickens} chickens, {stats.activeRabbits} rabbits
           </Text>
+          {stats.roosters > 0 || stats.hens > 0 ? (
+            <Text style={[styles.statSubtext, { color: colors.textMuted, marginTop: 4 }]}>
+              {stats.roosters} roosters, {stats.hens} hens
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -182,7 +190,9 @@ export default function DashboardScreen() {
                 <Egg size={20} color={colors.accent} />
                 <View style={styles.activityContent}>
                   <Text style={[styles.activityText, { color: colors.text }]}>{egg.count} eggs collected</Text>
-                  <Text style={[styles.activityDate, { color: colors.textMuted }]}>{new Date(egg.date).toLocaleDateString()}</Text>
+                  <Text style={[styles.activityDate, { color: colors.textMuted }]}>
+                    {new Date(egg.date + 'T00:00:00').toLocaleDateString()}
+                  </Text>
                 </View>
               </View>
             ))}

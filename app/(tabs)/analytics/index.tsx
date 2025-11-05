@@ -78,6 +78,7 @@ export default function AnalyticsScreen() {
     let avgEggsPerMonth = 0;
     let totalMonths = 0;
     let avgEggsPerDay7d = 0;
+    let dozenPerWeek = 0;
     if (eggProduction.length > 0) {
       const dates = eggProduction.map(e => new Date(e.date).getTime());
       const minDate = Math.min(...dates);
@@ -93,6 +94,17 @@ export default function AnalyticsScreen() {
         .filter(e => new Date(e.date) >= last7Days)
         .reduce((sum, e) => sum + e.count, 0);
       avgEggsPerDay7d = recent7DaysEggs / 7;
+      
+      // Calculate dozen per week (last 4 weeks average)
+      const fourWeeksAgo = new Date();
+      fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+      const last4WeeksEggs = eggProduction
+        .filter(e => {
+          const recordDate = new Date(e.date);
+          return recordDate >= fourWeeksAgo;
+        })
+        .reduce((sum, e) => sum + e.count, 0);
+      dozenPerWeek = (last4WeeksEggs / 12) / 4; // Convert to dozen, then divide by 4 weeks
     }
 
     return {
@@ -109,6 +121,7 @@ export default function AnalyticsScreen() {
       avgEggsPerMonth,
       avgEggsPerDay7d,
       totalMonths,
+      dozenPerWeek,
       totalEggs: eggProduction.reduce((sum, e) => sum + e.count, 0),
       totalSold,
       totalLaid,
@@ -217,9 +230,9 @@ export default function AnalyticsScreen() {
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#3b82f6" />
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.avgEggsPerMonth.toFixed(1)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg/Month</Text>
-            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>{analytics.totalMonths} months</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.dozenPerWeek.toFixed(1)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Dozen per week</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>Last 4 weeks avg</Text>
           </View>
         </View>
 

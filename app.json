@@ -30,6 +30,7 @@
       ]
     },
     "web": {},
+    "icon": "./assets/images/icon.png",
     "plugins": [
       [
         "expo-router",

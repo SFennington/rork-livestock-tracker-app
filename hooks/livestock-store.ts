@@ -437,6 +437,37 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return Math.max(0, count);
   }, [chickenHistory]);
 
+  const getRoostersAndHensCount = useCallback((date: string): { roosters: number; hens: number } => {
+    const targetDate = new Date(date).getTime();
+    const sortedEvents = [...chickenHistory].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    let roosters = 0;
+    let hens = 0;
+    
+    for (const event of sortedEvents) {
+      const eventDate = new Date(event.date).getTime();
+      if (eventDate > targetDate) break;
+      
+      if (event.type === 'acquired') {
+        if (event.sex === 'M') {
+          roosters += event.quantity;
+        } else if (event.sex === 'F') {
+          hens += event.quantity;
+        }
+      } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+        if (event.sex === 'M') {
+          roosters = Math.max(0, roosters - event.quantity);
+        } else if (event.sex === 'F') {
+          hens = Math.max(0, hens - event.quantity);
+        }
+      }
+    }
+    
+    return { roosters, hens };
+  }, [chickenHistory]);
+
   // Helper functions for rabbit breeding
   const getAvailableBucks = useCallback(() => {
     return rabbits.filter(r => r.gender === 'buck' && r.status === 'active');
@@ -537,6 +568,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     updateChickenHistoryEvent,
     deleteChickenHistoryEvent,
     getChickenCountOnDate,
+    getRoostersAndHensCount,
     reloadData: loadData,
   }), [
     chickens,
@@ -587,6 +619,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     updateChickenHistoryEvent,
     deleteChickenHistoryEvent,
     getChickenCountOnDate,
+    getRoostersAndHensCount,
     loadData,
   ]);
 });
