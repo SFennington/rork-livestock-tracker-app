@@ -277,127 +277,84 @@ export default function AnalyticsScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Egg Production Trends</Text>
         <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.text }]}>Production History</Text>
-            <TouchableOpacity onPress={() => toggleChart('production')} style={styles.eyeButton}>
-              {hiddenCharts.has('production') ? <Eye size={20} color={colors.textMuted} /> : <EyeOff size={20} color={colors.textMuted} />}
+            <Text style={[styles.chartTitle, { color: colors.text }]}>Daily Production</Text>
+            <TouchableOpacity onPress={() => toggleChart('daily')} style={styles.eyeButton}>
+              {hiddenCharts.has('daily') ? <Eye size={20} color={colors.textMuted} /> : <EyeOff size={20} color={colors.textMuted} />}
             </TouchableOpacity>
           </View>
-          {!hiddenCharts.has('production') && (
+          {!hiddenCharts.has('daily') && (
             <>
               {chartData.length === 0 ? (
                 <View style={styles.chartEmptyState}>
                   <Egg size={24} color={colors.textMuted} />
-                  <Text style={[styles.chartEmptyText, { color: colors.textMuted }]}>
-                    Log egg collections to unlock daily production insights.
-                  </Text>
+                  <Text style={[styles.chartEmptyText, { color: colors.textMuted }]}>Log egg collections to unlock daily production insights.</Text>
                 </View>
               ) : (
                 <View style={styles.lineChartContainer}>
-                  <PinchGestureHandler
-                    onGestureEvent={handlePinchGesture}
-                    onHandlerStateChange={handlePinchStateChange}
-                  >
+                  <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Pinch to zoom · last 30 days highlighted</Text>
+                  <PinchGestureHandler onGestureEvent={handlePinchGesture} onHandlerStateChange={handlePinchStateChange}>
                     <ScrollView
                       ref={chartScrollRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[
-                        styles.chartScrollContent,
-                        { width: chartContentWidth + chartPadding * 2 },
-                      ]}
+                      contentContainerStyle={[styles.chartScrollContent, { width: chartContentWidth + chartPadding * 2 }]}
                     >
                       <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
-                      {highlightWidth > 0 && (
-                        <Rect
-                          x={highlightX}
-                          y={chartPadding}
-                          width={highlightWidth}
-                          height={chartHeight - chartPadding * 2}
-                          fill={colors.primary}
-                          opacity={0.08}
-                          rx={12}
-                        />
-                      )}
-                      {chartData.map((_, index) => {
-                        if (index % gridInterval !== 0) return null;
-                        const x = chartPadding + index * dayWidth + dayWidth / 2;
-                        return (
-                          <SvgLine
-                            key={`grid-${index}`}
-                            x1={x}
-                            y1={chartPadding}
-                            x2={x}
-                            y2={chartHeight - chartPadding}
-                            stroke={colors.border}
-                            strokeWidth={1}
-                            opacity={0.15}
+                        {highlightWidth > 0 && (
+                          <Rect
+                            x={highlightX}
+                            y={chartPadding}
+                            width={highlightWidth}
+                            height={chartHeight - chartPadding * 2}
+                            fill={colors.primary}
+                            opacity={0.08}
+                            rx={12}
                           />
-                        );
-                      })}
-                      <SvgLine
-                        x1={chartPadding}
-                        y1={chartHeight - chartPadding}
-                        x2={chartPadding + chartContentWidth}
-                        y2={chartHeight - chartPadding}
-                        stroke={colors.border}
-                        strokeWidth={1}
-                        opacity={0.3}
-                      />
-                      {linePoints.length > 0 && (
-                        <Polyline
-                          points={linePoints}
-                          fill="none"
-                          stroke={colors.primary}
-                          strokeWidth={3}
-                          strokeLinejoin="round"
-                          strokeLinecap="round"
+                        )}
+                        {chartData.map((_, index) => {
+                          if (index % gridInterval !== 0) return null;
+                          const x = chartPadding + index * dayWidth + dayWidth / 2;
+                          return (
+                            <SvgLine
+                              key={`grid-${index}`}
+                              x1={x}
+                              y1={chartPadding}
+                              x2={x}
+                              y2={chartHeight - chartPadding}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.15}
+                            />
+                          );
+                        })}
+                        <SvgLine
+                          x1={chartPadding}
+                          y1={chartHeight - chartPadding}
+                          x2={chartPadding + chartContentWidth}
+                          y2={chartHeight - chartPadding}
+                          stroke={colors.border}
+                          strokeWidth={1}
+                          opacity={0.3}
                         />
-                      )}
-                      {chartData.map((day, index) => {
-                        if (index < chartData.length - 30) return null;
-                        const { x, y } = getPointCoordinates(day.total, index);
-                        return (
-                          <Circle
-                            key={`point-${day.date}`}
-                            cx={x}
-                            cy={y}
-                            r={3.5}
-                            fill={colors.surface}
-                            stroke={colors.primary}
-                            strokeWidth={2}
-                          />
-                        );
-                      })}
-                      {latestPointCoords && (
-                        <Circle
-                          cx={latestPointCoords.x}
-                          cy={latestPointCoords.y}
-                          r={5.5}
-                          fill={colors.primary}
-                          stroke="#ffffff"
-                          strokeWidth={2}
-                        />
-                      )}
-                      {chartData.map((day, index) => {
-                        if (index % labelInterval !== 0 && index !== chartData.length - 1) return null;
-                        const x = chartPadding + index * dayWidth + dayWidth / 2;
-                        const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        });
-                        return (
-                          <SvgText
-                            key={`label-${day.date}`}
-                            x={x}
-                            y={chartHeight - chartPadding + 16}
-                            fill={colors.textMuted}
-                            fontSize={10}
-                            textAnchor="middle"
-                          >
-                            {label}
-                          </SvgText>
-                        );
-                      })}
+                        {linePoints.length > 0 && (
+                          <Polyline points={linePoints} fill="none" stroke={colors.primary} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
+                        )}
+                        {chartData.map((day, index) => {
+                          if (index < chartData.length - 30) return null;
+                          const { x, y } = getPointCoordinates(day.total, index);
+                          return <Circle key={`point-${day.date}`} cx={x} cy={y} r={3.5} fill={colors.surface} stroke={colors.primary} strokeWidth={2} />;
+                        })}
+                        {latestPointCoords && <Circle cx={latestPointCoords.x} cy={latestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
+                        {chartData.map((day, index) => {
+                          if (index % labelInterval !== 0 && index !== chartData.length - 1) return null;
+                          const x = chartPadding + index * dayWidth + dayWidth / 2;
+                          const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                          return (
+                            <SvgText key={`label-${day.date}`} x={x} y={chartHeight - chartPadding + 16} fill={colors.textMuted} fontSize={10} textAnchor="middle">
+                              {label}
+                            </SvgText>
+                          );
+                        })}
                       </Svg>
                     </ScrollView>
                   </PinchGestureHandler>
@@ -409,11 +366,68 @@ export default function AnalyticsScreen() {
                     <View style={[styles.chartSummaryDivider, { backgroundColor: colors.border }]} />
                     <View style={styles.chartSummaryItem}>
                       <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Avg / day</Text>
-                      <Text style={[styles.chartSummaryValue, { color: colors.text }]}>
-                        {last30DayAverage.toFixed(1)}
-                      </Text>
+                      <Text style={[styles.chartSummaryValue, { color: colors.text }]}>{last30DayAverage.toFixed(1)}</Text>
                     </View>
                   </View>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+
+        <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.chartHeader}>
+            <Text style={[styles.chartTitle, { color: colors.text }]}>Monthly Production Comparison</Text>
+            <TouchableOpacity onPress={() => toggleChart('production')} style={styles.eyeButton}>
+              {hiddenCharts.has('production') ? <Eye size={20} color={colors.textMuted} /> : <EyeOff size={20} color={colors.textMuted} />}
+            </TouchableOpacity>
+          </View>
+          {!hiddenCharts.has('production') && (
+            <>
+              <View style={styles.barChart}>
+                {analytics.months.map((month) => {
+                  const yearData = analytics.monthlyEggsByYear[month] || {};
+
+                  return (
+                    <View key={month} style={styles.barContainer}>
+                      <View style={styles.barWrapper}>
+                        {analytics.sortedYears.map((year) => {
+                          const count = yearData[year] || 0;
+                          if (count === 0) return null;
+                          const barHeight = (count / analytics.maxMonthlyEggs) * 120;
+                          return (
+                            <View
+                              key={year}
+                              style={[
+                                styles.bar,
+                                {
+                                  height: Math.max(4, barHeight),
+                                  backgroundColor: analytics.yearColors[year],
+                                },
+                              ]}
+                            />
+                          );
+                        })}
+                      </View>
+                      <Text style={[styles.barLabel, { color: colors.textMuted }]}>
+                        {new Date(`2024-${month}-15`).toLocaleDateString('en', {
+                          month: 'short',
+                          timeZone: 'UTC',
+                        }).toUpperCase()}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {analytics.sortedYears.length > 0 && (
+                <View style={styles.legend}>
+                  {analytics.sortedYears.map((year) => (
+                    <View key={year} style={styles.legendItem}>
+                      <View style={[styles.legendColor, { backgroundColor: analytics.yearColors[year] }]} />
+                      <Text style={[styles.legendText, { color: colors.textMuted }]}>{year}</Text>
+                    </View>
+                  ))}
                 </View>
               )}
             </>
@@ -560,8 +574,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  chartSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
   eyeButton: {
     padding: 4,
+  },
+  barChart: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    height: 150,
+    gap: 4,
+    justifyContent: "space-between",
+  },
+  barContainer: {
+    alignItems: "center",
+    flex: 1,
+    height: "100%",
+    justifyContent: "flex-end",
+  },
+  barWrapper: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 1,
+    alignItems: "flex-end",
+  },
+  bar: {
+    borderRadius: 2,
+    minHeight: 4,
+    flex: 1,
+  },
+  barLabel: {
+    fontSize: 9,
+    marginTop: 4,
   },
   lineChartContainer: {
     gap: 16,
@@ -673,6 +721,27 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  legend: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 16,
+    justifyContent: "center",
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendColor: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
 
