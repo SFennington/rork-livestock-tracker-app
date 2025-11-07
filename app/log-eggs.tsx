@@ -39,7 +39,9 @@ export default function LogEggsScreen() {
       return;
     }
 
+    console.log('Saving egg production:', { date, quantity, type });
     const existingEntry = eggProduction.find(e => e.date === date);
+    console.log('Existing entry:', existingEntry);
     let newData: { laid?: number; broken?: number; consumed?: number } = {};
     
     if (existingEntry) {
@@ -55,6 +57,7 @@ export default function LogEggsScreen() {
     else if (type === 'consumed') newData.consumed = quantity;
     
     const totalCount = (newData.laid || 0) + (newData.broken || 0) + (newData.consumed || 0);
+    console.log('Total count to save:', totalCount, 'newData:', newData);
 
     await addEggProduction({
       date,
@@ -64,6 +67,7 @@ export default function LogEggsScreen() {
       consumed: newData.consumed || undefined,
     });
 
+    console.log('Egg production saved');
     router.back();
   };
 

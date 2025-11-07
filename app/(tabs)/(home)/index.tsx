@@ -15,7 +15,10 @@ export default function DashboardScreen() {
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
+    console.log('Today date:', today);
+    console.log('Egg production records:', eggProduction.map(e => ({ date: e.date, count: e.count, laid: e.laid })));
     const todayEggs = eggProduction.filter(e => e.date === today).reduce((sum, e) => sum + e.count, 0);
+    console.log('Today eggs count:', todayEggs);
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const totalIncome = income.reduce((sum, i) => sum + i.amount, 0);
     const activeBreedings = breedingRecords.filter(b => b.status === 'bred').length;
