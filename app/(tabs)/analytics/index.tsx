@@ -2,8 +2,9 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-nati
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
 import { TrendingUp, DollarSign, Egg, Eye, EyeOff } from "lucide-react-native";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Polyline, Circle, Line as SvgLine, Rect, Text as SvgText } from "react-native-svg";
 
 export default function AnalyticsScreen() {
   const { eggProduction, expenses, income } = useLivestock();
@@ -107,6 +108,31 @@ export default function AnalyticsScreen() {
       dozenPerWeek = (last4WeeksEggs / 12) / 4; // Convert to dozen, then divide by 4 weeks
     }
 
+    const totalsByDate = new Map<string, number>();
+    eggProduction.forEach(record => {
+      const key = record.date;
+      totalsByDate.set(key, (totalsByDate.get(key) ?? 0) + record.count);
+    });
+
+    let dailyEggHistory: { date: string; total: number }[] = [];
+    if (eggProduction.length > 0) {
+      const sortedRecords = [...eggProduction].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      const start = new Date(sortedRecords[0].date + "T00:00:00");
+      const end = new Date(sortedRecords[sortedRecords.length - 1].date + "T00:00:00");
+
+      for (let cursor = new Date(start); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+        const iso = cursor.toISOString().split("T")[0];
+        dailyEggHistory.push({
+          date: iso,
+          total: totalsByDate.get(iso) ?? 0,
+        });
+      }
+    }
+
+    const maxDailyEggs = dailyEggHistory.reduce((max, day) => Math.max(max, day.total), 0);
+
     return {
       totalExpenses,
       totalIncome,
@@ -127,8 +153,59 @@ export default function AnalyticsScreen() {
       totalLaid,
       totalBroken,
       totalConsumed,
+      dailyEggHistory,
+      maxDailyEggs,
     };
   }, [eggProduction, expenses, income]);
+
+  const chartScrollRef = useRef<ScrollView | null>(null);
+  const chartData = analytics.dailyEggHistory;
+  const chartMaxValue = Math.max(analytics.maxDailyEggs, 1);
+  const chartHeight = 200;
+  const dayWidth = 40;
+  const chartPadding = 24;
+  const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;
+  const highlightWidth = Math.min(chartData.length, 30) * dayWidth;
+  const highlightX = chartPadding + Math.max(0, chartContentWidth - highlightWidth);
+  const labelInterval = Math.max(1, Math.floor(chartData.length / 8));
+  const gridInterval = Math.max(1, Math.floor(chartData.length / 12));
+  const last30DaysData = chartData.slice(-30);
+  const last30DayTotal = last30DaysData.reduce((sum, day) => sum + day.total, 0);
+  const last30DayAverage = last30DaysData.length > 0 ? last30DayTotal / last30DaysData.length : 0;
+
+  useEffect(() => {
+    if (chartData.length === 0) return;
+    const timeout = setTimeout(() => {
+      chartScrollRef.current?.scrollToEnd({ animated: false });
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [chartData.length]);
+
+  const getPointCoordinates = useCallback(
+    (value: number, index: number) => {
+      const x = chartPadding + index * dayWidth + dayWidth / 2;
+      const normalized = chartMaxValue === 0 ? 0 : value / chartMaxValue;
+      const usableHeight = chartHeight - chartPadding * 2;
+      const y = chartPadding + (1 - normalized) * usableHeight;
+      return { x, y };
+    },
+    [chartPadding, dayWidth, chartMaxValue, chartHeight]
+  );
+
+  const linePoints = chartData
+    .map((day, index) => {
+      const { x, y } = getPointCoordinates(day.total, index);
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const latestPoint = chartData.length > 0 ? chartData[chartData.length - 1] : null;
+  const latestPointCoords = latestPoint
+    ? (() => {
+        const idx = chartData.length - 1;
+        return getPointCoordinates(latestPoint.total, idx);
+      })()
+    : null;
 
   const maxSeasonalEggs = Math.max(...Object.values(analytics.seasonalEggs), 1);
 
@@ -171,46 +248,131 @@ export default function AnalyticsScreen() {
           </View>
           {!hiddenCharts.has('production') && (
             <>
-              <View style={styles.barChart}>
-                {analytics.months.map((month) => {
-                  const yearData = analytics.monthlyEggsByYear[month] || {};
-                  
-                  return (
-                    <View key={month} style={styles.barContainer}>
-                      <View style={styles.barWrapper}>
-                        {analytics.sortedYears.map((year) => {
-                          const count = yearData[year] || 0;
-                          if (count === 0) return null;
-                          const barHeight = (count / analytics.maxMonthlyEggs) * 120;
-                          return (
-                            <View 
-                              key={year}
-                              style={[
-                                styles.bar, 
-                                { 
-                                  height: Math.max(4, barHeight),
-                                  backgroundColor: analytics.yearColors[year]
-                                }
-                              ]} 
-                            />
-                          );
-                        })}
-                      </View>
-                      <Text style={[styles.barLabel, { color: colors.textMuted }]}>
-                        {new Date(`2024-${month}-15`).toLocaleDateString('en', { month: 'short', timeZone: 'UTC' }).toUpperCase()}
+              {chartData.length === 0 ? (
+                <View style={styles.chartEmptyState}>
+                  <Egg size={24} color={colors.textMuted} />
+                  <Text style={[styles.chartEmptyText, { color: colors.textMuted }]}>
+                    Log egg collections to unlock daily production insights.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.lineChartContainer}>
+                  <ScrollView
+                    ref={chartScrollRef}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={[
+                      styles.chartScrollContent,
+                      { width: chartContentWidth + chartPadding * 2 },
+                    ]}
+                  >
+                    <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
+                      {highlightWidth > 0 && (
+                        <Rect
+                          x={highlightX}
+                          y={chartPadding}
+                          width={highlightWidth}
+                          height={chartHeight - chartPadding * 2}
+                          fill={colors.primary}
+                          opacity={0.08}
+                          rx={12}
+                        />
+                      )}
+                      {chartData.map((_, index) => {
+                        if (index % gridInterval !== 0) return null;
+                        const x = chartPadding + index * dayWidth + dayWidth / 2;
+                        return (
+                          <SvgLine
+                            key={`grid-${index}`}
+                            x1={x}
+                            y1={chartPadding}
+                            x2={x}
+                            y2={chartHeight - chartPadding}
+                            stroke={colors.border}
+                            strokeWidth={1}
+                            opacity={0.15}
+                          />
+                        );
+                      })}
+                      <SvgLine
+                        x1={chartPadding}
+                        y1={chartHeight - chartPadding}
+                        x2={chartPadding + chartContentWidth}
+                        y2={chartHeight - chartPadding}
+                        stroke={colors.border}
+                        strokeWidth={1}
+                        opacity={0.3}
+                      />
+                      {linePoints.length > 0 && (
+                        <Polyline
+                          points={linePoints}
+                          fill="none"
+                          stroke={colors.primary}
+                          strokeWidth={3}
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                        />
+                      )}
+                      {chartData.map((day, index) => {
+                        if (index < chartData.length - 30) return null;
+                        const { x, y } = getPointCoordinates(day.total, index);
+                        return (
+                          <Circle
+                            key={`point-${day.date}`}
+                            cx={x}
+                            cy={y}
+                            r={3.5}
+                            fill={colors.surface}
+                            stroke={colors.primary}
+                            strokeWidth={2}
+                          />
+                        );
+                      })}
+                      {latestPointCoords && (
+                        <Circle
+                          cx={latestPointCoords.x}
+                          cy={latestPointCoords.y}
+                          r={5.5}
+                          fill={colors.primary}
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                        />
+                      )}
+                      {chartData.map((day, index) => {
+                        if (index % labelInterval !== 0 && index !== chartData.length - 1) return null;
+                        const x = chartPadding + index * dayWidth + dayWidth / 2;
+                        const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        });
+                        return (
+                          <SvgText
+                            key={`label-${day.date}`}
+                            x={x}
+                            y={chartHeight - chartPadding + 16}
+                            fill={colors.textMuted}
+                            fontSize={10}
+                            textAnchor="middle"
+                          >
+                            {label}
+                          </SvgText>
+                        );
+                      })}
+                    </Svg>
+                  </ScrollView>
+                  <View style={[styles.chartSummary, { borderTopColor: colors.border }]}>
+                    <View style={styles.chartSummaryItem}>
+                      <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Last 30 days</Text>
+                      <Text style={[styles.chartSummaryValue, { color: colors.text }]}>{last30DayTotal}</Text>
+                    </View>
+                    <View style={[styles.chartSummaryDivider, { backgroundColor: colors.border }]} />
+                    <View style={styles.chartSummaryItem}>
+                      <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Avg / day</Text>
+                      <Text style={[styles.chartSummaryValue, { color: colors.text }]}>
+                        {last30DayAverage.toFixed(1)}
                       </Text>
                     </View>
-                  );
-                })}
-              </View>
-              {analytics.sortedYears.length > 0 && (
-                <View style={styles.legend}>
-                  {analytics.sortedYears.map((year) => (
-                    <View key={year} style={styles.legendItem}>
-                      <View style={[styles.legendColor, { backgroundColor: analytics.yearColors[year] }]} />
-                      <Text style={[styles.legendText, { color: colors.textMuted }]}>{year}</Text>
-                    </View>
-                  ))}
+                  </View>
                 </View>
               )}
             </>
@@ -361,35 +523,49 @@ const styles = StyleSheet.create({
   eyeButton: {
     padding: 4,
   },
-  barChart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    height: 150,
-    gap: 4,
-    justifyContent: "space-between",
+  lineChartContainer: {
+    gap: 16,
   },
-  barContainer: {
+  chartScrollContent: {
+    paddingBottom: 12,
+  },
+  chartSummary: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  chartSummaryItem: {
     flex: 1,
-    height: "100%",
-    justifyContent: "flex-end",
+    alignItems: "center",
   },
-  barWrapper: {
-    width: "100%",
-    flexDirection: "row",
-    gap: 1,
-    alignItems: "flex-end",
+  chartSummaryLabel: {
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
-  bar: {
-    borderRadius: 2,
-    minHeight: 4,
-    flex: 1,
-  },
-  barLabel: {
-    fontSize: 9,
+  chartSummaryValue: {
+    fontSize: 18,
+    fontWeight: "700",
     marginTop: 4,
   },
-
+  chartSummaryDivider: {
+    width: 1,
+    height: 32,
+    marginHorizontal: 12,
+  },
+  chartEmptyState: {
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 24,
+  },
+  chartEmptyText: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+  },
   statsGrid: {
     flexDirection: "row",
     gap: 12,
@@ -458,25 +634,6 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 20,
   },
-  legend: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 16,
-    justifyContent: "center",
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
 });
+
+
