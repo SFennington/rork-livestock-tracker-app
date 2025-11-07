@@ -5,6 +5,7 @@ import { TrendingUp, DollarSign, Egg, Eye, EyeOff } from "lucide-react-native";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Polyline, Circle, Line as SvgLine, Rect, Text as SvgText } from "react-native-svg";
+import { PinchGestureHandler, State } from "react-native-gesture-handler";
 
 export default function AnalyticsScreen() {
   const { eggProduction, expenses, income } = useLivestock();
@@ -162,8 +163,16 @@ export default function AnalyticsScreen() {
   const chartData = analytics.dailyEggHistory;
   const chartMaxValue = Math.max(analytics.maxDailyEggs, 1);
   const chartHeight = 200;
-  const dayWidth = 40;
   const chartPadding = 24;
+
+  const BASE_DAY_WIDTH = 32;
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 3;
+
+  const [zoomScale, setZoomScale] = useState(1);
+  const zoomAnchorRef = useRef(1);
+
+  const dayWidth = BASE_DAY_WIDTH * zoomScale;
   const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;
   const highlightWidth = Math.min(chartData.length, 30) * dayWidth;
   const highlightX = chartPadding + Math.max(0, chartContentWidth - highlightWidth);
@@ -180,6 +189,33 @@ export default function AnalyticsScreen() {
     }, 0);
     return () => clearTimeout(timeout);
   }, [chartData.length]);
+
+  const clampZoom = useCallback((value: number) => {
+    return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+  }, []);
+
+  const handlePinchGesture = useCallback(
+    (event: any) => {
+      const { scale } = event.nativeEvent;
+      const nextScale = clampZoom(zoomAnchorRef.current * scale);
+      setZoomScale(nextScale);
+    },
+    [clampZoom]
+  );
+
+  const handlePinchStateChange = useCallback(
+    (event: any) => {
+      const { state, scale } = event.nativeEvent;
+      if (state === State.BEGAN) {
+        zoomAnchorRef.current = zoomScale;
+      }
+      if (state === State.END || state === State.CANCELLED || state === State.FAILED) {
+        zoomAnchorRef.current = clampZoom(zoomAnchorRef.current * scale);
+        setZoomScale(zoomAnchorRef.current);
+      }
+    },
+    [zoomScale, clampZoom]
+  );
 
   const getPointCoordinates = useCallback(
     (value: number, index: number) => {
@@ -257,16 +293,20 @@ export default function AnalyticsScreen() {
                 </View>
               ) : (
                 <View style={styles.lineChartContainer}>
-                  <ScrollView
-                    ref={chartScrollRef}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={[
-                      styles.chartScrollContent,
-                      { width: chartContentWidth + chartPadding * 2 },
-                    ]}
+                  <PinchGestureHandler
+                    onGestureEvent={handlePinchGesture}
+                    onHandlerStateChange={handlePinchStateChange}
                   >
-                    <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
+                    <ScrollView
+                      ref={chartScrollRef}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={[
+                        styles.chartScrollContent,
+                        { width: chartContentWidth + chartPadding * 2 },
+                      ]}
+                    >
+                      <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
                       {highlightWidth > 0 && (
                         <Rect
                           x={highlightX}
@@ -358,8 +398,9 @@ export default function AnalyticsScreen() {
                           </SvgText>
                         );
                       })}
-                    </Svg>
-                  </ScrollView>
+                      </Svg>
+                    </ScrollView>
+                  </PinchGestureHandler>
                   <View style={[styles.chartSummary, { borderTopColor: colors.border }]}>
                     <View style={styles.chartSummaryItem}>
                       <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Last 30 days</Text>
@@ -393,8 +434,7 @@ export default function AnalyticsScreen() {
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#3b82f6" />
             <Text style={[styles.statValue, { color: colors.text }]}>{analytics.dozenPerWeek.toFixed(1)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Dozen per week</Text>
-            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>Last 4 weeks avg</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz / wk (4wk avg)</Text>
           </View>
         </View>
 
