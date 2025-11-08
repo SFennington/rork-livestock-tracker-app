@@ -443,7 +443,8 @@ export default function AnalyticsScreen() {
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#10b981" />
             <Text style={[styles.statValue, { color: colors.text }]}>{analytics.avgEggsPerDay7d.toFixed(1)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg/Day (7d)</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg/Day</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>7 day</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#3b82f6" />
