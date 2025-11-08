@@ -190,9 +190,9 @@ export default function LivestockScreen() {
                         <View style={styles.historyCardContent}>
                           <Text style={[styles.historyCardTitle, { color: colors.text }]}>{typeLabel}</Text>
                           <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
-                          {event.breed && (
+                          {event.breed ? (
                             <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{event.breed}</Text>
-                          )}
+                          ) : null}
                         </View>
                         <View style={styles.historyCardRight}>
                           <Text style={[styles.historyCardQuantityText, { color: iconColor }]}>
@@ -256,7 +256,9 @@ export default function LivestockScreen() {
                       <View style={styles.historyCardContent}>
                         <Text style={[styles.historyCardTitle, { color: colors.text }]}>{r.name || 'Rabbit'}</Text>
                         <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>Acquired {r.dateAcquired}</Text>
-                        <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{r.breed} • {r.gender === 'buck' ? 'Buck' : 'Doe'}</Text>
+                        {r.breed ? (
+                          <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{r.breed} • {r.gender === 'buck' ? 'Buck' : 'Doe'}</Text>
+                        ) : null}
                       </View>
                       <View style={styles.historyCardRight}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

@@ -292,8 +292,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   statCard: {
-    flex: 1,
-    minWidth: "48%",
+    width: "48%",
     padding: 12,
     borderRadius: 12,
   },
