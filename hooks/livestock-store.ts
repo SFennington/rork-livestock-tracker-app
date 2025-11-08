@@ -215,15 +215,31 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
   // Egg production operations
   const addEggProduction = useCallback(async (production: Omit<EggProduction, 'id'>) => {
-    const newProduction: EggProduction = { ...production, id: createId() };
     let updatedLocal: EggProduction[] = [];
     setEggProduction(prev => {
-      const filtered = prev.filter(e => e.date !== production.date);
-      updatedLocal = [...filtered, newProduction];
+      const existing = prev.find(e => e.date === production.date);
+      if (existing) {
+        updatedLocal = prev.map(e => 
+          e.date === production.date 
+            ? { 
+                ...e, 
+                count: production.count,
+                laid: production.laid ?? e.laid,
+                broken: production.broken ?? e.broken,
+                consumed: production.consumed ?? e.consumed,
+                notes: production.notes ?? e.notes,
+                sold: production.sold ?? e.sold,
+              } 
+            : e
+        );
+      } else {
+        const newProduction: EggProduction = { ...production, id: createId() };
+        updatedLocal = [...prev, newProduction];
+      }
       void storage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(updatedLocal));
       return updatedLocal;
     });
-    return newProduction;
+    return updatedLocal.find(e => e.date === production.date)!;
   }, []);
 
   const updateEggProduction = useCallback(async (id: string, updates: Partial<EggProduction>) => {

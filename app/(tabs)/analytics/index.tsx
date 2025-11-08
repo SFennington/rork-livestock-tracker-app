@@ -51,7 +51,7 @@ export default function AnalyticsScreen() {
       else seasonalEggs.winter += record.count;
       
       totalSold += record.sold || 0;
-      totalLaid += record.count;
+      totalLaid += record.laid || record.count;
       totalBroken += record.broken || 0;
       totalConsumed += record.consumed || 0;
     });
@@ -200,7 +200,7 @@ export default function AnalyticsScreen() {
   const perChickenContentWidth = Math.max(perChickenData.length, 30) * perChickenDayWidth;
   const perChickenHighlightWidth = Math.min(perChickenData.length, 30) * perChickenDayWidth;
   const perChickenHighlightX = yAxisWidth + chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
-  const perChickenLabelInterval = Math.max(1, Math.floor(perChickenData.length / 8));
+  const perChickenLabelInterval = Math.max(1, Math.floor(30 / 10));
   const perChickenGridInterval = Math.max(1, Math.floor(perChickenData.length / 12));
   const last30DaysPerChicken = perChickenData.slice(-30);
   const last30DayTotalPerChicken = last30DaysPerChicken.reduce((sum, day) => sum + day.perChicken, 0);
@@ -213,7 +213,7 @@ export default function AnalyticsScreen() {
   const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;
   const highlightWidth = Math.min(chartData.length, 30) * dayWidth;
   const highlightX = yAxisWidth + chartPadding + Math.max(0, chartContentWidth - highlightWidth);
-  const labelInterval = Math.max(1, Math.floor(chartData.length / 8));
+  const labelInterval = Math.max(1, Math.floor(30 / 10));
   const gridInterval = Math.max(1, Math.floor(chartData.length / 12));
   const last30DaysData = chartData.slice(-30);
   const last30DayTotal = last30DaysData.reduce((sum, day) => sum + day.total, 0);
@@ -468,7 +468,7 @@ export default function AnalyticsScreen() {
                         })}
                         {latestPointCoords && <Circle cx={latestPointCoords.x} cy={latestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
                         {chartData.map((day, index) => {
-                          if (index % labelInterval !== 0 && index !== chartData.length - 1) return null;
+                          if (index % 3 !== 0 && index !== chartData.length - 1) return null;
                           const x = yAxisWidth + chartPadding + index * dayWidth + dayWidth / 2;
                           const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
                           return (
@@ -607,7 +607,7 @@ export default function AnalyticsScreen() {
                         })}
                         {perChickenLatestPointCoords && <Circle cx={perChickenLatestPointCoords.x} cy={perChickenLatestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
                         {perChickenData.map((day, index) => {
-                          if (index % perChickenLabelInterval !== 0 && index !== perChickenData.length - 1) return null;
+                          if (index % 3 !== 0 && index !== perChickenData.length - 1) return null;
                           const x = yAxisWidth + chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
                           const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
                           return (

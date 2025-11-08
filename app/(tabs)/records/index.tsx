@@ -406,9 +406,15 @@ export default function RecordsScreen() {
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'date'} />
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'count'))} testID="eggs-sort-count">
-                        <Text style={styles.headText}>Count</Text>
+                        <Text style={styles.headText}>Laid</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'count'} />
                       </TouchableOpacity>
+                      <View style={[styles.cell, styles.cellXsm]}>
+                        <Text style={styles.headText}>Broken</Text>
+                      </View>
+                      <View style={[styles.cell, styles.cellXsm]}>
+                        <Text style={styles.headText}>Consumed</Text>
+                      </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setEggSort(prev => toggleSort(prev, 'notes'))} testID="eggs-sort-notes">
                         <Text style={styles.headText}>Notes</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'notes'} />
@@ -432,51 +438,17 @@ export default function RecordsScreen() {
                           <Text style={styles.bodyText}>{record.date}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
-                          {editingId === record.id && editingField === 'count' ? (
-                            <View style={styles.inlineEditContainer}>
-                              <TextInput testID={`egg-count-${record.id}`} style={styles.inlineInputSmall} keyboardType="numeric" value={eggForm?.count ?? String(record.count)} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), count: t }))} />
-                              <TouchableOpacity testID={`egg-save-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const payload = eggForm ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' };
-                                  const parsed = parseInt(payload.count, 10);
-                                  if (Number.isNaN(parsed)) {
-                                    Alert.alert('Invalid', 'Count must be a number');
-                                    return;
-                                  }
-                                  await updateEggProduction(record.id, { date: payload.date, count: parsed, notes: payload.notes?.trim() || undefined });
-                                  setEditingId(null);
-                                  setEditingField(null);
-                                  setEggForm(null);
-                                } catch (e) {
-                                  Alert.alert('Error', 'Failed to save egg record');
-                                  console.log('save egg error', e);
-                                }
-                              }}>
-                                <Text style={styles.inlineSaveText}>✓</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity testID={`egg-cancel-${record.id}`} style={styles.inlineCancelButton} onPress={(e) => {
-                                e.stopPropagation();
-                                setEditingId(null);
-                                setEditingField(null);
-                                setEggForm(null);
-                              }}>
-                                <Text style={styles.inlineCancelText}>✕</Text>
-                              </TouchableOpacity>
-                            </View>
-                          ) : (
-                            <TouchableOpacity onPress={(e) => {
-                              e.stopPropagation();
-                              setEditingId(record.id);
-                              setEditingField('count');
-                              setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '' });
-                            }}>
-                              <Text style={styles.bodyText}>{record.count}</Text>
-                            </TouchableOpacity>
-                          )}
+                          <Text style={styles.bodyText}>{record.laid ?? record.count}</Text>
+                        </View>
+                        <View style={[styles.cell, styles.cellXsm]}>
+                          <Text style={styles.bodyText}>{record.broken ?? 0}</Text>
+                        </View>
+                        <View style={[styles.cell, styles.cellXsm]}>
+                          <Text style={styles.bodyText}>{record.consumed ?? 0}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id && editingField === 'notes' ? (
+
                             <View style={styles.inlineEditContainer}>
                               <TextInput testID={`egg-notes-${record.id}`} style={styles.inlineInputSmall} value={eggForm?.notes ?? (record.notes ?? '')} onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), notes: t }))} placeholder="optional" />
                               <TouchableOpacity testID={`egg-save-notes-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
@@ -1209,6 +1181,10 @@ const styles = StyleSheet.create({
   cellXs: {
     width: 50,
     paddingHorizontal: 8,
+  },
+  cellXsm: {
+    minWidth: 70,
+    maxWidth: 80,
   },
   cellSm: {
     minWidth: 90,
