@@ -7,7 +7,7 @@ import Svg, { Polyline, Circle, Line as SvgLine, Rect, Text as SvgText } from "r
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 
 export default function AnalyticsScreen() {
-  const { eggProduction, expenses, income } = useLivestock();
+  const { eggProduction, expenses, income, getChickenCountOnDate } = useLivestock();
   const { colors } = useTheme();
   const [hiddenCharts, setHiddenCharts] = useState<Set<string>>(new Set());
 
@@ -132,6 +132,20 @@ export default function AnalyticsScreen() {
 
     const maxDailyEggs = dailyEggHistory.reduce((max, day) => Math.max(max, day.total), 0);
 
+    let eggsPerChickenHistory: { date: string; perChicken: number }[] = [];
+    if (dailyEggHistory.length > 0) {
+      eggsPerChickenHistory = dailyEggHistory.map(day => {
+        const chickenCount = getChickenCountOnDate(day.date);
+        const perChicken = chickenCount > 0 ? day.total / chickenCount : 0;
+        return {
+          date: day.date,
+          perChicken,
+        };
+      });
+    }
+
+    const maxEggsPerChicken = eggsPerChickenHistory.reduce((max, day) => Math.max(max, day.perChicken), 0);
+
     return {
       totalExpenses,
       totalIncome,
@@ -154,8 +168,14 @@ export default function AnalyticsScreen() {
       totalConsumed,
       dailyEggHistory,
       maxDailyEggs,
+      eggsPerChickenHistory,
+      maxEggsPerChicken,
     };
-  }, [eggProduction, expenses, income]);
+  }, [eggProduction, expenses, income, getChickenCountOnDate]);
+
+  const BASE_DAY_WIDTH = 32;
+  const MIN_ZOOM = 0.5;
+  const MAX_ZOOM = 3;
 
   const chartScrollRef = useRef<ScrollView | null>(null);
   const chartData = analytics.dailyEggHistory;
@@ -163,9 +183,20 @@ export default function AnalyticsScreen() {
   const chartHeight = 200;
   const chartPadding = 24;
 
-  const BASE_DAY_WIDTH = 32;
-  const MIN_ZOOM = 0.5;
-  const MAX_ZOOM = 3;
+  const perChickenScrollRef = useRef<ScrollView | null>(null);
+  const perChickenData = analytics.eggsPerChickenHistory;
+  const perChickenMaxValue = Math.max(analytics.maxEggsPerChicken, 1);
+  const [perChickenZoom, setPerChickenZoom] = useState(1);
+  const perChickenZoomAnchorRef = useRef(1);
+  const perChickenDayWidth = BASE_DAY_WIDTH * perChickenZoom;
+  const perChickenContentWidth = Math.max(perChickenData.length, 30) * perChickenDayWidth;
+  const perChickenHighlightWidth = Math.min(perChickenData.length, 30) * perChickenDayWidth;
+  const perChickenHighlightX = chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
+  const perChickenLabelInterval = Math.max(1, Math.floor(perChickenData.length / 8));
+  const perChickenGridInterval = Math.max(1, Math.floor(perChickenData.length / 12));
+  const last30DaysPerChicken = perChickenData.slice(-30);
+  const last30DayTotalPerChicken = last30DaysPerChicken.reduce((sum, day) => sum + day.perChicken, 0);
+  const last30DayAveragePerChicken = last30DaysPerChicken.length > 0 ? last30DayTotalPerChicken / last30DaysPerChicken.length : 0;
 
   const [zoomScale, setZoomScale] = useState(1);
   const zoomAnchorRef = useRef(1);
@@ -187,6 +218,14 @@ export default function AnalyticsScreen() {
     }, 0);
     return () => clearTimeout(timeout);
   }, [chartData.length]);
+
+  useEffect(() => {
+    if (perChickenData.length === 0) return;
+    const timeout = setTimeout(() => {
+      perChickenScrollRef.current?.scrollToEnd({ animated: false });
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [perChickenData.length]);
 
   const clampZoom = useCallback((value: number) => {
     return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
@@ -215,20 +254,43 @@ export default function AnalyticsScreen() {
     [zoomScale, clampZoom]
   );
 
+  const handlePerChickenPinchGesture = useCallback(
+    (event: any) => {
+      const { scale } = event.nativeEvent;
+      const nextScale = clampZoom(perChickenZoomAnchorRef.current * scale);
+      setPerChickenZoom(nextScale);
+    },
+    [clampZoom]
+  );
+
+  const handlePerChickenPinchStateChange = useCallback(
+    (event: any) => {
+      const { state, scale } = event.nativeEvent;
+      if (state === State.BEGAN) {
+        perChickenZoomAnchorRef.current = perChickenZoom;
+      }
+      if (state === State.END || state === State.CANCELLED || state === State.FAILED) {
+        perChickenZoomAnchorRef.current = clampZoom(perChickenZoomAnchorRef.current * scale);
+        setPerChickenZoom(perChickenZoomAnchorRef.current);
+      }
+    },
+    [perChickenZoom, clampZoom]
+  );
+
   const getPointCoordinates = useCallback(
-    (value: number, index: number) => {
-      const x = chartPadding + index * dayWidth + dayWidth / 2;
-      const normalized = chartMaxValue === 0 ? 0 : value / chartMaxValue;
+    (value: number, index: number, maxValue: number, width: number) => {
+      const x = chartPadding + index * width + width / 2;
+      const normalized = maxValue === 0 ? 0 : value / maxValue;
       const usableHeight = chartHeight - chartPadding * 2;
       const y = chartPadding + (1 - normalized) * usableHeight;
       return { x, y };
     },
-    [chartPadding, dayWidth, chartMaxValue, chartHeight]
+    [chartPadding, chartHeight]
   );
 
   const linePoints = chartData
     .map((day, index) => {
-      const { x, y } = getPointCoordinates(day.total, index);
+      const { x, y } = getPointCoordinates(day.total, index, chartMaxValue, dayWidth);
       return `${x},${y}`;
     })
     .join(" ");
@@ -237,7 +299,22 @@ export default function AnalyticsScreen() {
   const latestPointCoords = latestPoint
     ? (() => {
         const idx = chartData.length - 1;
-        return getPointCoordinates(latestPoint.total, idx);
+        return getPointCoordinates(latestPoint.total, idx, chartMaxValue, dayWidth);
+      })()
+    : null;
+
+  const perChickenLinePoints = perChickenData
+    .map((day, index) => {
+      const { x, y } = getPointCoordinates(day.perChicken, index, perChickenMaxValue, perChickenDayWidth);
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const perChickenLatestPoint = perChickenData.length > 0 ? perChickenData[perChickenData.length - 1] : null;
+  const perChickenLatestPointCoords = perChickenLatestPoint
+    ? (() => {
+        const idx = perChickenData.length - 1;
+        return getPointCoordinates(perChickenLatestPoint.perChicken, idx, perChickenMaxValue, perChickenDayWidth);
       })()
     : null;
 
@@ -339,7 +416,7 @@ export default function AnalyticsScreen() {
                         )}
                         {chartData.map((day, index) => {
                           if (index < chartData.length - 30) return null;
-                          const { x, y } = getPointCoordinates(day.total, index);
+                          const { x, y } = getPointCoordinates(day.total, index, chartMaxValue, dayWidth);
                           return <Circle key={`point-${day.date}`} cx={x} cy={y} r={3.5} fill={colors.surface} stroke={colors.primary} strokeWidth={2} />;
                         })}
                         {latestPointCoords && <Circle cx={latestPointCoords.x} cy={latestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
@@ -365,6 +442,101 @@ export default function AnalyticsScreen() {
                     <View style={styles.chartSummaryItem}>
                       <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Avg / day</Text>
                       <Text style={[styles.chartSummaryValue, { color: colors.text }]}>{last30DayAverage.toFixed(1)}</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+
+        <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.chartHeader}>
+            <Text style={[styles.chartTitle, { color: colors.text }]}>Eggs per Chicken</Text>
+            <TouchableOpacity onPress={() => toggleChart('perChicken')} style={styles.eyeButton}>
+              {hiddenCharts.has('perChicken') ? <Eye size={20} color={colors.textMuted} /> : <EyeOff size={20} color={colors.textMuted} />}
+            </TouchableOpacity>
+          </View>
+          {!hiddenCharts.has('perChicken') && (
+            <>
+              {perChickenData.length === 0 ? (
+                <View style={styles.chartEmptyState}>
+                  <Egg size={24} color={colors.textMuted} />
+                  <Text style={[styles.chartEmptyText, { color: colors.textMuted }]}>Log egg collections and chicken events to see per-chicken productivity.</Text>
+                </View>
+              ) : (
+                <View style={styles.lineChartContainer}>
+                  <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Pinch to zoom · last 30 days highlighted</Text>
+                  <PinchGestureHandler onGestureEvent={handlePerChickenPinchGesture} onHandlerStateChange={handlePerChickenPinchStateChange}>
+                    <ScrollView
+                      ref={perChickenScrollRef}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={[styles.chartScrollContent, { width: perChickenContentWidth + chartPadding * 2 }]}
+                    >
+                      <Svg width={perChickenContentWidth + chartPadding * 2} height={chartHeight}>
+                        {perChickenHighlightWidth > 0 && (
+                          <Rect
+                            x={perChickenHighlightX}
+                            y={chartPadding}
+                            width={perChickenHighlightWidth}
+                            height={chartHeight - chartPadding * 2}
+                            fill={colors.primary}
+                            opacity={0.08}
+                            rx={12}
+                          />
+                        )}
+                        {perChickenData.map((_, index) => {
+                          if (index % perChickenGridInterval !== 0) return null;
+                          const x = chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
+                          return (
+                            <SvgLine
+                              key={`grid-${index}`}
+                              x1={x}
+                              y1={chartPadding}
+                              x2={x}
+                              y2={chartHeight - chartPadding}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.15}
+                            />
+                          );
+                        })}
+                        <SvgLine
+                          x1={chartPadding}
+                          y1={chartHeight - chartPadding}
+                          x2={chartPadding + perChickenContentWidth}
+                          y2={chartHeight - chartPadding}
+                          stroke={colors.border}
+                          strokeWidth={1}
+                          opacity={0.3}
+                        />
+                        {perChickenLinePoints.length > 0 && (
+                          <Polyline points={perChickenLinePoints} fill="none" stroke={colors.primary} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
+                        )}
+                        {perChickenData.map((day, index) => {
+                          if (index < perChickenData.length - 30) return null;
+                          const { x, y } = getPointCoordinates(day.perChicken, index, perChickenMaxValue, perChickenDayWidth);
+                          return <Circle key={`point-${day.date}`} cx={x} cy={y} r={3.5} fill={colors.surface} stroke={colors.primary} strokeWidth={2} />;
+                        })}
+                        {perChickenLatestPointCoords && <Circle cx={perChickenLatestPointCoords.x} cy={perChickenLatestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
+                        {perChickenData.map((day, index) => {
+                          if (index % perChickenLabelInterval !== 0 && index !== perChickenData.length - 1) return null;
+                          const x = chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
+                          const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                          return (
+                            <SvgText key={`label-${day.date}`} x={x} y={chartHeight - chartPadding + 16} fill={colors.textMuted} fontSize={10} textAnchor="middle">
+                              {label}
+                            </SvgText>
+                          );
+                        })}
+                      </Svg>
+                    </ScrollView>
+                  </PinchGestureHandler>
+                  <View style={[styles.chartSummary, { borderTopColor: colors.border }]}>
+                    <View style={styles.chartSummaryItem}>
+                      <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Last 30 days avg</Text>
+                      <Text style={[styles.chartSummaryValue, { color: colors.text }]}>{last30DayAveragePerChicken.toFixed(2)}</Text>
                     </View>
                   </View>
                 </View>
