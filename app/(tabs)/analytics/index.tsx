@@ -379,6 +379,7 @@ export default function AnalyticsScreen() {
                     <ScrollView
                       ref={chartScrollRef}
                       horizontal
+                      scrollEnabled={true}
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={[styles.chartScrollContent, { width: yAxisWidth + chartContentWidth + chartPadding * 2 }]}
                     >
@@ -390,8 +391,9 @@ export default function AnalyticsScreen() {
                               key={`yaxis-${index}`}
                               x={yAxisWidth - 8}
                               y={y + 4}
-                              fill={colors.textMuted}
-                              fontSize={10}
+                              fill={colors.text}
+                              fontSize={11}
+                              fontWeight="600"
                               textAnchor="end"
                             >
                               {value}
@@ -518,6 +520,7 @@ export default function AnalyticsScreen() {
                     <ScrollView
                       ref={perChickenScrollRef}
                       horizontal
+                      scrollEnabled={true}
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={[styles.chartScrollContent, { width: yAxisWidth + perChickenContentWidth + chartPadding * 2 }]}
                     >
@@ -529,8 +532,9 @@ export default function AnalyticsScreen() {
                               key={`yaxis-${index}`}
                               x={yAxisWidth - 8}
                               y={y + 4}
-                              fill={colors.textMuted}
-                              fontSize={10}
+                              fill={colors.text}
+                              fontSize={11}
+                              fontWeight="600"
                               textAnchor="end"
                             >
                               {value}
