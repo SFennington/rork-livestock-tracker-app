@@ -14,6 +14,7 @@ export default function AnalyticsLayout() {
             backgroundColor: colors.primary,
           },
           headerTintColor: "#fff",
+          statusBarStyle: "light",
         }} 
       />
     </Stack>

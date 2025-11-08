@@ -3,14 +3,12 @@ import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
 import { TrendingUp, DollarSign, Egg, Eye, EyeOff } from "lucide-react-native";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Polyline, Circle, Line as SvgLine, Rect, Text as SvgText } from "react-native-svg";
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 
 export default function AnalyticsScreen() {
   const { eggProduction, expenses, income } = useLivestock();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const [hiddenCharts, setHiddenCharts] = useState<Set<string>>(new Set());
 
   const toggleChart = useCallback((chartId: string) => {
@@ -246,7 +244,7 @@ export default function AnalyticsScreen() {
   const maxSeasonalEggs = Math.max(...Object.values(analytics.seasonalEggs), 1);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Financial Overview</Text>
         <View style={[styles.roiCard, { backgroundColor: colors.primary }]}>
