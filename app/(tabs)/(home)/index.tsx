@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
-import { useLivestock, useRabbitBreeding, useRabbitHealth } from "@/hooks/livestock-store";
+import { useLivestock, useRabbitBreeding, useRabbitHealth, getLocalDateString } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
 import { Egg, Heart, DollarSign, TrendingUp, Plus, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Mic } from "lucide-react-native";
 import { router } from "expo-router";
@@ -14,7 +14,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
 
   const stats = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     console.log('Today date:', today);
     console.log('Egg production records:', eggProduction.map(e => ({ date: e.date, count: e.count, laid: e.laid })));
     const todayEggs = eggProduction.filter(e => e.date === today).reduce((sum, e) => sum + e.count, 0);
