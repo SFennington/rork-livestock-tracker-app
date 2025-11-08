@@ -437,8 +437,8 @@ export default function AnalyticsScreen() {
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Egg size={20} color="#f59e0b" />
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalEggs}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Eggs</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalLaid}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Laid</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#10b981" />
@@ -449,6 +449,17 @@ export default function AnalyticsScreen() {
             <TrendingUp size={20} color="#3b82f6" />
             <Text style={[styles.statValue, { color: colors.text }]}>{analytics.dozenPerWeek.toFixed(1)}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz / wk (4wk avg)</Text>
+          </View>
+        </View>
+
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalBroken}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Broken</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalConsumed}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Consumed</Text>
           </View>
         </View>
 

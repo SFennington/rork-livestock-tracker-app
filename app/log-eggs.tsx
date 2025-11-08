@@ -56,7 +56,7 @@ export default function LogEggsScreen() {
     else if (type === 'broken') newData.broken = quantity;
     else if (type === 'consumed') newData.consumed = quantity;
     
-    const totalCount = (newData.laid || 0) + (newData.broken || 0) + (newData.consumed || 0);
+    const totalCount = newData.laid || 0;
     console.log('Total count to save:', totalCount, 'newData:', newData);
 
     await addEggProduction({
