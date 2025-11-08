@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store";
 import { useLivestock } from "@/hooks/livestock-store";
 import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon } from "lucide-react-native";
-import * as FileSystem from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
