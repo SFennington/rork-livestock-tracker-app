@@ -174,7 +174,7 @@ export default function AnalyticsScreen() {
   }, [eggProduction, expenses, income, getChickenCountOnDate]);
 
   const BASE_DAY_WIDTH = 32;
-  const MIN_ZOOM = 0.5;
+  const MIN_ZOOM = 0.3;
   const MAX_ZOOM = 3;
 
   const chartScrollRef = useRef<ScrollView | null>(null);
@@ -182,16 +182,24 @@ export default function AnalyticsScreen() {
   const chartMaxValue = Math.max(analytics.maxDailyEggs, 1);
   const chartHeight = 200;
   const chartPadding = 24;
+  const yAxisWidth = 40;
+  const yAxisSteps = 5;
+  const yAxisValues = Array.from({ length: yAxisSteps + 1 }, (_, i) => {
+    return Math.round((chartMaxValue / yAxisSteps) * (yAxisSteps - i));
+  });
 
   const perChickenScrollRef = useRef<ScrollView | null>(null);
   const perChickenData = analytics.eggsPerChickenHistory;
   const perChickenMaxValue = Math.max(analytics.maxEggsPerChicken, 1);
+  const perChickenYAxisValues = Array.from({ length: yAxisSteps + 1 }, (_, i) => {
+    return ((perChickenMaxValue / yAxisSteps) * (yAxisSteps - i)).toFixed(2);
+  });
   const [perChickenZoom, setPerChickenZoom] = useState(1);
   const perChickenZoomAnchorRef = useRef(1);
   const perChickenDayWidth = BASE_DAY_WIDTH * perChickenZoom;
   const perChickenContentWidth = Math.max(perChickenData.length, 30) * perChickenDayWidth;
   const perChickenHighlightWidth = Math.min(perChickenData.length, 30) * perChickenDayWidth;
-  const perChickenHighlightX = chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
+  const perChickenHighlightX = yAxisWidth + chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
   const perChickenLabelInterval = Math.max(1, Math.floor(perChickenData.length / 8));
   const perChickenGridInterval = Math.max(1, Math.floor(perChickenData.length / 12));
   const last30DaysPerChicken = perChickenData.slice(-30);
@@ -204,7 +212,7 @@ export default function AnalyticsScreen() {
   const dayWidth = BASE_DAY_WIDTH * zoomScale;
   const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;
   const highlightWidth = Math.min(chartData.length, 30) * dayWidth;
-  const highlightX = chartPadding + Math.max(0, chartContentWidth - highlightWidth);
+  const highlightX = yAxisWidth + chartPadding + Math.max(0, chartContentWidth - highlightWidth);
   const labelInterval = Math.max(1, Math.floor(chartData.length / 8));
   const gridInterval = Math.max(1, Math.floor(chartData.length / 12));
   const last30DaysData = chartData.slice(-30);
@@ -279,13 +287,13 @@ export default function AnalyticsScreen() {
 
   const getPointCoordinates = useCallback(
     (value: number, index: number, maxValue: number, width: number) => {
-      const x = chartPadding + index * width + width / 2;
+      const x = yAxisWidth + chartPadding + index * width + width / 2;
       const normalized = maxValue === 0 ? 0 : value / maxValue;
       const usableHeight = chartHeight - chartPadding * 2;
       const y = chartPadding + (1 - normalized) * usableHeight;
       return { x, y };
     },
-    [chartPadding, chartHeight]
+    [chartPadding, chartHeight, yAxisWidth]
   );
 
   const linePoints = chartData
@@ -372,9 +380,33 @@ export default function AnalyticsScreen() {
                       ref={chartScrollRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.chartScrollContent, { width: chartContentWidth + chartPadding * 2 }]}
+                      contentContainerStyle={[styles.chartScrollContent, { width: yAxisWidth + chartContentWidth + chartPadding * 2 }]}
                     >
-                      <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
+                      <Svg width={yAxisWidth + chartContentWidth + chartPadding * 2} height={chartHeight}>
+                        {yAxisValues.map((value, index) => {
+                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
+                          return (
+                            <SvgText
+                              key={`yaxis-${index}`}
+                              x={yAxisWidth - 8}
+                              y={y + 4}
+                              fill={colors.textMuted}
+                              fontSize={10}
+                              textAnchor="end"
+                            >
+                              {value}
+                            </SvgText>
+                          );
+                        })}
+                        <SvgLine
+                          x1={yAxisWidth}
+                          y1={chartPadding}
+                          x2={yAxisWidth}
+                          y2={chartHeight - chartPadding}
+                          stroke={colors.border}
+                          strokeWidth={1}
+                          opacity={0.3}
+                        />
                         {highlightWidth > 0 && (
                           <Rect
                             x={highlightX}
@@ -386,9 +418,24 @@ export default function AnalyticsScreen() {
                             rx={12}
                           />
                         )}
+                        {yAxisValues.map((_, index) => {
+                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
+                          return (
+                            <SvgLine
+                              key={`ygrid-${index}`}
+                              x1={yAxisWidth}
+                              y1={y}
+                              x2={yAxisWidth + chartPadding + chartContentWidth}
+                              y2={y}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.1}
+                            />
+                          );
+                        })}
                         {chartData.map((_, index) => {
                           if (index % gridInterval !== 0) return null;
-                          const x = chartPadding + index * dayWidth + dayWidth / 2;
+                          const x = yAxisWidth + chartPadding + index * dayWidth + dayWidth / 2;
                           return (
                             <SvgLine
                               key={`grid-${index}`}
@@ -403,9 +450,9 @@ export default function AnalyticsScreen() {
                           );
                         })}
                         <SvgLine
-                          x1={chartPadding}
+                          x1={yAxisWidth + chartPadding}
                           y1={chartHeight - chartPadding}
-                          x2={chartPadding + chartContentWidth}
+                          x2={yAxisWidth + chartPadding + chartContentWidth}
                           y2={chartHeight - chartPadding}
                           stroke={colors.border}
                           strokeWidth={1}
@@ -422,7 +469,7 @@ export default function AnalyticsScreen() {
                         {latestPointCoords && <Circle cx={latestPointCoords.x} cy={latestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
                         {chartData.map((day, index) => {
                           if (index % labelInterval !== 0 && index !== chartData.length - 1) return null;
-                          const x = chartPadding + index * dayWidth + dayWidth / 2;
+                          const x = yAxisWidth + chartPadding + index * dayWidth + dayWidth / 2;
                           const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
                           return (
                             <SvgText key={`label-${day.date}`} x={x} y={chartHeight - chartPadding + 16} fill={colors.textMuted} fontSize={10} textAnchor="middle">
@@ -472,9 +519,33 @@ export default function AnalyticsScreen() {
                       ref={perChickenScrollRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.chartScrollContent, { width: perChickenContentWidth + chartPadding * 2 }]}
+                      contentContainerStyle={[styles.chartScrollContent, { width: yAxisWidth + perChickenContentWidth + chartPadding * 2 }]}
                     >
-                      <Svg width={perChickenContentWidth + chartPadding * 2} height={chartHeight}>
+                      <Svg width={yAxisWidth + perChickenContentWidth + chartPadding * 2} height={chartHeight}>
+                        {perChickenYAxisValues.map((value, index) => {
+                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
+                          return (
+                            <SvgText
+                              key={`yaxis-${index}`}
+                              x={yAxisWidth - 8}
+                              y={y + 4}
+                              fill={colors.textMuted}
+                              fontSize={10}
+                              textAnchor="end"
+                            >
+                              {value}
+                            </SvgText>
+                          );
+                        })}
+                        <SvgLine
+                          x1={yAxisWidth}
+                          y1={chartPadding}
+                          x2={yAxisWidth}
+                          y2={chartHeight - chartPadding}
+                          stroke={colors.border}
+                          strokeWidth={1}
+                          opacity={0.3}
+                        />
                         {perChickenHighlightWidth > 0 && (
                           <Rect
                             x={perChickenHighlightX}
@@ -486,9 +557,24 @@ export default function AnalyticsScreen() {
                             rx={12}
                           />
                         )}
+                        {perChickenYAxisValues.map((_, index) => {
+                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
+                          return (
+                            <SvgLine
+                              key={`ygrid-${index}`}
+                              x1={yAxisWidth}
+                              y1={y}
+                              x2={yAxisWidth + chartPadding + perChickenContentWidth}
+                              y2={y}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.1}
+                            />
+                          );
+                        })}
                         {perChickenData.map((_, index) => {
                           if (index % perChickenGridInterval !== 0) return null;
-                          const x = chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
+                          const x = yAxisWidth + chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
                           return (
                             <SvgLine
                               key={`grid-${index}`}
@@ -503,9 +589,9 @@ export default function AnalyticsScreen() {
                           );
                         })}
                         <SvgLine
-                          x1={chartPadding}
+                          x1={yAxisWidth + chartPadding}
                           y1={chartHeight - chartPadding}
-                          x2={chartPadding + perChickenContentWidth}
+                          x2={yAxisWidth + chartPadding + perChickenContentWidth}
                           y2={chartHeight - chartPadding}
                           stroke={colors.border}
                           strokeWidth={1}
@@ -522,7 +608,7 @@ export default function AnalyticsScreen() {
                         {perChickenLatestPointCoords && <Circle cx={perChickenLatestPointCoords.x} cy={perChickenLatestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
                         {perChickenData.map((day, index) => {
                           if (index % perChickenLabelInterval !== 0 && index !== perChickenData.length - 1) return null;
-                          const x = chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
+                          const x = yAxisWidth + chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
                           const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
                           return (
                             <SvgText key={`label-${day.date}`} x={x} y={chartHeight - chartPadding + 16} fill={colors.textMuted} fontSize={10} textAnchor="middle">
