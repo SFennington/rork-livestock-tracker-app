@@ -53,7 +53,7 @@ export default function AnalyticsScreen() {
       else seasonalEggs.winter += record.count;
       
       totalSold += record.sold || 0;
-      totalLaid += record.laid || 0;
+      totalLaid += record.count;
       totalBroken += record.broken || 0;
       totalConsumed += record.consumed || 0;
     });
@@ -448,7 +448,8 @@ export default function AnalyticsScreen() {
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#3b82f6" />
             <Text style={[styles.statValue, { color: colors.text }]}>{analytics.dozenPerWeek.toFixed(1)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz / wk (4wk avg)</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz/Wk</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>4 wk avg</Text>
           </View>
         </View>
 
