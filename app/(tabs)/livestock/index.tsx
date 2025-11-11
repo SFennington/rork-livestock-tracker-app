@@ -104,7 +104,26 @@ export default function LivestockScreen() {
 
       {/* Management header per animal */}
       <View style={styles.managementHeader}>
-        {activeTab === 'rabbits' && (
+        {activeTab === 'chickens' ? (
+          <View style={styles.managementActions}>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/log-eggs')}
+              testID="manage-chickens-log-eggs"
+            >
+              <Egg size={20} color={colors.accent} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Log Eggs</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => router.push('/chicken-history')}
+              testID="manage-chickens-history"
+            >
+              <Calendar size={20} color={colors.primary} />
+              <Text style={[styles.managementActionText, { color: colors.text }]}>Chicken History</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
           <View style={styles.managementActions}>
             <TouchableOpacity
               style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
