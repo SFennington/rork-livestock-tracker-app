@@ -81,16 +81,17 @@ export default function SettingsScreen() {
         Alert.alert('Success', 'Data exported successfully!');
       } else {
         const fileName = `livestock-backup-${new Date().toISOString().split('T')[0]}.json`;
-        const fileUri = FileSystem.documentDirectory + fileName;
-        await FileSystem.writeAsStringAsync(fileUri, jsonString);
-        console.log('File written to:', fileUri);
+        const directory = new FileSystem.Directory(FileSystem.Paths.document!);
+        const file = new FileSystem.File(directory, fileName);
+        await file.write(jsonString);
+        console.log('File written to:', file.uri);
         
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
-          await Sharing.shareAsync(fileUri);
+          await Sharing.shareAsync(file.uri);
           console.log('Mobile export completed');
         } else {
-          Alert.alert('Success', `Data saved to ${fileUri}`);
+          Alert.alert('Success', `Data saved to ${file.uri}`);
         }
       }
     } catch (error) {
@@ -141,7 +142,8 @@ export default function SettingsScreen() {
         }
 
         const fileUri = result.assets[0].uri;
-        jsonString = await FileSystem.readAsStringAsync(fileUri);
+        const file = new FileSystem.File(fileUri);
+        jsonString = await file.text();
       }
 
       console.log('File read, parsing JSON...');
@@ -313,16 +315,17 @@ export default function SettingsScreen() {
         console.log('Web template download completed');
         Alert.alert('Success', 'Template downloaded successfully!');
       } else {
-        const fileUri = FileSystem.documentDirectory + fileName;
-        await FileSystem.writeAsStringAsync(fileUri, csvContent);
-        console.log('File written to:', fileUri);
+        const directory = new FileSystem.Directory(FileSystem.Paths.document!);
+        const file = new FileSystem.File(directory, fileName);
+        await file.write(csvContent);
+        console.log('File written to:', file.uri);
         
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
-          await Sharing.shareAsync(fileUri);
+          await Sharing.shareAsync(file.uri);
           console.log('Mobile template download completed');
         } else {
-          Alert.alert('Success', `Template saved to ${fileUri}`);
+          Alert.alert('Success', `Template saved to ${file.uri}`);
         }
       }
     } catch (error) {
@@ -385,7 +388,8 @@ export default function SettingsScreen() {
 
         const fileUri = result.assets[0].uri;
         console.log('Reading file from:', fileUri);
-        csvString = await FileSystem.readAsStringAsync(fileUri);
+        const file = new FileSystem.File(fileUri);
+        csvString = await file.text();
         console.log('File read successfully, length:', csvString.length);
       }
 
