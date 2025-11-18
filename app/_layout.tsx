@@ -32,7 +32,7 @@ function RootLayoutNav() {
   
   return (
     <>
-      <StatusBar style="dark" backgroundColor={colors.background} />
+      <StatusBar style="light" />
       <Stack 
         screenOptions={{ 
           headerBackTitle: "Back",

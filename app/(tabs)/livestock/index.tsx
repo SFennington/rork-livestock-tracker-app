@@ -1,16 +1,14 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock, useRabbitBreeding, useRabbitHealth } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Egg, Syringe } from "lucide-react-native";
+import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function LivestockScreen() {
-  const { chickenHistory, rabbits, isLoading, getChickenCountOnDate } = useLivestock();
+  const { chickenHistory, rabbits, isLoading, getChickenCountOnDate, getRoostersAndHensCount } = useLivestock();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'rabbits'>('chickens');
-  const insets = useSafeAreaInsets();
   const { activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
 
@@ -18,9 +16,15 @@ export default function LivestockScreen() {
     return [...chickenHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [chickenHistory]);
 
+  const today = new Date().toISOString().split('T')[0];
+  
   const currentChickenCount = useMemo(() => {
-    return getChickenCountOnDate(new Date().toISOString().split('T')[0]);
-  }, [getChickenCountOnDate]);
+    return getChickenCountOnDate(today);
+  }, [getChickenCountOnDate, today]);
+
+  const { roosters, hens } = useMemo(() => {
+    return getRoostersAndHensCount(today);
+  }, [getRoostersAndHensCount, today]);
 
   const activeRabbitCount = useMemo(() => {
     const count = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
@@ -69,7 +73,7 @@ export default function LivestockScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10b981" />
         </View>
@@ -78,7 +82,7 @@ export default function LivestockScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.tabs, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'chickens' && styles.activeTab]}
@@ -103,27 +107,8 @@ export default function LivestockScreen() {
       </View>
 
       {/* Management header per animal */}
-      <View style={styles.managementHeader}>
-        {activeTab === 'chickens' ? (
-          <View style={styles.managementActions}>
-            <TouchableOpacity
-              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/log-eggs')}
-              testID="manage-chickens-log-eggs"
-            >
-              <Egg size={20} color={colors.accent} />
-              <Text style={[styles.managementActionText, { color: colors.text }]}>Log Eggs</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/chicken-history')}
-              testID="manage-chickens-history"
-            >
-              <Calendar size={20} color={colors.primary} />
-              <Text style={[styles.managementActionText, { color: colors.text }]}>Chicken History</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+      {activeTab === 'rabbits' && (
+        <View style={styles.managementHeader}>
           <View style={styles.managementActions}>
             <TouchableOpacity
               style={[styles.managementActionCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -160,8 +145,8 @@ export default function LivestockScreen() {
               <Text style={[styles.managementActionText, { color: colors.text }]}>Offspring Summary</Text>
             </TouchableOpacity>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         {activeTab === 'chickens' ? (
@@ -170,6 +155,16 @@ export default function LivestockScreen() {
               <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="chicken-count-card">
                 <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Chicken Count</Text>
                 <Text style={[styles.currentCountValue, { color: colors.primary }]}>{currentChickenCount}</Text>
+                <View style={styles.chickenTypeCounts}>
+                  <View style={styles.chickenTypeItem}>
+                    <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Roosters</Text>
+                    <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{roosters}</Text>
+                  </View>
+                  <View style={styles.chickenTypeItem}>
+                    <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Hens</Text>
+                    <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{hens}</Text>
+                  </View>
+                </View>
                 {chickenBreedBreakdown.length > 0 && (
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
                     {chickenBreedBreakdown.map(([breed, count]) => (
@@ -499,9 +494,28 @@ const styles = StyleSheet.create({
   breedName: {
     fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   breedCount: {
     fontSize: 16,
     fontWeight: "600" as const,
+  },
+  chickenTypeCounts: {
+    flexDirection: "row",
+    marginTop: 12,
+    gap: 16,
+    justifyContent: "center",
+  },
+  chickenTypeItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+  chickenTypeLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  chickenTypeValue: {
+    fontSize: 20,
+    fontWeight: "700" as const,
   },
 });

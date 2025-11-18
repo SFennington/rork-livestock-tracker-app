@@ -4,14 +4,12 @@ import { useTheme } from "@/hooks/theme-store";
 import { Egg, Heart, DollarSign, TrendingUp, Plus, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Mic } from "lucide-react-native";
 import { router } from "expo-router";
 import { useMemo } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount } = useLivestock();
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
 
   const stats = useMemo(() => {
     const today = getLocalDateString();
@@ -49,7 +47,7 @@ export default function DashboardScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.primary, paddingTop: insets.top }]}>
+      <View style={[styles.container, { backgroundColor: colors.primary }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.text} />
         </View>
@@ -58,7 +56,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={[styles.greeting, { color: colors.text }]}>Welcome back!</Text>
         <Text style={[styles.date, { color: colors.textSecondary }]}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
@@ -188,17 +186,21 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <View style={[styles.activityList, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {[...eggProduction].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3).map((egg) => (
-              <View key={egg.id} style={[styles.activityItem, { borderBottomColor: colors.border }]}>
-                <Egg size={20} color={colors.accent} />
-                <View style={styles.activityContent}>
-                  <Text style={[styles.activityText, { color: colors.text }]}>{egg.count} eggs collected</Text>
-                  <Text style={[styles.activityDate, { color: colors.textMuted }]}>
-                    {new Date(egg.date + 'T00:00:00').toLocaleDateString()}
-                  </Text>
+            {[...eggProduction].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3).map((egg) => {
+              const [year, month, day] = egg.date.split('-');
+              const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              return (
+                <View key={egg.id} style={[styles.activityItem, { borderBottomColor: colors.border }]}>
+                  <Egg size={20} color={colors.accent} />
+                  <View style={styles.activityContent}>
+                    <Text style={[styles.activityText, { color: colors.text }]}>{egg.count} eggs collected</Text>
+                    <Text style={[styles.activityDate, { color: colors.textMuted }]}>
+                      {displayDate.toLocaleDateString()}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
             {[...breedingRecords].sort((a, b) => new Date(b.breedingDate).getTime() - new Date(a.breedingDate).getTime()).slice(0, 2).map((breeding) => {
               const buck = rabbits.find(r => r.id === breeding.buckId);
               const doe = rabbits.find(r => r.id === breeding.doeId);
