@@ -86,6 +86,7 @@ export const CHICKEN_BREEDS = [
   'Vorwerk',
   'Welsummer',
   'Yokohama',
+  'Sapphire Gem',
   'Other',
 ];
 
