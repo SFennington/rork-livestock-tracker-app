@@ -110,8 +110,9 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Signing config will be provided by EAS Build
-            // signingConfig signingConfigs.debug
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
+            signingConfig signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
