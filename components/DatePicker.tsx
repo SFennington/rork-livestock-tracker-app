@@ -12,6 +12,7 @@ interface DatePickerProps {
 
 export default function DatePicker({ value, onChange, label, collapsible = false }: DatePickerProps) {
   const [isExpanded, setIsExpanded] = useState(!collapsible);
+  
   const parseDate = (dateStr: string) => {
     if (!dateStr) {
       const now = new Date();
@@ -108,52 +109,64 @@ export default function DatePicker({ value, onChange, label, collapsible = false
           </Text>
         </TouchableOpacity>
       ) : (
-      <View style={styles.calendar}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handlePrevMonth} style={styles.navButton}>
-            <ChevronLeft size={20} color="#6b7280" />
-          </TouchableOpacity>
-          <Text style={styles.monthYear}>
-            {months[displayMonth - 1]} {displayYear}
-          </Text>
-          <TouchableOpacity onPress={handleNextMonth} style={styles.navButton}>
-            <ChevronRight size={20} color="#6b7280" />
-          </TouchableOpacity>
+        <View style={styles.calendar}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handlePrevMonth} style={styles.navButton}>
+              <ChevronLeft size={20} color="#6b7280" />
+            </TouchableOpacity>
+            <Text style={styles.monthYear}>
+              {months[displayMonth - 1]} {displayYear}
+            </Text>
+            <TouchableOpacity onPress={handleNextMonth} style={styles.navButton}>
+              <ChevronRight size={20} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.weekdays}>
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <Text key={i} style={styles.weekday}>{day}</Text>
+            ))}
+          </View>
+
+          <View style={styles.days}>
+            {calendarDays.map((day, i) => {
+              if (day === null) {
+                return <View key={`empty-${i}`} style={styles.dayCell} />;
+              }
+
+              const dateStr = `${displayYear}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isSelected = dateStr === value;
+              const isToday = dateStr === todayStr;
+
+              return (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.dayCell}
+                  onPress={() => handleDayPress(day)}
+                >
+                  <View style={[
+                    styles.dayButton,
+                    isSelected && styles.dayButtonSelected,
+                    isToday && !isSelected && styles.dayButtonToday,
+                  ]}>
+                    <Text style={[
+                      styles.dayText,
+                      isSelected && styles.dayTextSelected,
+                      isToday && !isSelected && styles.dayTextToday,
+                    ]}>
+                      {day}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-
-        <View style={styles.weekdays}>
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-            <Text key={i} style={styles.weekday}>{day}</Text>
-          ))}
-        </View>
-
-        <View style={styles.days}>
-          {calendarDays.map((day, i) => {
-            if (day === null) {
-              return <View key={`empty-${i}`} style={styles.dayCell} />;
-            }
-
-            const dateStr = `${displayYear}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const isSelected = dateStr === value;
-            const isToday = dateStr === todayStr;
-
-            return (
-              <TouchableOpacity
-                key={i}
-                style={styles.dayCell}
-                onPress={() => handleDayPress(day)}
-              >
-                <View style={[
-                  styles.dayButton,
-                  isSelected && styles.dayButtonSelected,
-                  isToday && !isSelected && styles.dayButtonToday,
-                ]}>
-        </View>
-      </View>
       )}
     </View>
   );
-}                 ]}>
+}
+
 const styles = StyleSheet.create({
   container: {
     marginTop: 8,
@@ -179,18 +192,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500" as const,
     color: "#111827",
-  },
-}
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500" as const,
-    color: "#374151",
-    marginBottom: 8,
   },
   calendar: {
     backgroundColor: "#fff",
