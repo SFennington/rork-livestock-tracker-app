@@ -42,14 +42,14 @@ jobs:
         run: eas whoami
 
       - name: Create Google Service Account file
-        if: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY != '' && !inputs.skip_submit }}
+        if: ${{ !inputs.skip_submit }}
         run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' > google-play-service-account.json
 
       - name: Build Android app
         run: eas build --platform android --profile ${{ inputs.profile || 'production' }} --non-interactive --wait
 
       - name: Submit to Google Play Store
-        if: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY != '' && !inputs.skip_submit }}
+        if: ${{ !inputs.skip_submit }}
         run: eas submit --platform android --profile ${{ inputs.profile || 'production' }} --latest --non-interactive
 
       - name: Cleanup
