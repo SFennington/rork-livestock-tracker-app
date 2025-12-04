@@ -1,15 +1,18 @@
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInput } from "react-native";
 import { useState, useMemo } from "react";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function LogEggsScreen() {
   const { addEggProduction, eggProduction } = useLivestock();
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ date?: string }>();
   const [quantity, setQuantity] = useState<number | null>(null);
   const [quantityInput, setQuantityInput] = useState("");
   const [type, setType] = useState<'laid' | 'broken' | 'consumed'>('laid');
-  const [date, setDate] = useState(getLocalDateString());
+  const [date, setDate] = useState(params.date || getLocalDateString());
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -74,7 +77,7 @@ export default function LogEggsScreen() {
 
 
   return (
-    <View style={styles.backgroundContainer}>
+    <View style={[styles.backgroundContainer, { paddingBottom: insets.bottom }]}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           <Text style={styles.screenTitle}>Log Egg Record</Text>
@@ -182,7 +185,7 @@ export default function LogEggsScreen() {
             <DatePicker
               value={date}
               onChange={(value: string) => setDate(value)}
-              placeholder="Or pick a date"
+              collapsible={true}
             />
           </View>
 

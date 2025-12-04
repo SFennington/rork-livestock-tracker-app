@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/theme-store";
 import { Egg, Heart, DollarSign, TrendingUp, Plus, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Mic } from "lucide-react-native";
 import { router } from "expo-router";
 import { useMemo } from "react";
+import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
   const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount } = useLivestock();
@@ -101,6 +102,9 @@ export default function DashboardScreen() {
           )}
         </View>
       )}
+
+      {/* Egg Log Checker */}
+      <EggLogChecker />
 
       <View style={styles.quickActions}>
         <View style={[styles.actionButton, styles.disabledButton, { backgroundColor: colors.textMuted }]}>

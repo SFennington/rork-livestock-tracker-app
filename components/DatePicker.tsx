@@ -1,15 +1,17 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react-native";
 
 interface DatePickerProps {
   value: string;
   onChange: (date: string) => void;
   label?: string;
   placeholder?: string;
+  collapsible?: boolean;
 }
 
-export default function DatePicker({ value, onChange, label }: DatePickerProps) {
+export default function DatePicker({ value, onChange, label, collapsible = false }: DatePickerProps) {
+  const [isExpanded, setIsExpanded] = useState(!collapsible);
   const parseDate = (dateStr: string) => {
     if (!dateStr) {
       const now = new Date();
@@ -57,6 +59,20 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
   const handleDayPress = (day: number) => {
     const newDate = `${displayYear}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     onChange(newDate);
+    if (collapsible) {
+      setIsExpanded(false);
+    }
+  };
+
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return 'Select a date';
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   const handlePrevMonth = () => {
@@ -81,6 +97,17 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
       
+      {collapsible && !isExpanded ? (
+        <TouchableOpacity 
+          style={styles.collapsedField} 
+          onPress={() => setIsExpanded(true)}
+        >
+          <Calendar size={18} color="#6b7280" />
+          <Text style={styles.collapsedFieldText}>
+            {formatDisplayDate(value)}
+          </Text>
+        </TouchableOpacity>
+      ) : (
       <View style={styles.calendar}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handlePrevMonth} style={styles.navButton}>
@@ -121,21 +148,38 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
                   isSelected && styles.dayButtonSelected,
                   isToday && !isSelected && styles.dayButtonToday,
                 ]}>
-                  <Text style={[
-                    styles.dayText,
-                    isSelected && styles.dayTextSelected,
-                    isToday && !isSelected && styles.dayTextToday,
-                  ]}>
-                    {day}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
         </View>
       </View>
+      )}
     </View>
   );
+}                 ]}>
+const styles = StyleSheet.create({
+  container: {
+    marginTop: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500" as const,
+    color: "#374151",
+    marginBottom: 8,
+  },
+  collapsedField: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  collapsedFieldText: {
+    fontSize: 14,
+    fontWeight: "500" as const,
+    color: "#111827",
+  },
 }
 
 const styles = StyleSheet.create({

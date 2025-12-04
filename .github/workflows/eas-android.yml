@@ -2,6 +2,22 @@ name: EAS Android Build & Submit
 
 on:
   workflow_dispatch:
+    inputs:
+      track:
+        description: 'Google Play track (internal, alpha, beta, production)'
+        required: false
+        default: 'alpha'
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+      skip_submit:
+        description: 'Skip Google Play submission (build only)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build-and-submit:
@@ -9,12 +25,12 @@ jobs:
     permissions:
       contents: read
     env:
-      NODE_VERSION: "20"
-      PROJECT_DIR: "."                 # Expo project is at repo root
-      TRACK: "internal"                # internal | alpha | beta | production
+      NODE_VERSION: "22.20.0"
+      PROJECT_DIR: "."
+      TRACK: ${{ inputs.track || 'alpha' }}
       NPM_CONFIG_LEGACY_PEER_DEPS: "true"
       NPM_CONFIG_AUDIT: "false"
-      HAS_PLAY_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      HAS_PLAY_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
@@ -27,176 +43,51 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # Install deps (works with or without a lockfile)
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
       - name: Install dependencies
         working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f yarn.lock ]; then
-            corepack enable
-            yarn install --frozen-lockfile || yarn install
-          elif [ -f pnpm-lock.yaml ]; then
-            corepack enable
-            pnpm install --frozen-lockfile || pnpm install
-          else
-            if [ -f package-lock.json ]; then
-              npm ci --no-fund || npm i --no-fund
-            else
-              npm i --package-lock-only --no-fund
-              npm i --no-fund
-            fi
-          fi
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
-      # Ensure AJV v8 + ajv-keywords v5 (no overrides to avoid EOVERRIDE)
-      - name: Ensure AJV v8 stack
+      - name: Verify EAS authentication
         working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm uninstall ajv-keywords || true
-          npm i -D ajv@^8.12.0 ajv-keywords@^5.1.0 --no-fund
-          npm ls ajv || true
-          npm ls ajv-keywords || true
-
-      - name: Install EAS CLI
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: npm i -D eas-cli
-
-      # Normalize eas.json: pin CLI, set appVersionSource, ensure non-dev-client production
-      - name: Normalize EAS config
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f eas.json
-          node -e "const fs=require('fs');const p='eas.json';let o={};try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch(e){};o.cli=o.cli||{};if(!o.cli.version)o.cli.version='>= 3.20.0';if(!o.cli.appVersionSource)o.cli.appVersionSource='remote';o.build=o.build||{};o.build.production=o.build.production||{};o.build.production.android=Object.assign({buildType:'app-bundle'},o.build.production.android||{});o.build.production.android.developmentClient=false;fs.writeFileSync(p,JSON.stringify(o,null,2));console.log('eas.json normalized');"
-
-      # Ensure expo-dev-client exists to satisfy any dev-client checks gracefully
-      - name: Ensure expo-dev-client present
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: npm i -D expo-dev-client --no-fund || true
-
-      # Ensure app.json has owner & slug; inject EXPO_PROJECT_ID if provided (skips needing 'eas init')
-      - name: Ensure app.json owner/slug and (optionally) projectId
-        working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f app.json ]; then
-            node -e "
-              const fs=require('fs');
-              const cp=require('child_process');
-              const p='app.json';
-              let j={};
-              try{ j=JSON.parse(fs.readFileSync(p,'utf8')); }catch(e){}
-              j.expo=j.expo||{};
-              // slug fallback to package.json name or folder name
-              if(!j.expo.slug){
-                try{ const pkg=JSON.parse(fs.readFileSync('package.json','utf8')); j.expo.slug=(pkg.name||'app').replace(/[^a-z0-9-]/gi,'-').toLowerCase(); }catch(e){ j.expo.slug='app'; }
-              }
-              // owner from eas whoami
-              if(!j.expo.owner){
-                try{
-                  const out=cp.execSync('npx eas whoami --json',{stdio:['ignore','pipe','pipe']}).toString();
-                  const u=JSON.parse(out).username; if(u) j.expo.owner=u;
-                }catch(e){}
-              }
-              // inject projectId if provided as secret
-              const pid=process.env.EXPO_PROJECT_ID;
-              if(pid){
-                j.expo.extra=j.expo.extra||{};
-                j.expo.extra.eas=j.expo.extra.eas||{};
-                j.expo.extra.eas.projectId=pid;
-              }
-              fs.writeFileSync(p,JSON.stringify(j,null,2));
-              console.log('app.json updated');
-            "
-          else
-            echo "app.json not found"; exit 1
-          fi
-
-      # If no EXPO_PROJECT_ID was provided, try to link/create project automatically
-      - name: Configure EAS project (only if projectId missing)
-        if: ${{ env.EXPO_PROJECT_ID == '' }}
-        working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          NODE_ENV: production
-          APP_ENV: ci
-        run: |
-          # May still fail on some accounts; it's best to set EXPO_PROJECT_ID secret.
-          npx eas init --non-interactive || true
-          npx --yes expo@latest config --type public
-
-      - name: EAS login (verify)
-        working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas whoami || true
+        run: eas whoami
 
       - name: Build Android AAB
         working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          EXPO_DEBUG: "1"
-        run: npx eas build --platform android --profile production --non-interactive --wait
+        run: eas build --platform android --profile production --non-interactive --wait
 
-      - name: Show latest EAS build (always)
+      - name: Show latest build info
         if: always()
         working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas build:list --limit 1 || true
+        run: eas build:list --limit 1 || true
 
-      # NEW: Download the built AAB so we can attach it to the workflow
-      - name: Download latest Android AAB
+      - name: Create Google Play service account file
+        if: ${{ env.HAS_PLAY_KEY != '' && !inputs.skip_submit }}
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' > google-play-service-account.json
+
+      - name: Submit to Google Play Store
+        if: ${{ env.HAS_PLAY_KEY != '' && !inputs.skip_submit }}
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: eas submit --platform android --latest --non-interactive
+
+      - name: Cleanup service account file
         if: always()
         working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        shell: bash
+        run: rm -f google-play-service-account.json
+
+      - name: Build completed (submission skipped)
+        if: ${{ inputs.skip_submit || env.HAS_PLAY_KEY == '' }}
         run: |
-          set -euo pipefail
-          mkdir -p build-outputs
-          (cd build-outputs && npx eas build:download -p android --latest --non-interactive || true)
-          ls -la build-outputs || true
-
-      - name: Upload AAB artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-aab
-          path: build-outputs/*.aab
-          if-no-files-found: warn
-
-      - name: Write Play service account JSON (if provided)
-        if: ${{ env.HAS_PLAY_KEY != '' }}
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          printf "%s" "${HAS_PLAY_KEY}" > google-play-key.json
-          test -s google-play-key.json && echo "Key written."
-
-      # Make submit non-blocking so the job still succeeds
-      - name: Submit to Google Play (auto, non-blocking)
-        if: ${{ env.HAS_PLAY_KEY != '' }}
-        continue-on-error: true
-        working-directory: ${{ env.PROJECT_DIR }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas submit --platform android --latest --track "${{ env.TRACK }}" --key google-play-key.json --non-interactive
-
-      - name: Submission skipped note
-        if: ${{ env.HAS_PLAY_KEY == '' }}
-        run: echo "No PLAY_SERVICE_ACCOUNT_JSON secret; submission skipped. Use the 'android-aab' artifact from this run to upload in Play Console."
-
-      - name: Upload npm logs (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-debug-logs
-          path: /home/runner/.npm/_logs/
-          if-no-files-found: ignore
+          echo "✅ Build completed successfully!"
+          if [ "${{ inputs.skip_submit }}" = "true" ]; then
+            echo "Submission skipped (manual option selected)"
+          else
+            echo "Submission skipped (no GOOGLE_SERVICE_ACCOUNT_KEY secret configured)"
+            echo "Add the secret to enable automatic submission to Google Play"
+          fi
