@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.sfennington.livestocktracker",
-      "versionCode": 9,
+      "versionCode": 10,
       "permissions": [
         "RECORD_AUDIO",
         "READ_EXTERNAL_STORAGE",
