@@ -48,10 +48,14 @@ jobs:
 
       - name: Build Android app
         run: eas build --platform android --profile ${{ inputs.profile || 'production' }} --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Submit to Google Play Store
         if: ${{ !inputs.skip_submit }}
         run: eas submit --platform android --profile ${{ inputs.profile || 'production' }} --latest --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Cleanup
         if: always()
@@ -67,3 +71,5 @@ jobs:
           else
             echo "🚀 Submitted to Google Play Store"
           fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
