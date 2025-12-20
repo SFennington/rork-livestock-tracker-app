@@ -10,34 +10,26 @@ export default function EggLogChecker() {
   const { colors } = useTheme();
 
   const missingDays = useMemo(() => {
-    // Find the earliest date we have chickens
-    const sortedChickenEvents = [...chickenHistory].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    // Find first acquisition date
-    const firstAcquisition = sortedChickenEvents.find(e => e.type === 'acquired');
-    if (!firstAcquisition) return [];
-
-    const startDate = new Date(firstAcquisition.date);
+    if (!eggProduction.length) return [];
+    // Find the first day an egg was logged
+    const sortedEggs = [...eggProduction].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const firstEggDate = new Date(sortedEggs[0].date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const missing: string[] = [];
     const eggDates = new Set(eggProduction.map(e => e.date));
 
-    // Check each day from start to today
-    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+    // Only check for missing days after the first egg log
+    for (let d = new Date(firstEggDate); d <= today; d.setDate(d.getDate() + 1)) {
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      
       if (!eggDates.has(dateStr)) {
         missing.push(dateStr);
       }
     }
-
     // Return only the most recent missing days (up to 7)
     return missing.slice(-7);
-  }, [eggProduction, chickenHistory]);
+  }, [eggProduction]);
 
   if (missingDays.length === 0) {
     return null;
