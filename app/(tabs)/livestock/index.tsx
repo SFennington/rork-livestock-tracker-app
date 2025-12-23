@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/theme-store";
 import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
+import { getChickenBreedName } from "@/constants/breeds";
 
 export default function LivestockScreen() {
   const { chickenHistory, rabbits, isLoading, getChickenCountOnDate, getRoostersAndHensCount } = useLivestock();
@@ -169,7 +170,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.text }]}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]}>{getChickenBreedName(breed)}</Text>
                         <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                       </View>
                     ))}
@@ -205,7 +206,7 @@ export default function LivestockScreen() {
                           <Text style={[styles.historyCardTitle, { color: colors.text }]}>{typeLabel}</Text>
                           <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
                           {event.breed ? (
-                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{event.breed}</Text>
+                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{getChickenBreedName(event.breed)}</Text>
                           ) : null}
                         </View>
                         <View style={styles.historyCardRight}>
