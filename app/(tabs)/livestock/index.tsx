@@ -490,12 +490,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     gap: 12,
+    width: '100%',
   },
   breedName: {
     fontSize: 14,
     flex: 1,
     minWidth: 0,
     flexShrink: 1,
+    includeFontPadding: false,
   },
   breedCount: {
     fontSize: 16,
