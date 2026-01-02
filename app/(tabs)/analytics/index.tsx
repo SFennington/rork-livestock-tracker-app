@@ -146,6 +146,45 @@ export default function AnalyticsScreen() {
 
     const maxEggsPerChicken = eggsPerChickenHistory.reduce((max, day) => Math.max(max, day.perChicken), 0);
 
+    // Calculate eggs per chicken per month
+    const monthlyEggsPerChicken: { [monthKey: string]: { [year: string]: number } } = {};
+    const monthlyChickenCounts: { [monthKey: string]: { [year: string]: number } } = {};
+    
+    eggProduction.forEach(record => {
+      const date = new Date(record.date);
+      const year = date.getFullYear().toString();
+      const monthNum = date.getMonth() + 1;
+      const monthKey = String(monthNum).padStart(2, '0');
+      
+      const chickenCount = getChickenCountOnDate(record.date);
+      
+      if (!monthlyEggsPerChicken[monthKey]) {
+        monthlyEggsPerChicken[monthKey] = {};
+        monthlyChickenCounts[monthKey] = {};
+      }
+      
+      monthlyEggsPerChicken[monthKey][year] = (monthlyEggsPerChicken[monthKey][year] || 0) + record.count;
+      
+      // Track chicken count (we'll average it later)
+      if (!monthlyChickenCounts[monthKey][year]) {
+        monthlyChickenCounts[monthKey][year] = chickenCount;
+      }
+    });
+
+    // Calculate average eggs per chicken per month
+    let maxMonthlyEggsPerChicken = 1;
+    Object.keys(monthlyEggsPerChicken).forEach(month => {
+      Object.keys(monthlyEggsPerChicken[month]).forEach(year => {
+        const totalEggs = monthlyEggsPerChicken[month][year];
+        const avgChickens = monthlyChickenCounts[month][year];
+        const perChicken = avgChickens > 0 ? totalEggs / avgChickens : 0;
+        monthlyEggsPerChicken[month][year] = perChicken;
+        if (perChicken > maxMonthlyEggsPerChicken) {
+          maxMonthlyEggsPerChicken = perChicken;
+        }
+      });
+    });
+
     return {
       totalExpenses,
       totalIncome,
@@ -170,12 +209,15 @@ export default function AnalyticsScreen() {
       maxDailyEggs,
       eggsPerChickenHistory,
       maxEggsPerChicken,
+      monthlyEggsPerChicken,
+      maxMonthlyEggsPerChicken,
     };
   }, [eggProduction, expenses, income, getChickenCountOnDate]);
 
   const BASE_DAY_WIDTH = 32;
   const MIN_ZOOM = 0.3;
   const MAX_ZOOM = 3;
+  const VIEWPORT_WIDTH = 350; // Approximate chart width
 
   const chartScrollRef = useRef<ScrollView | null>(null);
   const chartData = analytics.dailyEggHistory;
@@ -194,8 +236,22 @@ export default function AnalyticsScreen() {
   const perChickenYAxisValues = Array.from({ length: yAxisSteps + 1 }, (_, i) => {
     return ((perChickenMaxValue / yAxisSteps) * (yAxisSteps - i)).toFixed(2);
   });
-  const [perChickenZoom, setPerChickenZoom] = useState(1);
-  const perChickenZoomAnchorRef = useRef(1);
+  const perChickenInitialZoom = useMemo(() => {
+    const days = Math.max(perChickenData.length, 30);
+    const requiredWidth = days * BASE_DAY_WIDTH;
+    if (requiredWidth > VIEWPORT_WIDTH) {
+      return Math.max(MIN_ZOOM, VIEWPORT_WIDTH / requiredWidth);
+    }
+    return 1;
+  }, [perChickenData.length]);
+
+  const [perChickenZoom, setPerChickenZoom] = useState(perChickenInitialZoom);
+  const perChickenZoomAnchorRef = useRef(perChickenInitialZoom);
+
+  useEffect(() => {
+    setPerChickenZoom(perChickenInitialZoom);
+    perChickenZoomAnchorRef.current = perChickenInitialZoom;
+  }, [perChickenInitialZoom]);
   const perChickenDayWidth = BASE_DAY_WIDTH * perChickenZoom;
   const perChickenContentWidth = Math.max(perChickenData.length, 30) * perChickenDayWidth;
   const perChickenHighlightWidth = Math.min(perChickenData.length, 30) * perChickenDayWidth;
@@ -206,8 +262,22 @@ export default function AnalyticsScreen() {
   const last30DayTotalPerChicken = last30DaysPerChicken.reduce((sum, day) => sum + day.perChicken, 0);
   const last30DayAveragePerChicken = last30DaysPerChicken.length > 0 ? last30DayTotalPerChicken / last30DaysPerChicken.length : 0;
 
-  const [zoomScale, setZoomScale] = useState(1);
-  const zoomAnchorRef = useRef(1);
+  const initialZoom = useMemo(() => {
+    const days = Math.max(chartData.length, 30);
+    const requiredWidth = days * BASE_DAY_WIDTH;
+    if (requiredWidth > VIEWPORT_WIDTH) {
+      return Math.max(MIN_ZOOM, VIEWPORT_WIDTH / requiredWidth);
+    }
+    return 1;
+  }, [chartData.length]);
+
+  const [zoomScale, setZoomScale] = useState(initialZoom);
+  const zoomAnchorRef = useRef(initialZoom);
+
+  useEffect(() => {
+    setZoomScale(initialZoom);
+    zoomAnchorRef.current = initialZoom;
+  }, [initialZoom]);
 
   const dayWidth = BASE_DAY_WIDTH * zoomScale;
   const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;

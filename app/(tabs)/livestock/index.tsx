@@ -169,7 +169,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.text }]}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{breed}</Text>
                         <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                       </View>
                     ))}
@@ -240,7 +240,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]} testID="rabbit-breed-breakdown">
                     {rabbitBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.text }]}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{breed}</Text>
                         <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                       </View>
                     ))}
@@ -495,10 +495,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     minWidth: 0,
+    flexShrink: 1,
   },
   breedCount: {
     fontSize: 16,
     fontWeight: "600" as const,
+    flexShrink: 0,
   },
   chickenTypeCounts: {
     flexDirection: "row",
