@@ -1,13 +1,14 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { AlertCircle, Calendar } from "lucide-react-native";
+import { AlertCircle, Calendar, X } from "lucide-react-native";
 import { router } from "expo-router";
 
 export default function EggLogChecker() {
   const { eggProduction, chickenHistory } = useLivestock();
   const { colors } = useTheme();
+  const [dismissedDates, setDismissedDates] = useState<Set<string>>(new Set());
 
   const missingDays = useMemo(() => {
     if (!eggProduction.length) return [];
@@ -26,13 +27,13 @@ export default function EggLogChecker() {
     
     for (let d = new Date(checkStartDate); d <= today; d.setDate(d.getDate() + 1)) {
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      if (!eggDates.has(dateStr)) {
+      if (!eggDates.has(dateStr) && !dismissedDates.has(dateStr)) {
         missing.push(dateStr);
       }
     }
     // Return only the most recent missing days (up to 7)
     return missing.slice(-7);
-  }, [eggProduction]);
+  }, [eggProduction, dismissedDates]);
 
   if (missingDays.length === 0) {
     return null;
@@ -64,6 +65,11 @@ export default function EggLogChecker() {
     });
   };
 
+  const handleDismiss = (dateStr: string, e: any) => {
+    e.stopPropagation();
+    setDismissedDates(prev => new Set([...prev, dateStr]));
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -86,6 +92,13 @@ export default function EggLogChecker() {
             <Text style={[styles.dateText, { color: colors.text }]}>
               {formatDate(date)}
             </Text>
+            <TouchableOpacity
+              onPress={(e) => handleDismiss(date, e)}
+              style={styles.dismissButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={14} color={colors.textMuted} />
+            </TouchableOpacity>
           </TouchableOpacity>
         ))}
       </View>
@@ -129,5 +142,9 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 13,
     fontWeight: "600" as const,
+  },
+  dismissButton: {
+    marginLeft: 4,
+    padding: 2,
   },
 });

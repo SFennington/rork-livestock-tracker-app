@@ -571,135 +571,67 @@ export default function AnalyticsScreen() {
 
         <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.chartHeader}>
-            <Text style={[styles.chartTitle, { color: colors.text }]}>Eggs per Chicken</Text>
+            <Text style={[styles.chartTitle, { color: colors.text }]}>Eggs per Chicken per Month</Text>
             <TouchableOpacity onPress={() => toggleChart('perChicken')} style={styles.eyeButton}>
               {hiddenCharts.has('perChicken') ? <Eye size={20} color={colors.textMuted} /> : <EyeOff size={20} color={colors.textMuted} />}
             </TouchableOpacity>
           </View>
           {!hiddenCharts.has('perChicken') && (
             <>
-              {perChickenData.length === 0 ? (
+              {Object.keys(analytics.monthlyEggsPerChicken).length === 0 ? (
                 <View style={styles.chartEmptyState}>
                   <Egg size={24} color={colors.textMuted} />
                   <Text style={[styles.chartEmptyText, { color: colors.textMuted }]}>Log egg collections and chicken events to see per-chicken productivity.</Text>
                 </View>
               ) : (
-                <View style={styles.lineChartContainer}>
-                  <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Pinch to zoom · last 30 days highlighted</Text>
-                  <PinchGestureHandler onGestureEvent={handlePerChickenPinchGesture} onHandlerStateChange={handlePerChickenPinchStateChange}>
-                    <ScrollView
-                      ref={perChickenScrollRef}
-                      horizontal
-                      scrollEnabled={true}
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.chartScrollContent, { width: yAxisWidth + perChickenContentWidth + chartPadding * 2 }]}
-                    >
-                      <Svg width={yAxisWidth + perChickenContentWidth + chartPadding * 2} height={chartHeight}>
-                        {perChickenYAxisValues.map((value, index) => {
-                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
-                          return (
-                            <SvgText
-                              key={`yaxis-${index}`}
-                              x={yAxisWidth - 8}
-                              y={y + 4}
-                              fill={colors.text}
-                              fontSize={11}
-                              fontWeight="600"
-                              textAnchor="end"
-                            >
-                              {value}
-                            </SvgText>
-                          );
-                        })}
-                        <SvgLine
-                          x1={yAxisWidth}
-                          y1={chartPadding}
-                          x2={yAxisWidth}
-                          y2={chartHeight - chartPadding}
-                          stroke={colors.border}
-                          strokeWidth={1}
-                          opacity={0.3}
-                        />
-                        {perChickenHighlightWidth > 0 && (
-                          <Rect
-                            x={perChickenHighlightX}
-                            y={chartPadding}
-                            width={perChickenHighlightWidth}
-                            height={chartHeight - chartPadding * 2}
-                            fill={colors.primary}
-                            opacity={0.08}
-                            rx={12}
-                          />
-                        )}
-                        {perChickenYAxisValues.map((_, index) => {
-                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
-                          return (
-                            <SvgLine
-                              key={`ygrid-${index}`}
-                              x1={yAxisWidth}
-                              y1={y}
-                              x2={yAxisWidth + chartPadding + perChickenContentWidth}
-                              y2={y}
-                              stroke={colors.border}
-                              strokeWidth={1}
-                              opacity={0.1}
-                            />
-                          );
-                        })}
-                        {perChickenData.map((_, index) => {
-                          if (index % perChickenGridInterval !== 0) return null;
-                          const x = yAxisWidth + chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
-                          return (
-                            <SvgLine
-                              key={`grid-${index}`}
-                              x1={x}
-                              y1={chartPadding}
-                              x2={x}
-                              y2={chartHeight - chartPadding}
-                              stroke={colors.border}
-                              strokeWidth={1}
-                              opacity={0.15}
-                            />
-                          );
-                        })}
-                        <SvgLine
-                          x1={yAxisWidth + chartPadding}
-                          y1={chartHeight - chartPadding}
-                          x2={yAxisWidth + chartPadding + perChickenContentWidth}
-                          y2={chartHeight - chartPadding}
-                          stroke={colors.border}
-                          strokeWidth={1}
-                          opacity={0.3}
-                        />
-                        {perChickenLinePoints.length > 0 && (
-                          <Polyline points={perChickenLinePoints} fill="none" stroke={colors.primary} strokeWidth={3} strokeLinejoin="round" strokeLinecap="round" />
-                        )}
-                        {perChickenData.map((day, index) => {
-                          if (index < perChickenData.length - 30) return null;
-                          const { x, y } = getPointCoordinates(day.perChicken, index, perChickenMaxValue, perChickenDayWidth);
-                          return <Circle key={`point-${day.date}`} cx={x} cy={y} r={3.5} fill={colors.surface} stroke={colors.primary} strokeWidth={2} />;
-                        })}
-                        {perChickenLatestPointCoords && <Circle cx={perChickenLatestPointCoords.x} cy={perChickenLatestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
-                        {perChickenData.map((day, index) => {
-                          if (index % 3 !== 0 && index !== perChickenData.length - 1) return null;
-                          const x = yAxisWidth + chartPadding + index * perChickenDayWidth + perChickenDayWidth / 2;
-                          const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                          return (
-                            <SvgText key={`label-${day.date}`} x={x} y={chartHeight - chartPadding + 16} fill={colors.textMuted} fontSize={10} textAnchor="middle">
-                              {label}
-                            </SvgText>
-                          );
-                        })}
-                      </Svg>
-                    </ScrollView>
-                  </PinchGestureHandler>
-                  <View style={[styles.chartSummary, { borderTopColor: colors.border }]}>
-                    <View style={styles.chartSummaryItem}>
-                      <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Last 30 days avg</Text>
-                      <Text style={[styles.chartSummaryValue, { color: colors.text }]}>{last30DayAveragePerChicken.toFixed(2)}</Text>
-                    </View>
+                <>
+                  <View style={styles.barChart}>
+                    {analytics.months.map((month) => {
+                      const yearData = analytics.monthlyEggsPerChicken[month] || {};
+
+                      return (
+                        <View key={month} style={styles.barContainer}>
+                          <View style={styles.barWrapper}>
+                            {analytics.sortedYears.map((year) => {
+                              const perChicken = yearData[year] || 0;
+                              if (perChicken === 0) return null;
+                              const barHeight = (perChicken / analytics.maxMonthlyEggsPerChicken) * 120;
+                              return (
+                                <View
+                                  key={year}
+                                  style={[
+                                    styles.bar,
+                                    {
+                                      height: Math.max(4, barHeight),
+                                      backgroundColor: analytics.yearColors[year],
+                                    },
+                                  ]}
+                                />
+                              );
+                            })}
+                          </View>
+                          <Text style={[styles.barLabel, { color: colors.textMuted }]}>
+                            {new Date(`2024-${month}-15`).toLocaleDateString('en', {
+                              month: 'short',
+                              timeZone: 'UTC',
+                            }).toUpperCase()}
+                          </Text>
+                        </View>
+                      );
+                    })}
                   </View>
-                </View>
+
+                  {analytics.sortedYears.length > 0 && (
+                    <View style={styles.legend}>
+                      {analytics.sortedYears.map((year) => (
+                        <View key={year} style={styles.legendItem}>
+                          <View style={[styles.legendColor, { backgroundColor: analytics.yearColors[year] }]} />
+                          <Text style={[styles.legendText, { color: colors.textMuted }]}>{year}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
             </>
           )}
