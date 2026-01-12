@@ -21,7 +21,10 @@ export default function EggLogChecker() {
     const eggDates = new Set(eggProduction.map(e => e.date));
 
     // Only check for missing days after the first egg log
-    for (let d = new Date(firstEggDate); d <= today; d.setDate(d.getDate() + 1)) {
+    const checkStartDate = new Date(firstEggDate);
+    checkStartDate.setDate(checkStartDate.getDate() + 1); // Start from day after first log
+    
+    for (let d = new Date(checkStartDate); d <= today; d.setDate(d.getDate() + 1)) {
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       if (!eggDates.has(dateStr)) {
         missing.push(dateStr);
