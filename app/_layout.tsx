@@ -129,7 +129,8 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThAppSettingsProvider>
+        <ThemeProvider>
+          <AppSettingsProvider>
             <BackupProvider>
               <LivestockProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
@@ -137,8 +138,7 @@ export default function RootLayout() {
                 </GestureHandlerRootView>
               </LivestockProvider>
             </BackupProvider>
-          </AppSettingsstockProvider>
-          </BackupProvider>
+          </AppSettingsProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
