@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LivestockProvider } from "@/hooks/livestock-store";
 import { ThemeProvider, useTheme } from "@/hooks/theme-store";
 import { BackupProvider } from "@/hooks/backup-store";
+import { AppSettingsProvider } from "@/hooks/app-settings-store";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from 'expo-system-ui';
@@ -58,6 +59,7 @@ function RootLayoutNav() {
       <Stack.Screen name="rabbit-health" options={{ title: "Rabbit Health" }} />
       <Stack.Screen name="rabbit-offspring-summary" options={{ title: "Offspring Summary" }} />
       <Stack.Screen name="rabbit-offspring/[id]" options={{ title: "Offspring Details" }} />
+      <Stack.Screen name="app-configuration" options={{ title: "App Configuration" }} />
       </Stack>
     </>
   );
@@ -127,13 +129,15 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <BackupProvider>
-            <LivestockProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
-                <RootLayoutNav />
-              </GestureHandlerRootView>
-            </LivestockProvider>
+        <ThAppSettingsProvider>
+            <BackupProvider>
+              <LivestockProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </LivestockProvider>
+            </BackupProvider>
+          </AppSettingsstockProvider>
           </BackupProvider>
         </ThemeProvider>
       </QueryClientProvider>

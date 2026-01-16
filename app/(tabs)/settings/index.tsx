@@ -4,11 +4,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
-import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock } from "lucide-react-native";
+import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 const PALETTE_NAMES: Record<ThemePalette, string> = {
   emerald: "Emerald Green",
@@ -825,6 +826,30 @@ export default function SettingsScreen() {
                 </View>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <SettingsIcon size={20} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>App Configuration</Text>
+          </View>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Customize categories, quick selects, and field options
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.dataButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/app-configuration')}
+          >
+            <SettingsIcon size={20} color="#fff" />
+            <Text style={styles.dataButtonText}>Configure App Fields</Text>
+          </TouchableOpacity>
+
+          <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 12 }]}>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              💡 Edit expense/income categories, quick select presets, and event types to match your farm's needs.
+            </Text>
           </View>
         </View>
 

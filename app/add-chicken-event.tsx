@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { Hash, FileText, DollarSign, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -10,8 +11,9 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function AddChickenEventScreen() {
   const { addChickenHistoryEvent } = useLivestock();
+  const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
-  const [eventType, setEventType] = useState<'acquired' | 'death' | 'sold' | 'consumed'>('acquired');
+  const [eventType, setEventType] = useState(settings.chickenEventTypes[0] || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [quantity, setQuantity] = useState("1");
   const [breed, setBreed] = useState("");
@@ -58,38 +60,20 @@ export default function AddChickenEventScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
             <View style={styles.eventTypeButtons}>
-              <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'acquired' && styles.eventTypeButtonActive]}
-                onPress={() => setEventType('acquired')}
-              >
-                <Text style={[styles.eventTypeButtonText, eventType === 'acquired' && styles.eventTypeButtonTextActive]}>
-                  Acquired
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'death' && styles.eventTypeButtonActive]}
-                onPress={() => setEventType('death')}
-              >
-                <Text style={[styles.eventTypeButtonText, eventType === 'death' && styles.eventTypeButtonTextActive]}>
-                  Death/Loss
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'sold' && styles.eventTypeButtonActive]}
-                onPress={() => setEventType('sold')}
-              >
-                <Text style={[styles.eventTypeButtonText, eventType === 'sold' && styles.eventTypeButtonTextActive]}>
-                  Sold
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'consumed' && styles.eventTypeButtonActive]}
-                onPress={() => setEventType('consumed')}
-              >
-                <Text style={[styles.eventTypeButtonText, eventType === 'consumed' && styles.eventTypeButtonTextActive]}>
-                  Consumed
-                </Text>
-              </TouchableOpacity>
+              {settings.chickenEventTypes.map((evtType) => {
+                const displayName = evtType === 'death' ? 'Death/Loss' : evtType.charAt(0).toUpperCase() + evtType.slice(1);
+                return (
+                  <TouchableOpacity
+                    key={evtType}
+                    style={[styles.eventTypeButton, eventType === evtType && styles.eventTypeButtonActive]}
+                    onPress={() => setEventType(evtType)}
+                  >
+                    <Text style={[styles.eventTypeButtonText, eventType === evtType && styles.eventTypeButtonTextActive]}>
+                      {displayName}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 

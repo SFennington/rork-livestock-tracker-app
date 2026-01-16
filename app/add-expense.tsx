@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, FileText, TrendingUp, TrendingDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -12,26 +13,19 @@ type IncomeType = 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other';
 
 export default function AddTransactionScreen() {
   const { addExpense, addIncome } = useLivestock();
+  const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
   const [transactionType, setTransactionType] = useState<TransactionType>('expense');
-  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>('feed');
-  const [incomeType, setIncomeType] = useState<IncomeType>('eggs');
+  const [expenseCategory, setExpenseCategory] = useState(settings.expenseCategories[0] || 'feed');
+  const [incomeType, setIncomeType] = useState(settings.incomeTypes[0] || 'eggs');
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'general'>('general');
   const [description, setDescription] = useState("");
 
   const quickSelectOptions = transactionType === 'expense' 
-    ? [
-        { label: 'Feed - $50', amount: '50', category: 'feed', description: 'Feed purchase' },
-        { label: 'Bedding - $30', amount: '30', category: 'bedding', description: 'Bedding material' },
-        { label: 'Medical - $75', amount: '75', category: 'medical', description: 'Medical supplies' },
-      ]
-    : [
-        { label: 'Egg Sales - $25', amount: '25', type: 'eggs', description: 'Egg sales' },
-        { label: 'Meat Sales - $100', amount: '100', type: 'meat', description: 'Meat sales' },
-        { label: 'Livestock Sales - $150', amount: '150', type: 'livestock', description: 'Livestock sales' },
-      ];
+    ? settings.expenseQuickSelects
+    : settings.incomeQuickSelects;
 
   const handleQuickSelect = (option: any) => {
     setAmount(option.amount);
@@ -127,7 +121,7 @@ export default function AddTransactionScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Category *</Text>
             <View style={styles.categoryGrid}>
-              {(['feed', 'bedding', 'medical', 'equipment', 'other'] as const).map((cat) => {
+              {settings.expenseCategories.map((cat) => {
                 const categoryName = cat.charAt(0).toUpperCase() + cat.slice(1);
                 return (
                   <TouchableOpacity
@@ -147,7 +141,7 @@ export default function AddTransactionScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Income Type *</Text>
             <View style={styles.categoryGrid}>
-              {(['eggs', 'meat', 'livestock', 'breeding', 'other'] as const).map((type) => {
+              {settings.incomeTypes.map((type) => {
                 const typeName = type.charAt(0).toUpperCase() + type.slice(1);
                 return (
                   <TouchableOpacity

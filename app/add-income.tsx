@@ -2,14 +2,16 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, FileText, Hash } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function AddIncomeScreen() {
   const { addIncome } = useLivestock();
+  const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
-  const [type, setType] = useState<'eggs' | 'meat' | 'livestock' | 'breeding' | 'other'>('eggs');
+  const [type, setType] = useState(settings.incomeTypes[0] || 'eggs');
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit'>('chicken');
@@ -51,7 +53,7 @@ export default function AddIncomeScreen() {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Income Type *</Text>
           <View style={styles.typeGrid}>
-            {(['eggs', 'meat', 'livestock', 'breeding', 'other'] as const).map((t) => {
+            {settings.incomeTypes.map((t) => {
               const typeName = t.charAt(0).toUpperCase() + t.slice(1);
               return (
                 <TouchableOpacity
