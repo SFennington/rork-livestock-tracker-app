@@ -7,9 +7,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Plus, Trash2, Edit3, RotateCcw } from "lucide-react-native";
 
 export default function AppConfigurationScreen() {
-  const { settings, updateExpenseCategories, updateIncomeTypes, updateChickenEventTypes, updateExpenseQuickSelects, updateIncomeQuickSelects, resetToDefaults } = useAppSettings();
+  const { settings, updateExpenseCategories, updateIncomeTypes, updateChickenEventTypes, updateExpenseQuickSelects, updateIncomeQuickSelects, updateEnabledAnimals, resetToDefaults } = useAppSettings();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+
+  // Enabled Animals
+  const [enabledAnimals, setEnabledAnimals] = useState(settings.enabledAnimals);
 
   // Expense Categories
   const [expenseCategories, setExpenseCategories] = useState(settings.expenseCategories);
@@ -167,6 +170,37 @@ export default function AppConfigurationScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Enabled Animals */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Enabled Animals</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
+            Control which animals appear in your dashboard and records
+          </Text>
+          <View style={styles.animalTogglesContainer}>
+            {Object.entries(enabledAnimals).map(([animal, enabled]) => (
+              <TouchableOpacity
+                key={animal}
+                style={[
+                  styles.animalToggle,
+                  {
+                    backgroundColor: enabled ? colors.primary : colors.card,
+                    borderColor: enabled ? colors.primary : colors.border,
+                  }
+                ]}
+                onPress={() => {
+                  const updated = { ...enabledAnimals, [animal]: !enabled };
+                  setEnabledAnimals(updated);
+                  updateEnabledAnimals(updated);
+                }}
+              >
+                <Text style={[styles.animalToggleText, { color: enabled ? '#fff' : colors.text }]}>
+                  {animal.charAt(0).toUpperCase() + animal.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Expense Categories */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Expense Categories</Text>
@@ -562,6 +596,23 @@ const styles = StyleSheet.create({
   resetButtonText: {
     color: "#fff",
     fontSize: 16,
+    fontWeight: "600" as const,
+  },
+  animalTogglesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  animalToggle: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    minWidth: 100,
+  },
+  animalToggleText: {
+    fontSize: 14,
     fontWeight: "600" as const,
   },
   bottomSpacing: {

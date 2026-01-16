@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock, useRabbitBreeding, useRabbitHealth, getLocalDateString } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { Egg, Heart, DollarSign, TrendingUp, Plus, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Mic } from "lucide-react-native";
 import { router } from "expo-router";
 import { useMemo } from "react";
@@ -11,6 +12,7 @@ export default function DashboardScreen() {
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
   const { colors } = useTheme();
+  const { settings } = useAppSettings();
 
   const stats = useMemo(() => {
     const today = getLocalDateString();
@@ -104,7 +106,7 @@ export default function DashboardScreen() {
       )}
 
       {/* Egg Log Checker */}
-      <EggLogChecker />
+      {settings.enabledAnimals.chickens && <EggLogChecker />}
 
       <View style={styles.quickActions}>
         <View style={[styles.actionButton, styles.disabledButton, { backgroundColor: colors.textMuted }]}>
@@ -130,25 +132,29 @@ export default function DashboardScreen() {
 
 
       <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: colors.accent }]}>
-          <View style={styles.statHeader}>
-            <Egg size={24} color="#fff" />
-            <Text style={styles.statValue}>{stats.todayEggs}</Text>
+        {settings.enabledAnimals.chickens && (
+          <View style={[styles.statCard, { backgroundColor: colors.accent }]}>
+            <View style={styles.statHeader}>
+              <Egg size={24} color="#fff" />
+              <Text style={styles.statValue}>{stats.todayEggs}</Text>
+            </View>
+            <Text style={styles.statLabel}>Eggs Today</Text>
+            <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day</Text>
           </View>
-          <Text style={styles.statLabel}>Eggs Today</Text>
-          <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day</Text>
-        </View>
+        )}
 
-        <TouchableOpacity testID="stat-active-breedings" style={[styles.statCard, { backgroundColor: colors.secondary }]} onPress={() => router.push('/breeding-calendar')}>
-          <View style={styles.statHeader}>
-            <Heart size={24} color="#fff" />
-            <Text style={styles.statValue}>{activeBreedings.length}</Text>
-          </View>
-          <Text style={styles.statLabel}>Active Breedings</Text>
-          <Text style={styles.statSubtext}>
-            {upcomingKindlings.length > 0 ? `${upcomingKindlings.length} due soon` : 'In progress'}
-          </Text>
-        </TouchableOpacity>
+        {settings.enabledAnimals.rabbits && (
+          <TouchableOpacity testID="stat-active-breedings" style={[styles.statCard, { backgroundColor: colors.secondary }]} onPress={() => router.push('/breeding-calendar')}>
+            <View style={styles.statHeader}>
+              <Heart size={24} color="#fff" />
+              <Text style={styles.statValue}>{activeBreedings.length}</Text>
+            </View>
+            <Text style={styles.statLabel}>Active Breedings</Text>
+            <Text style={styles.statSubtext}>
+              {upcomingKindlings.length > 0 ? `${upcomingKindlings.length} due soon` : 'In progress'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={[styles.statCard, { backgroundColor: colors.primary }]}>
           <View style={styles.statHeader}>
@@ -165,14 +171,20 @@ export default function DashboardScreen() {
           <View style={styles.statHeader}>
             <Bird size={24} color={colors.text} />
             <Text style={[styles.statValue, { color: colors.text }]}>
-              {stats.activeChickens + stats.activeRabbits}
+              {(settings.enabledAnimals.chickens ? stats.activeChickens : 0) + (settings.enabledAnimals.rabbits ? stats.activeRabbits : 0)}
             </Text>
           </View>
           <Text style={[styles.statLabel, { color: colors.text }]}>Total Livestock</Text>
           <Text style={[styles.statSubtext, { color: colors.textMuted }]}>
-            {stats.activeChickens} chickens, {stats.activeRabbits} rabbits
+            {settings.enabledAnimals.chickens && settings.enabledAnimals.rabbits 
+              ? `${stats.activeChickens} chickens, ${stats.activeRabbits} rabbits`
+              : settings.enabledAnimals.chickens
+              ? `${stats.activeChickens} chickens`
+              : settings.enabledAnimals.rabbits
+              ? `${stats.activeRabbits} rabbits`
+              : '0 animals'}
           </Text>
-          {stats.roosters > 0 || stats.hens > 0 ? (
+          {settings.enabledAnimals.chickens && (stats.roosters > 0 || stats.hens > 0) ? (
             <Text style={[styles.statSubtext, { color: colors.textMuted, marginTop: 4 }]}>
               {stats.roosters} roosters, {stats.hens} hens
             </Text>

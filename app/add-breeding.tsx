@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
-import { FileText } from "lucide-react-native";
+import { FileText, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
@@ -13,6 +13,7 @@ export default function AddBreedingScreen() {
   const [selectedDoe, setSelectedDoe] = useState("");
   const [breedingDate, setBreedingDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const bucks = rabbits.filter(r => r.gender === 'buck' && r.status === 'active');
   const does = rabbits.filter(r => r.gender === 'doe' && r.status === 'active');
@@ -121,11 +122,26 @@ export default function AddBreedingScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <DatePicker
-            label="Breeding Date *"
-            value={breedingDate}
-            onChange={setBreedingDate}
-          />
+          <Text style={styles.label}>Breeding Date *</Text>
+          
+          <TouchableOpacity 
+            style={styles.calendarToggle}
+            onPress={() => setShowCalendar(!showCalendar)}
+          >
+            <Text style={styles.calendarToggleText}>
+              {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
+            </Text>
+            <ChevronDown size={16} color="#6b7280" style={[showCalendar && { transform: [{ rotate: '180deg' }] }]} />
+          </TouchableOpacity>
+
+          {showCalendar && (
+            <DatePicker
+              label=""
+              value={breedingDate}
+              onChange={setBreedingDate}
+            />
+          )}
+          
           <Text style={styles.helperText}>
             Expected kindling: {calculateExpectedKindling(breedingDate)} (31 days)
           </Text>
@@ -292,5 +308,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "#374151",
+  },
+  calendarToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  calendarToggleText: {
+    fontSize: 13,
+    color: "#6b7280",
   },
 });

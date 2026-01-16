@@ -542,7 +542,8 @@ export default function AnalyticsScreen() {
                         {chartData.map((day, index) => {
                           if (index % 3 !== 0 && index !== chartData.length - 1) return null;
                           const x = yAxisWidth + chartPadding + index * dayWidth + dayWidth / 2;
-                          const label = new Date(day.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                          const date = new Date(day.date + "T00:00:00");
+                          const label = `${date.getMonth() + 1}/${date.getDate()}`;
                           return (
                             <SvgText key={`label-${day.date}`} x={x} y={chartHeight - chartPadding + 16} fill={colors.textMuted} fontSize={10} textAnchor="middle">
                               {label}
@@ -611,10 +612,7 @@ export default function AnalyticsScreen() {
                             })}
                           </View>
                           <Text style={[styles.barLabel, { color: colors.textMuted }]}>
-                            {new Date(`2024-${month}-15`).toLocaleDateString('en', {
-                              month: 'short',
-                              timeZone: 'UTC',
-                            }).toUpperCase()}
+                            {month}
                           </Text>
                         </View>
                       );
@@ -672,10 +670,7 @@ export default function AnalyticsScreen() {
                         })}
                       </View>
                       <Text style={[styles.barLabel, { color: colors.textMuted }]}>
-                        {new Date(`2024-${month}-15`).toLocaleDateString('en', {
-                          month: 'short',
-                          timeZone: 'UTC',
-                        }).toUpperCase()}
+                        {month}
                       </Text>
                     </View>
                   );

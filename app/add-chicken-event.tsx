@@ -3,7 +3,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
-import { Hash, FileText, DollarSign, User } from "lucide-react-native";
+import { Hash, FileText, DollarSign, User, Calendar, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
@@ -20,6 +20,13 @@ export default function AddChickenEventScreen() {
   const [cost, setCost] = useState("");
   const [sex, setSex] = useState<'M' | 'F' | ''>('');
   const [notes, setNotes] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const getDateString = (daysAgo: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date.toISOString().split('T')[0];
+  };
 
   const handleSave = async () => {
     if (!date || !quantity) {
@@ -78,11 +85,55 @@ export default function AddChickenEventScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <DatePicker
-              label="Date *"
-              value={date}
-              onChange={setDate}
-            />
+            <View style={styles.labelRow}>
+              <Calendar size={16} color="#6b7280" />
+              <Text style={styles.label}>Date *</Text>
+            </View>
+            
+            <View style={styles.quickDateButtons}>
+              <TouchableOpacity 
+                style={[styles.quickDateButton, date === getDateString(0) && styles.quickDateButtonActive]}
+                onPress={() => setDate(getDateString(0))}
+              >
+                <Text style={[styles.quickDateText, date === getDateString(0) && styles.quickDateTextActive]}>
+                  Today
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.quickDateButton, date === getDateString(1) && styles.quickDateButtonActive]}
+                onPress={() => setDate(getDateString(1))}
+              >
+                <Text style={[styles.quickDateText, date === getDateString(1) && styles.quickDateTextActive]}>
+                  Yesterday
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.quickDateButton, date === getDateString(2) && styles.quickDateButtonActive]}
+                onPress={() => setDate(getDateString(2))}
+              >
+                <Text style={[styles.quickDateText, date === getDateString(2) && styles.quickDateTextActive]}>
+                  2 Days Ago
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.calendarToggle}
+              onPress={() => setShowCalendar(!showCalendar)}
+            >
+              <Text style={styles.calendarToggleText}>
+                {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
+              </Text>
+              <ChevronDown size={16} color="#6b7280" style={[showCalendar && { transform: [{ rotate: '180deg' }] }]} />
+            </TouchableOpacity>
+
+            {showCalendar && (
+              <DatePicker
+                label=""
+                value={date}
+                onChange={setDate}
+              />
+            )}
           </View>
 
           <View style={styles.inputGroup}>
@@ -305,5 +356,44 @@ const styles = StyleSheet.create({
   },
   sexButtonTextActive: {
     color: "#fff",
+  },
+  quickDateButtons: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  quickDateButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    alignItems: "center",
+  },
+  quickDateButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  quickDateText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  quickDateTextActive: {
+    color: "#fff",
+  },
+  calendarToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  calendarToggleText: {
+    fontSize: 13,
+    color: "#6b7280",
   },
 });

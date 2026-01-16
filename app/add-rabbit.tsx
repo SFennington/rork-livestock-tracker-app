@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
-import { DollarSign, Weight, Hash, FileText, Award, Heart } from "lucide-react-native";
+import { DollarSign, Weight, Hash, FileText, Award, Heart, Calendar, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
@@ -27,6 +27,14 @@ export default function AddRabbitScreen() {
   const [temperament, setTemperament] = useState<'calm' | 'active' | 'aggressive' | 'shy'>('calm');
   const [feedingNotes, setFeedingNotes] = useState("");
   const [notes, setNotes] = useState("");
+  const [showBirthCalendar, setShowBirthCalendar] = useState(false);
+  const [showAcquiredCalendar, setShowAcquiredCalendar] = useState(false);
+
+  const getDateString = (daysAgo: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date.toISOString().split('T')[0];
+  };
 
   const handleSave = async () => {
     if (!name || !breed || !dateOfBirth || !dateAcquired || !cost || !quantity) {
@@ -108,19 +116,107 @@ export default function AddRabbitScreen() {
         </View>
 
         <View style={styles.inputGroup}>
-          <DatePicker
-            label="Date of Birth *"
-            value={dateOfBirth}
-            onChange={setDateOfBirth}
-          />
+          <View style={styles.labelRow}>
+            <Calendar size={16} color="#6b7280" />
+            <Text style={styles.label}>Date of Birth *</Text>
+          </View>
+          
+          <View style={styles.quickDateButtons}>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateOfBirth === getDateString(0) && styles.quickDateButtonActive]}
+              onPress={() => setDateOfBirth(getDateString(0))}
+            >
+              <Text style={[styles.quickDateText, dateOfBirth === getDateString(0) && styles.quickDateTextActive]}>
+                Today
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateOfBirth === getDateString(1) && styles.quickDateButtonActive]}
+              onPress={() => setDateOfBirth(getDateString(1))}
+            >
+              <Text style={[styles.quickDateText, dateOfBirth === getDateString(1) && styles.quickDateTextActive]}>
+                Yesterday
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateOfBirth === getDateString(2) && styles.quickDateButtonActive]}
+              onPress={() => setDateOfBirth(getDateString(2))}
+            >
+              <Text style={[styles.quickDateText, dateOfBirth === getDateString(2) && styles.quickDateTextActive]}>
+                2 Days Ago
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.calendarToggle}
+            onPress={() => setShowBirthCalendar(!showBirthCalendar)}
+          >
+            <Text style={styles.calendarToggleText}>
+              {showBirthCalendar ? 'Hide Calendar' : 'Show Calendar'}
+            </Text>
+            <ChevronDown size={16} color="#6b7280" style={[showBirthCalendar && { transform: [{ rotate: '180deg' }] }]} />
+          </TouchableOpacity>
+
+          {showBirthCalendar && (
+            <DatePicker
+              label=""
+              value={dateOfBirth}
+              onChange={setDateOfBirth}
+            />
+          )}
         </View>
 
         <View style={styles.inputGroup}>
-          <DatePicker
-            label="Date Acquired *"
-            value={dateAcquired}
-            onChange={setDateAcquired}
-          />
+          <View style={styles.labelRow}>
+            <Calendar size={16} color="#6b7280" />
+            <Text style={styles.label}>Date Acquired *</Text>
+          </View>
+          
+          <View style={styles.quickDateButtons}>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateAcquired === getDateString(0) && styles.quickDateButtonActive]}
+              onPress={() => setDateAcquired(getDateString(0))}
+            >
+              <Text style={[styles.quickDateText, dateAcquired === getDateString(0) && styles.quickDateTextActive]}>
+                Today
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateAcquired === getDateString(1) && styles.quickDateButtonActive]}
+              onPress={() => setDateAcquired(getDateString(1))}
+            >
+              <Text style={[styles.quickDateText, dateAcquired === getDateString(1) && styles.quickDateTextActive]}>
+                Yesterday
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateAcquired === getDateString(2) && styles.quickDateButtonActive]}
+              onPress={() => setDateAcquired(getDateString(2))}
+            >
+              <Text style={[styles.quickDateText, dateAcquired === getDateString(2) && styles.quickDateTextActive]}>
+                2 Days Ago
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.calendarToggle}
+            onPress={() => setShowAcquiredCalendar(!showAcquiredCalendar)}
+          >
+            <Text style={styles.calendarToggleText}>
+              {showAcquiredCalendar ? 'Hide Calendar' : 'Show Calendar'}
+            </Text>
+            <ChevronDown size={16} color="#6b7280" style={[showAcquiredCalendar && { transform: [{ rotate: '180deg' }] }]} />
+          </TouchableOpacity>
+
+          {showAcquiredCalendar && (
+            <DatePicker
+              label=""
+              value={dateAcquired}
+              onChange={setDateAcquired}
+            />
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -482,5 +578,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  quickDateButtons: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  quickDateButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    alignItems: "center",
+  },
+  quickDateButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  quickDateText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  quickDateTextActive: {
+    color: "#fff",
+  },
+  calendarToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  calendarToggleText: {
+    fontSize: 13,
+    color: "#6b7280",
   },
 });

@@ -16,6 +16,12 @@ export interface AppSettings {
   chickenEventTypes: string[];
   expenseQuickSelects: QuickSelectOption[];
   incomeQuickSelects: QuickSelectOption[];
+  enabledAnimals: {
+    chickens: boolean;
+    rabbits: boolean;
+    goats: boolean;
+    ducks: boolean;
+  };
 }
 
 const STORAGE_KEY = 'app_settings';
@@ -34,6 +40,12 @@ const defaultSettings: AppSettings = {
     { label: 'Meat Sales - $100', amount: '100', type: 'meat', description: 'Meat sales' },
     { label: 'Livestock Sales - $150', amount: '150', type: 'livestock', description: 'Livestock sales' },
   ],
+  enabledAnimals: {
+    chickens: true,
+    rabbits: true,
+    goats: false,
+    ducks: false,
+  },
 };
 
 export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
@@ -92,6 +104,10 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     await saveSettings({ ...settings, incomeQuickSelects: quickSelects });
   }, [settings, saveSettings]);
 
+  const updateEnabledAnimals = useCallback(async (enabledAnimals: AppSettings['enabledAnimals']) => {
+    await saveSettings({ ...settings, enabledAnimals });
+  }, [settings, saveSettings]);
+
   const resetToDefaults = useCallback(async () => {
     await saveSettings(defaultSettings);
   }, [saveSettings]);
@@ -100,6 +116,7 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     settings,
     isLoading,
     updateExpenseCategories,
+    updateEnabledAnimals,
     updateIncomeTypes,
     updateChickenEventTypes,
     updateExpenseQuickSelects,

@@ -487,22 +487,16 @@ const styles = StyleSheet.create({
   },
   breedItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     gap: 12,
-    width: '100%',
   },
   breedName: {
     fontSize: 14,
-    flex: 1,
-    minWidth: 0,
-    flexShrink: 1,
     includeFontPadding: false,
   },
   breedCount: {
     fontSize: 16,
     fontWeight: "600" as const,
-    flexShrink: 0,
   },
   chickenTypeCounts: {
     flexDirection: "row",
