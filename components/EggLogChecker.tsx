@@ -13,10 +13,11 @@ export default function EggLogChecker() {
   const missingDays = useMemo(() => {
     if (!eggProduction.length) return [];
     // Find the first day an egg was logged
-    const sortedEggs = [...eggProduction].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const firstEggDate = new Date(sortedEggs[0].date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const sortedEggs = [...eggProduction].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
+    const firstEggDate = new Date(sortedEggs[0].date + 'T00:00:00');
+    
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const missing: string[] = [];
     const eggDates = new Set(eggProduction.map(e => e.date));
@@ -41,13 +42,12 @@ export default function EggLogChecker() {
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const dateOnly = new Date(date);
-    dateOnly.setHours(0, 0, 0, 0);
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     if (dateOnly.getTime() === today.getTime()) {
       return 'Today';
