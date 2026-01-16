@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store";
 import { useLivestock } from "@/hooks/livestock-store";
-import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon } from "lucide-react-native";
+import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
+import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -28,16 +29,148 @@ const PALETTE_DESCRIPTIONS: Record<ThemePalette, string> = {
 export default function SettingsScreen() {
   const { colors, palette, mode, availablePalettes, changePalette, changeMode } = useTheme();
   const livestock = useLivestock();
+  const backup = useBackup();
   const insets = useSafeAreaInsets();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [isImportingCSV, setIsImportingCSV] = useState(false);
   const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
 
   const handlePaletteChange = (newPalette: ThemePalette) => {
     if (!newPalette || typeof newPalette !== 'string' || newPalette.length > 20) return;
     changePalette(newPalette);
+  };
+
+  // Check if backup is due on mount
+  useEffect(() => {
+    const performAutoBackup = async () => {
+      if (backup.isBackupDue()) {
+        console.log('Auto-backup is due, performing backup...');
+        await performBackup(true);
+      }
+    };
+    performAutoBackup();
+  }, []);
+
+  const pickBackupFolder = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        Alert.alert(
+          'Web Platform',
+          'On web, backups will automatically download to your Downloads folder. Set up your browser to auto-sync Downloads with Google Drive.',
+          [{ text: 'OK' }]
+        );
+        await backup.setBackupFolder('web-downloads');
+        return;
+      }
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/*',
+        copyToCacheDirectory: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const uri = result.assets[0].uri;
+        // On Android, this gives us a content:// URI that we can write to
+        await backup.setBackupFolder(uri);
+        Alert.alert('Success', 'Backup folder selected successfully!');
+      }
+    } catch (error) {
+      console.error('Folder picker error:', error);
+      Alert.alert('Error', 'Failed to select folder. Please try again.');
+    }
+  };
+
+  const performBackup = async (isAuto = false) => {
+    try {
+      if (!backup.settings.folderUri) {
+        if (!isAuto) {
+          Alert.alert('No Folder Selected', 'Please select a backup folder first.');
+        }
+        return;
+      }
+
+      setIsBackingUp(true);
+      console.log('Performing backup...');
+
+      const allData = {
+        version: '1.0.0',
+        exportDate: new Date().toISOString(),
+        data: {
+          chickens: livestock.chickens,
+          rabbits: livestock.rabbits,
+          eggProduction: livestock.eggProduction,
+          breedingRecords: livestock.breedingRecords,
+          breedingPlans: livestock.breedingPlans,
+          vaccinations: livestock.vaccinations,
+          healthRecords: livestock.healthRecords,
+          weightRecords: livestock.weightRecords,
+          feedRecords: livestock.feedRecords,
+          expenses: livestock.expenses,
+          income: livestock.income,
+          chickenHistory: livestock.chickenHistory,
+        }
+      };
+
+      const jsonString = JSON.stringify(allData, null, 2);
+      const fileName = `livestock-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+      if (Platform.OS === 'web') {
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Write to selected folder
+        const folderUri = backup.settings.folderUri;
+        const directory = new FileSystem.Directory(folderUri);
+        const file = new FileSystem.File(directory, fileName);
+        await file.write(jsonString);
+        console.log('Backup written to:', file.uri);
+      }
+
+      await backup.updateLastBackupDate(new Date().toISOString());
+      
+      if (!isAuto) {
+        Alert.alert('Success', 'Backup completed successfully!');
+      }
+      console.log('Backup completed');
+    } catch (error) {
+      console.error('Backup error:', error);
+      if (!isAuto) {
+        Alert.alert('Error', 'Failed to create backup. Please try again.');
+      }
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const getScheduleLabel = (schedule: BackupSchedule): string => {
+    switch (schedule) {
+      case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
+      case 'off': return 'Off';
+      default: return 'Off';
+    }
+  };
+
+  const getLastBackupText = (): string => {
+    if (!backup.settings.lastBackupDate) return 'Never';
+    const lastBackup = new Date(backup.settings.lastBackupDate);
+    const now = new Date();
+    const hoursDiff = (now.getTime() - lastBackup.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursDiff < 1) return 'Less than 1 hour ago';
+    if (hoursDiff < 24) return `${Math.floor(hoursDiff)} hours ago`;
+    const daysDiff = Math.floor(hoursDiff / 24);
+    return `${daysDiff} day${daysDiff > 1 ? 's' : ''} ago`;
   };
 
   const exportData = async () => {
@@ -831,6 +964,91 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
+            <CloudUpload size={20} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Automatic Backups</Text>
+          </View>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Automatically save backups to your chosen location
+          </Text>
+
+          <View style={[styles.backupStatusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.backupStatusRow}>
+              <Text style={[styles.backupStatusLabel, { color: colors.textMuted }]}>Backup Location:</Text>
+              <Text style={[styles.backupStatusValue, { color: colors.text }]}>
+                {backup.settings.folderUri ? (Platform.OS === 'web' ? 'Downloads Folder' : 'Selected') : 'Not Set'}
+              </Text>
+            </View>
+            <View style={styles.backupStatusRow}>
+              <Text style={[styles.backupStatusLabel, { color: colors.textMuted }]}>Schedule:</Text>
+              <Text style={[styles.backupStatusValue, { color: colors.text }]}>
+                {getScheduleLabel(backup.settings.schedule)}
+              </Text>
+            </View>
+            <View style={styles.backupStatusRow}>
+              <Text style={[styles.backupStatusLabel, { color: colors.textMuted }]}>Last Backup:</Text>
+              <Text style={[styles.backupStatusValue, { color: colors.text }]}>
+                {getLastBackupText()}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.dataButton, { backgroundColor: colors.card, borderWidth: 2, borderColor: colors.primary, marginTop: 12 }]}
+            onPress={pickBackupFolder}
+          >
+            <FolderOpen size={20} color={colors.primary} />
+            <Text style={[styles.dataButtonText, { color: colors.primary }]}>
+              {backup.settings.folderUri ? 'Change Backup Folder' : 'Select Backup Folder'}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.subsectionTitle, { color: colors.text, marginTop: 20 }]}>Backup Schedule</Text>
+          <View style={styles.scheduleButtons}>
+            {(['off', 'daily', 'weekly'] as BackupSchedule[]).map((schedule) => (
+              <TouchableOpacity
+                key={schedule}
+                style={[
+                  styles.scheduleButton,
+                  {
+                    backgroundColor: backup.settings.schedule === schedule ? colors.primary : colors.card,
+                    borderColor: colors.border,
+                  }
+                ]}
+                onPress={() => backup.setSchedule(schedule)}
+              >
+                <Clock size={16} color={backup.settings.schedule === schedule ? '#fff' : colors.textMuted} />
+                <Text style={[
+                  styles.scheduleButtonText,
+                  { color: backup.settings.schedule === schedule ? '#fff' : colors.text }
+                ]}>
+                  {getScheduleLabel(schedule)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.dataButton, { backgroundColor: colors.primary, marginTop: 12 }]}
+            onPress={() => performBackup(false)}
+            disabled={isBackingUp || !backup.settings.folderUri}
+          >
+            <CloudUpload size={20} color="#fff" />
+            <Text style={styles.dataButtonText}>
+              {isBackingUp ? 'Backing Up...' : 'Backup Now'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 12 }]}>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              💡 {Platform.OS === 'web' 
+                ? 'On web, backups download to your Downloads folder. Configure your browser or OS to auto-sync this folder with Google Drive.' 
+                : 'Select a folder in your Google Drive using the file picker. The app will write backups there automatically.'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <FileSpreadsheet size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>CSV Import/Export</Text>
           </View>
@@ -1118,6 +1336,43 @@ const styles = StyleSheet.create({
   },
   csvButtonText: {
     fontSize: 14,
+    fontWeight: "600" as const,
+  },
+  backupStatusCard: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  backupStatusRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  backupStatusLabel: {
+    fontSize: 14,
+  },
+  backupStatusValue: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+  },
+  scheduleButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  scheduleButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  scheduleButtonText: {
+    fontSize: 13,
     fontWeight: "600" as const,
   },
 });

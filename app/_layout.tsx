@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { LivestockProvider } from "@/hooks/livestock-store";
 import { ThemeProvider, useTheme } from "@/hooks/theme-store";
+import { BackupProvider } from "@/hooks/backup-store";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from 'expo-system-ui';
@@ -127,11 +128,13 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <LivestockProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </LivestockProvider>
+          <BackupProvider>
+            <LivestockProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </LivestockProvider>
+          </BackupProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
