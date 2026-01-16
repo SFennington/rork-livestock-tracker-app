@@ -23,6 +23,12 @@ export default function AddTransactionScreen() {
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'general'>('general');
   const [description, setDescription] = useState("");
 
+  const getDateString = (daysAgo: number): string => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
   const quickSelectOptions = transactionType === 'expense' 
     ? settings.expenseQuickSelects
     : settings.incomeQuickSelects;
@@ -195,10 +201,37 @@ export default function AddTransactionScreen() {
         </View>
 
         <View style={styles.inputGroup}>
+          <Text style={styles.label}>Date *</Text>
+          <View style={styles.dateButtonsRow}>
+            <TouchableOpacity
+              style={[styles.dateQuickButton, date === getDateString(0) && styles.dateQuickButtonActive]}
+              onPress={() => setDate(getDateString(0))}
+            >
+              <Text style={[styles.dateQuickButtonText, date === getDateString(0) && styles.dateQuickButtonTextActive]}>
+                Today
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.dateQuickButton, date === getDateString(1) && styles.dateQuickButtonActive]}
+              onPress={() => setDate(getDateString(1))}
+            >
+              <Text style={[styles.dateQuickButtonText, date === getDateString(1) && styles.dateQuickButtonTextActive]}>
+                Yesterday
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.dateQuickButton, date === getDateString(2) && styles.dateQuickButtonActive]}
+              onPress={() => setDate(getDateString(2))}
+            >
+              <Text style={[styles.dateQuickButtonText, date === getDateString(2) && styles.dateQuickButtonTextActive]}>
+                2 Days Ago
+              </Text>
+            </TouchableOpacity>
+          </View>
           <DatePicker
-            label="Date *"
             value={date}
             onChange={setDate}
+            collapsible={true}
           />
         </View>
 
@@ -326,6 +359,30 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
   typeButtonTextActive: {
+    color: "#fff",
+  },
+  dateButtonsRow: {
+    flexDirection: "row" as const,
+    gap: 8,
+    marginBottom: 12,
+  },
+  dateQuickButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center" as const,
+  },
+  dateQuickButtonActive: {
+    backgroundColor: "#10b981",
+  },
+  dateQuickButtonText: {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    color: "#6b7280",
+  },
+  dateQuickButtonTextActive: {
     color: "#fff",
   },
   livestockButtons: {
