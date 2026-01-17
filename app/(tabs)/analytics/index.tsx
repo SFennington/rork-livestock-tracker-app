@@ -586,37 +586,48 @@ export default function AnalyticsScreen() {
                 </View>
               ) : (
                 <>
-                  <View style={styles.barChart}>
-                    {analytics.months.map((month) => {
-                      const yearData = analytics.monthlyEggsPerChicken[month] || {};
+                  <View style={styles.barChartContainer}>
+                    <View style={styles.yAxis}>
+                      <Text style={[styles.yAxisLabel, { color: colors.textMuted }]}>
+                        {Math.round(analytics.maxMonthlyEggsPerChicken)}
+                      </Text>
+                      <Text style={[styles.yAxisLabel, { color: colors.textMuted }]}>
+                        {Math.round(analytics.maxMonthlyEggsPerChicken / 2)}
+                      </Text>
+                      <Text style={[styles.yAxisLabel, { color: colors.textMuted }]}>0</Text>
+                    </View>
+                    <View style={styles.barChart}>
+                      {analytics.months.map((month) => {
+                        const yearData = analytics.monthlyEggsPerChicken[month] || {};
 
-                      return (
-                        <View key={month} style={styles.barContainer}>
-                          <View style={styles.barWrapper}>
-                            {analytics.sortedYears.map((year) => {
-                              const perChicken = yearData[year] || 0;
-                              if (perChicken === 0) return null;
-                              const barHeight = (perChicken / analytics.maxMonthlyEggsPerChicken) * 120;
-                              return (
-                                <View
-                                  key={year}
-                                  style={[
-                                    styles.bar,
-                                    {
-                                      height: Math.max(4, barHeight),
-                                      backgroundColor: analytics.yearColors[year],
-                                    },
-                                  ]}
-                                />
-                              );
-                            })}
+                        return (
+                          <View key={month} style={styles.barContainer}>
+                            <View style={styles.barWrapper}>
+                              {analytics.sortedYears.map((year) => {
+                                const perChicken = yearData[year] || 0;
+                                if (perChicken === 0) return null;
+                                const barHeight = (perChicken / analytics.maxMonthlyEggsPerChicken) * 120;
+                                return (
+                                  <View
+                                    key={year}
+                                    style={[
+                                      styles.bar,
+                                      {
+                                        height: Math.max(4, barHeight),
+                                        backgroundColor: analytics.yearColors[year],
+                                      },
+                                    ]}
+                                  />
+                                );
+                              })}
+                            </View>
+                            <Text style={[styles.barLabel, { color: colors.textMuted }]}>
+                              {month}
+                            </Text>
                           </View>
-                          <Text style={[styles.barLabel, { color: colors.textMuted }]}>
-                            {month}
-                          </Text>
-                        </View>
-                      );
-                    })}
+                        );
+                      })}
+                    </View>
                   </View>
 
                   {analytics.sortedYears.length > 0 && (
@@ -644,37 +655,48 @@ export default function AnalyticsScreen() {
           </View>
           {!hiddenCharts.has('production') && (
             <>
-              <View style={styles.barChart}>
-                {analytics.months.map((month) => {
-                  const yearData = analytics.monthlyEggsByYear[month] || {};
+              <View style={styles.barChartContainer}>
+                <View style={styles.yAxis}>
+                  <Text style={[styles.yAxisLabel, { color: colors.textMuted }]}>
+                    {Math.round(analytics.maxMonthlyEggs)}
+                  </Text>
+                  <Text style={[styles.yAxisLabel, { color: colors.textMuted }]}>
+                    {Math.round(analytics.maxMonthlyEggs / 2)}
+                  </Text>
+                  <Text style={[styles.yAxisLabel, { color: colors.textMuted }]}>0</Text>
+                </View>
+                <View style={styles.barChart}>
+                  {analytics.months.map((month) => {
+                    const yearData = analytics.monthlyEggsByYear[month] || {};
 
-                  return (
-                    <View key={month} style={styles.barContainer}>
-                      <View style={styles.barWrapper}>
-                        {analytics.sortedYears.map((year) => {
-                          const count = yearData[year] || 0;
-                          if (count === 0) return null;
-                          const barHeight = (count / analytics.maxMonthlyEggs) * 120;
-                          return (
-                            <View
-                              key={year}
-                              style={[
-                                styles.bar,
-                                {
-                                  height: Math.max(4, barHeight),
-                                  backgroundColor: analytics.yearColors[year],
-                                },
-                              ]}
-                            />
-                          );
-                        })}
+                    return (
+                      <View key={month} style={styles.barContainer}>
+                        <View style={styles.barWrapper}>
+                          {analytics.sortedYears.map((year) => {
+                            const count = yearData[year] || 0;
+                            if (count === 0) return null;
+                            const barHeight = (count / analytics.maxMonthlyEggs) * 120;
+                            return (
+                              <View
+                                key={year}
+                                style={[
+                                  styles.bar,
+                                  {
+                                    height: Math.max(4, barHeight),
+                                    backgroundColor: analytics.yearColors[year],
+                                  },
+                                ]}
+                              />
+                            );
+                          })}
+                        </View>
+                        <Text style={[styles.barLabel, { color: colors.textMuted }]}>
+                          {month}
+                        </Text>
                       </View>
-                      <Text style={[styles.barLabel, { color: colors.textMuted }]}>
-                        {month}
-                      </Text>
-                    </View>
-                  );
-                })}
+                    );
+                  })}
+                </View>
               </View>
 
               {analytics.sortedYears.length > 0 && (
@@ -853,12 +875,29 @@ const styles = StyleSheet.create({
   eyeButton: {
     padding: 4,
   },
+  barChartContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  yAxis: {
+    height: 150,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingRight: 4,
+    paddingBottom: 20,
+  },
+  yAxisLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+  },
   barChart: {
     flexDirection: "row",
     alignItems: "flex-end",
     height: 150,
     gap: 4,
     justifyContent: "space-between",
+    flex: 1,
   },
   barContainer: {
     alignItems: "center",
