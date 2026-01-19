@@ -67,14 +67,11 @@ export default function SettingsScreen() {
         return;
       }
 
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/*',
-        copyToCacheDirectory: false,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const uri = result.assets[0].uri;
-        // On Android, this gives us a content:// URI that we can write to
+      // Use Storage Access Framework on Android for directory selection
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      
+      if (permissions.granted) {
+        const uri = permissions.directoryUri;
         await backup.setBackupFolder(uri);
         Alert.alert('Success', 'Backup folder selected successfully!');
       }
@@ -129,12 +126,17 @@ export default function SettingsScreen() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       } else {
-        // Write to selected folder
+        // Write to selected folder using Storage Access Framework
         const folderUri = backup.settings.folderUri;
-        const directory = new FileSystem.Directory(folderUri);
-        const file = new FileSystem.File(directory, fileName);
-        await file.write(jsonString);
-        console.log('Backup written to:', file.uri);
+        const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          folderUri,
+          fileName,
+          'application/json'
+        );
+        await FileSystem.writeAsStringAsync(fileUri, jsonString, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        console.log('Backup written to:', fileUri);
       }
 
       await backup.updateLastBackupDate(new Date().toISOString());

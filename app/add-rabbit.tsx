@@ -16,7 +16,7 @@ export default function AddRabbitScreen() {
   const [gender, setGender] = useState<'buck' | 'doe'>('doe');
   const [dateOfBirth, setDateOfBirth] = useState(new Date().toISOString().split('T')[0]);
   const [dateAcquired, setDateAcquired] = useState(new Date().toISOString().split('T')[0]);
-  const [cost, setCost] = useState("");
+  const [pricePerUnit, setPricePerUnit] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [color, setColor] = useState("");
   const [weight, setWeight] = useState("");
@@ -30,6 +30,8 @@ export default function AddRabbitScreen() {
   const [showBirthCalendar, setShowBirthCalendar] = useState(false);
   const [showAcquiredCalendar, setShowAcquiredCalendar] = useState(false);
 
+  const totalCost = (parseFloat(pricePerUnit) || 0) * (parseInt(quantity) || 0);
+
   const getDateString = (daysAgo: number) => {
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
@@ -37,7 +39,7 @@ export default function AddRabbitScreen() {
   };
 
   const handleSave = async () => {
-    if (!name || !breed || !dateOfBirth || !dateAcquired || !cost || !quantity) {
+    if (!name || !breed || !dateOfBirth || !dateAcquired || !pricePerUnit || !quantity) {
       if (Platform.OS === 'web') {
         alert("Please fill in all required fields");
       }
@@ -50,7 +52,7 @@ export default function AddRabbitScreen() {
       gender,
       dateOfBirth,
       dateAcquired,
-      cost: parseFloat(cost),
+      cost: totalCost,
       quantity: parseInt(quantity),
       status: 'active',
       color: color || undefined,
@@ -226,12 +228,12 @@ export default function AddRabbitScreen() {
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <DollarSign size={16} color="#6b7280" />
-            <Text style={styles.label}>Cost *</Text>
+            <Text style={styles.label}>Price Per Unit *</Text>
           </View>
           <TextInput
             style={styles.input}
-            value={cost}
-            onChangeText={setCost}
+            value={pricePerUnit}
+            onChangeText={setPricePerUnit}
             placeholder="0.00"
             placeholderTextColor="#9ca3af"
             keyboardType="decimal-pad"
@@ -252,6 +254,13 @@ export default function AddRabbitScreen() {
             keyboardType="numeric"
           />
         </View>
+
+        {totalCost > 0 && (
+          <View style={styles.totalDisplay}>
+            <Text style={styles.totalLabel}>Total Cost:</Text>
+            <Text style={styles.totalValue}>${totalCost.toFixed(2)}</Text>
+          </View>
+        )}
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Color (optional)</Text>
@@ -621,5 +630,26 @@ const styles = StyleSheet.create({
   calendarToggleText: {
     fontSize: 13,
     color: "#6b7280",
+  },
+  totalDisplay: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#ecfdf5",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#10b981",
+    marginBottom: 20,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#065f46",
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#10b981",
   },
 });

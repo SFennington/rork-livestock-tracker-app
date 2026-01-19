@@ -12,11 +12,13 @@ export default function AddIncomeScreen() {
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
   const [type, setType] = useState(settings.incomeTypes[0] || 'eggs');
-  const [amount, setAmount] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit'>('chicken');
-  const [quantity, setQuantity] = useState("");
   const [description, setDescription] = useState("");
+
+  const totalAmount = (parseFloat(unitPrice) || 0) * (parseInt(quantity) || 0);
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -25,27 +27,28 @@ export default function AddIncomeScreen() {
   };
 
   const handleSave = async () => {
-    if (!amount || !date || !description) {
+    if (!unitPrice || !quantity || !date || !description) {
       if (Platform.OS === 'web') {
         alert("Please fill in all required fields");
       }
       return;
     }
 
-    const incomeAmount = parseFloat(amount);
-    if (isNaN(incomeAmount) || incomeAmount <= 0) {
+    const price = parseFloat(unitPrice);
+    const qty = parseInt(quantity);
+    if (isNaN(price) || price <= 0 || isNaN(qty) || qty <= 0) {
       if (Platform.OS === 'web') {
-        alert("Please enter a valid income amount");
+        alert("Please enter valid price and quantity");
       }
       return;
     }
 
     await addIncome({
       type,
-      amount: incomeAmount,
+      amount: price * qty,
       date,
       livestockType,
-      quantity: quantity ? parseInt(quantity) : undefined,
+      quantity: qty,
       description,
     });
 
@@ -102,15 +105,37 @@ export default function AddIncomeScreen() {
           </View>
         </View>
 
+        {settings.incomeQuickSelects.length > 0 && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Quick Select</Text>
+            <View style={styles.quickSelectGrid}>
+              {settings.incomeQuickSelects.map((quick, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.quickSelectButton}
+                  onPress={() => {
+                    setType(quick.type || type);
+                    setUnitPrice(quick.amount);
+                    setDescription(quick.description);
+                    setQuantity("1");
+                  }}
+                >
+                  <Text style={styles.quickSelectText}>{quick.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <DollarSign size={16} color="#6b7280" />
-            <Text style={styles.label}>Amount *</Text>
+            <Text style={styles.label}>Unit Price *</Text>
           </View>
           <TextInput
             style={styles.input}
-            value={amount}
-            onChangeText={setAmount}
+            value={unitPrice}
+            onChangeText={setUnitPrice}
             placeholder="0.00"
             placeholderTextColor="#9ca3af"
             keyboardType="decimal-pad"
@@ -120,17 +145,24 @@ export default function AddIncomeScreen() {
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <Hash size={16} color="#6b7280" />
-            <Text style={styles.label}>Quantity (optional)</Text>
+            <Text style={styles.label}>Quantity *</Text>
           </View>
           <TextInput
             style={styles.input}
             value={quantity}
             onChangeText={setQuantity}
-            placeholder="Number of items sold"
+            placeholder="1"
             placeholderTextColor="#9ca3af"
             keyboardType="number-pad"
           />
         </View>
+
+        {totalAmount > 0 && (
+          <View style={styles.totalDisplay}>
+            <Text style={styles.totalLabel}>Total:</Text>
+            <Text style={styles.totalValue}>${totalAmount.toFixed(2)}</Text>
+          </View>
+        )}
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Date *</Text>
@@ -341,5 +373,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  quickSelectGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  quickSelectButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f3f4f6",
+  },
+  quickSelectText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  totalDisplay: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#ecfdf5",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#10b981",
+    marginBottom: 20,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#065f46",
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#10b981",
   },
 });

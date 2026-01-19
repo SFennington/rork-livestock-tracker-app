@@ -14,11 +14,13 @@ export default function AddChickenScreen() {
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
   const [dateAcquired, setDateAcquired] = useState(new Date().toISOString().split('T')[0]);
-  const [cost, setCost] = useState("");
+  const [pricePerUnit, setPricePerUnit] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [color, setColor] = useState("");
   const [notes, setNotes] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+
+  const totalCost = (parseFloat(pricePerUnit) || 0) * (parseInt(quantity) || 0);
 
   const getDateString = (daysAgo: number) => {
     const date = new Date();
@@ -27,7 +29,7 @@ export default function AddChickenScreen() {
   };
 
   const handleSave = async () => {
-    if (!name || !breed || !dateAcquired || !cost || !quantity) {
+    if (!name || !breed || !dateAcquired || !pricePerUnit || !quantity) {
       if (Platform.OS === 'web') {
         alert("Please fill in all required fields");
       }
@@ -38,7 +40,7 @@ export default function AddChickenScreen() {
       name,
       breed,
       dateAcquired,
-      cost: parseFloat(cost),
+      cost: totalCost,
       quantity: parseInt(quantity),
       status: 'active',
       color: color || undefined,
@@ -132,12 +134,12 @@ export default function AddChickenScreen() {
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <DollarSign size={16} color="#6b7280" />
-            <Text style={styles.label}>Cost *</Text>
+            <Text style={styles.label}>Price Per Unit *</Text>
           </View>
           <TextInput
             style={styles.input}
-            value={cost}
-            onChangeText={setCost}
+            value={pricePerUnit}
+            onChangeText={setPricePerUnit}
             placeholder="0.00"
             placeholderTextColor="#9ca3af"
             keyboardType="decimal-pad"
@@ -158,6 +160,13 @@ export default function AddChickenScreen() {
             keyboardType="numeric"
           />
         </View>
+
+        {totalCost > 0 && (
+          <View style={styles.totalDisplay}>
+            <Text style={styles.totalLabel}>Total Cost:</Text>
+            <Text style={styles.totalValue}>${totalCost.toFixed(2)}</Text>
+          </View>
+        )}
 
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
@@ -312,5 +321,26 @@ const styles = StyleSheet.create({
   calendarToggleText: {
     fontSize: 13,
     color: "#6b7280",
+  },
+  totalDisplay: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#ecfdf5",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#10b981",
+    marginBottom: 20,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#065f46",
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#10b981",
   },
 });
