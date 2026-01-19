@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { TrendingUp, DollarSign, Egg, Eye, EyeOff } from "lucide-react-native";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import Svg, { Polyline, Circle, Line as SvgLine, Rect, Text as SvgText } from "react-native-svg";
@@ -8,6 +9,7 @@ import { PinchGestureHandler, State } from "react-native-gesture-handler";
 
 export default function AnalyticsScreen() {
   const { eggProduction, expenses, income, getChickenCountOnDate } = useLivestock();
+  const { settings } = useAppSettings();
   const { colors } = useTheme();
   const [hiddenCharts, setHiddenCharts] = useState<Set<string>>(new Set());
 
@@ -22,15 +24,28 @@ export default function AnalyticsScreen() {
   const analytics = useMemo(() => {
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const totalIncome = income.reduce((sum, i) => sum + i.amount, 0);
-    const roi = totalIncome - totalExpenses;
-    const roiPercentage = totalExpenses > 0 ? ((totalIncome - totalExpenses) / totalExpenses) * 100 : 0;
+    
+    // Calculate egg consumption savings
+    let totalSold = 0;
+    let totalLaid = 0;
+    let totalBroken = 0;
+    
+    eggProduction.forEach(record => {
+      totalSold += record.sold || 0;
+      totalLaid += record.laid || record.count;
+      totalBroken += record.broken || 0;
+    });
+    
+    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken;
+    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
+    const totalIncomeWithSavings = totalIncome + consumptionSavings;
+    
+    const roi = totalIncomeWithSavings - totalExpenses;
+    const roiPercentage = totalExpenses > 0 ? ((totalIncomeWithSavings - totalExpenses) / totalExpenses) * 100 : 0;
 
     const monthlyEggsByYear: { [monthKey: string]: { [year: string]: number } } = {};
     const seasonalEggs = { spring: 0, summer: 0, fall: 0, winter: 0 };
     
-    let totalSold = 0;
-    let totalLaid = 0;
-    let totalBroken = 0;
     let totalConsumed = 0;
     
     eggProduction.forEach(record => {
@@ -50,9 +65,6 @@ export default function AnalyticsScreen() {
       else if (month >= 8 && month <= 10) seasonalEggs.fall += record.count;
       else seasonalEggs.winter += record.count;
       
-      totalSold += record.sold || 0;
-      totalLaid += record.laid || record.count;
-      totalBroken += record.broken || 0;
       totalConsumed += record.consumed || 0;
     });
 
@@ -188,6 +200,9 @@ export default function AnalyticsScreen() {
     return {
       totalExpenses,
       totalIncome,
+      totalIncomeWithSavings,
+      consumptionSavings,
+      eggsConsumed,
       roi,
       roiPercentage,
       monthlyEggsByYear,
@@ -212,7 +227,7 @@ export default function AnalyticsScreen() {
       monthlyEggsPerChicken,
       maxMonthlyEggsPerChicken,
     };
-  }, [eggProduction, expenses, income, getChickenCountOnDate]);
+  }, [eggProduction, expenses, income, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen]);
 
   const BASE_DAY_WIDTH = 32;
   const MIN_ZOOM = 0.3;
@@ -415,8 +430,16 @@ export default function AnalyticsScreen() {
           </Text>
           <View style={styles.roiDetails}>
             <View style={styles.roiDetailItem}>
-              <Text style={styles.roiDetailLabel}>Income</Text>
+              <Text style={styles.roiDetailLabel}>Income (Sales)</Text>
               <Text style={styles.roiDetailValue}>${analytics.totalIncome.toFixed(2)}</Text>
+            </View>
+            <View style={styles.roiDetailItem}>
+              <Text style={styles.roiDetailLabel}>Egg Savings</Text>
+              <Text style={styles.roiDetailValue}>${analytics.consumptionSavings.toFixed(2)}</Text>
+            </View>
+            <View style={styles.roiDetailItem}>
+              <Text style={styles.roiDetailLabel}>Total Income</Text>
+              <Text style={styles.roiDetailValue}>${analytics.totalIncomeWithSavings.toFixed(2)}</Text>
             </View>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Expenses</Text>

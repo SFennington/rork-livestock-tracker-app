@@ -109,13 +109,6 @@ export default function DashboardScreen() {
       {settings.enabledAnimals.chickens && <EggLogChecker />}
 
       <View style={styles.quickActions}>
-        <View style={[styles.actionButton, styles.disabledButton, { backgroundColor: colors.textMuted }]}>
-          <Mic size={20} color="#fff" />
-          <Text style={styles.actionText}>Voice Log</Text>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>Soon</Text>
-          </View>
-        </View>
         <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/log-eggs')}>
           <Egg size={20} color="#fff" />
           <Text style={styles.actionText}>Log Eggs</Text>

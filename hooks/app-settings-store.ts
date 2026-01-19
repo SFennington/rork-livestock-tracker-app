@@ -22,6 +22,8 @@ export interface AppSettings {
     goats: boolean;
     ducks: boolean;
   };
+  eggsOnHand: number;
+  eggValuePerDozen: number;
 }
 
 const STORAGE_KEY = 'app_settings';
@@ -46,6 +48,8 @@ const defaultSettings: AppSettings = {
     goats: false,
     ducks: false,
   },
+  eggsOnHand: 0,
+  eggValuePerDozen: 4.00,
 };
 
 export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
@@ -108,6 +112,14 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     await saveSettings({ ...settings, enabledAnimals });
   }, [settings, saveSettings]);
 
+  const updateEggsOnHand = useCallback(async (eggsOnHand: number) => {
+    await saveSettings({ ...settings, eggsOnHand });
+  }, [settings, saveSettings]);
+
+  const updateEggValuePerDozen = useCallback(async (eggValuePerDozen: number) => {
+    await saveSettings({ ...settings, eggValuePerDozen });
+  }, [settings, saveSettings]);
+
   const resetToDefaults = useCallback(async () => {
     await saveSettings(defaultSettings);
   }, [saveSettings]);
@@ -121,6 +133,8 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     updateChickenEventTypes,
     updateExpenseQuickSelects,
     updateIncomeQuickSelects,
+    updateEggsOnHand,
+    updateEggValuePerDozen,
     resetToDefaults,
   };
 });

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Platform } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Platform, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
-import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon } from "lucide-react-native";
+import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -30,6 +31,7 @@ const PALETTE_DESCRIPTIONS: Record<ThemePalette, string> = {
 export default function SettingsScreen() {
   const { colors, palette, mode, availablePalettes, changePalette, changeMode } = useTheme();
   const livestock = useLivestock();
+  const { settings, updateEggsOnHand, updateEggValuePerDozen } = useAppSettings();
   const backup = useBackup();
   const insets = useSafeAreaInsets();
   const [isExporting, setIsExporting] = useState(false);
@@ -38,6 +40,8 @@ export default function SettingsScreen() {
   const [isImportingCSV, setIsImportingCSV] = useState(false);
   const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [eggsOnHandInput, setEggsOnHandInput] = useState(settings.eggsOnHand.toString());
+  const [eggValueInput, setEggValueInput] = useState(settings.eggValuePerDozen.toString());
 
   const handlePaletteChange = (newPalette: ThemePalette) => {
     if (!newPalette || typeof newPalette !== 'string' || newPalette.length > 20) return;
@@ -857,6 +861,57 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
+            <EggIcon size={20} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Egg Inventory</Text>
+          </View>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Track eggs on hand and calculate consumption savings
+          </Text>
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Eggs on Hand</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                value={eggsOnHandInput}
+                onChangeText={setEggsOnHandInput}
+                onBlur={() => {
+                  const num = parseInt(eggsOnHandInput) || 0;
+                  updateEggsOnHand(num);
+                  setEggsOnHandInput(num.toString());
+                }}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Value per Dozen ($)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                value={eggValueInput}
+                onChangeText={setEggValueInput}
+                onBlur={() => {
+                  const num = parseFloat(eggValueInput) || 4.00;
+                  updateEggValuePerDozen(num);
+                  setEggValueInput(num.toFixed(2));
+                }}
+                keyboardType="decimal-pad"
+                placeholder="4.00"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          </View>
+
+          <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 12 }]}>
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+              💡 Consumed eggs = Total laid - Sold - On hand - Broken. This calculates the value of eggs your household consumed, adding to your total income as savings.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <Database size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Data Management</Text>
           </View>
@@ -1312,6 +1367,26 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  inputRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 12,
+  },
+  inputContainer: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
   },
   dataButtons: {
     gap: 12,
