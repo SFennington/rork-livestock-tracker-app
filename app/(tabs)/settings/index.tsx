@@ -71,17 +71,24 @@ export default function SettingsScreen() {
         return;
       }
 
+      console.log('Requesting directory permissions...');
       // Use Storage Access Framework on Android for directory selection
       const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      console.log('Permissions result:', permissions);
       
       if (permissions.granted) {
         const uri = permissions.directoryUri;
+        console.log('Selected folder URI:', uri);
         await backup.setBackupFolder(uri);
         Alert.alert('Success', 'Backup folder selected successfully!');
+      } else {
+        console.log('Permissions denied');
+        Alert.alert('Permission Denied', 'Storage access permission is required to save backups.');
       }
     } catch (error) {
       console.error('Folder picker error:', error);
-      Alert.alert('Error', 'Failed to select folder. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', `Failed to select folder: ${errorMessage}\n\nPlease try again.`);
     }
   };
 
@@ -565,6 +572,7 @@ export default function SettingsScreen() {
             case 'eggs':
               if (!row.date) {
                 console.warn('Skipping row - missing date:', row);
+                errors.push(`Row ${i + 2}: Missing date field`);
                 break;
               }
               
@@ -575,28 +583,40 @@ export default function SettingsScreen() {
               const totalCount = laid + sold + broken + donated;
               
               if (totalCount > 0) {
-                const normalizedDate = new Date(row.date).toISOString().split('T')[0];
-                const existingRecord = livestock.eggProduction.find(
-                  e => e.date === normalizedDate
-                );
-                if (existingRecord) {
-                  console.log('Skipping duplicate egg production for date:', normalizedDate);
-                } else {
-                  console.log('Adding egg production:', normalizedDate, 'laid:', laid, 'sold:', sold, 'broken:', broken, 'donated:', donated);
-                  await livestock.addEggProduction({
-                    date: normalizedDate,
-                    count: totalCount,
-                    laid,
-                    sold,
-                    broken,
-                    donated,
-                    notes: row.notes || '',
-                  });
-                  importedCount++;
-                  console.log('Successfully added egg production');
+                try {
+                  // Parse date and normalize to YYYY-MM-DD format
+                  const dateObj = new Date(row.date);
+                  if (isNaN(dateObj.getTime())) {
+                    throw new Error(`Invalid date: "${row.date}"`);
+                  }
+                  const normalizedDate = dateObj.toISOString().split('T')[0];
+                  const existingRecord = livestock.eggProduction.find(
+                    e => e.date === normalizedDate
+                  );
+                  if (existingRecord) {
+                    console.log('Skipping duplicate egg production for date:', normalizedDate);
+                  } else {
+                    console.log('Adding egg production:', normalizedDate, 'laid:', laid, 'sold:', sold, 'broken:', broken, 'donated:', donated);
+                    await livestock.addEggProduction({
+                      date: normalizedDate,
+                      count: totalCount,
+                      laid,
+                      sold,
+                      broken,
+                      donated,
+                      notes: row.notes || '',
+                    });
+                    importedCount++;
+                    console.log('Successfully added egg production');
+                  }
+                } catch (dateError) {
+                  const errMsg = dateError instanceof Error ? dateError.message : 'Date parsing failed';
+                  console.error('Date error:', errMsg);
+                  errors.push(`Row ${i + 2}: ${errMsg}`);
                 }
               } else {
                 console.warn('Skipping row - no egg data:', row);
+                errors.push(`Row ${i + 2}: All egg counts are 0`);
               }
               break;
             case 'expenses':
@@ -694,21 +714,36 @@ export default function SettingsScreen() {
         }
       }
 
-      console.log(`Import completed: ${importedCount} records imported`);
+      console.log(`Import completed: ${importedCount} records imported, ${errors.length} errors`);
       setIsImportingCSV(false);
       
-      if (errors.length > 0) {
-        Alert.alert(
-          'Import Complete',
-          `Successfully imported ${importedCount} record(s). ${errors.length} row(s) had errors. Check console for details.`
-        );
+      if (importedCount > 0) {
+        if (errors.length > 0) {
+          const errorSummary = errors.slice(0, 3).join('\n');
+          const moreErrors = errors.length > 3 ? `\n...and ${errors.length - 3} more errors` : '';
+          Alert.alert(
+            'Import Complete',
+            `Successfully imported ${importedCount} record(s).\n\n${errors.length} row(s) skipped:\n${errorSummary}${moreErrors}`
+          );
+        } else {
+          Alert.alert('Import Complete', `Successfully imported ${importedCount} record(s).`);
+        }
       } else {
-        Alert.alert('Import Complete', `Successfully imported ${importedCount} record(s).`);
+        if (errors.length > 0) {
+          const errorSummary = errors.slice(0, 3).join('\n');
+          const moreErrors = errors.length > 3 ? `\n...and ${errors.length - 3} more errors` : '';
+          Alert.alert(
+            'Import Failed',
+            `No records imported.\n\nErrors found:\n${errorSummary}${moreErrors}\n\nPlease check your CSV file format.`
+          );
+        } else {
+          Alert.alert('Import Failed', 'No valid records found in CSV file. Please check the file format.');
+        }
       }
     } catch (error) {
       console.error('CSV import error:', error);
       if (error instanceof Error && error.message !== 'Cancelled') {
-        Alert.alert('Error', 'Failed to import CSV. Please check the file format.');
+        Alert.alert('Error', `Failed to import CSV: ${error.message}\n\nPlease check the file format.`);
       }
     } finally {
       setIsImportingCSV(false);
