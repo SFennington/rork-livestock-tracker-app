@@ -62,7 +62,11 @@ export default function AddChickenEventScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={[styles.container, { paddingTop: insets.top }]} 
+      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      showsVerticalScrollIndicator={false}
+    >
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>

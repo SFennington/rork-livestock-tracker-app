@@ -54,7 +54,11 @@ export default function AddIncomeScreen() {
 
   return (
     <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.form}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Income Type *</Text>
