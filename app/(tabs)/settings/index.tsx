@@ -620,9 +620,23 @@ export default function SettingsScreen() {
               }
               break;
             case 'expenses':
-              if (row.date && row.category && row.amount && row.livestockType) {
-                const normalizedDate = new Date(row.date).toISOString().split('T')[0];
-                const parsedAmount = parseFloat(row.amount) || 0;
+              if (!row.date || !row.category || !row.amount || !row.livestockType) {
+                console.warn('Skipping row - missing required fields:', row);
+                errors.push(`Row ${i + 2}: Missing required field (date, category, amount, or livestockType)`);
+                break;
+              }
+              
+              try {
+                const dateObj = new Date(row.date);
+                if (isNaN(dateObj.getTime())) {
+                  throw new Error(`Invalid date: "${row.date}"`);
+                }
+                const normalizedDate = dateObj.toISOString().split('T')[0];
+                const parsedAmount = parseFloat(row.amount);
+                if (isNaN(parsedAmount)) {
+                  throw new Error(`Invalid amount: "${row.amount}"`);
+                }
+                
                 const existingExpense = livestock.expenses.find(
                   e => e.date === normalizedDate && e.amount === parsedAmount && e.category === row.category
                 );
@@ -641,14 +655,30 @@ export default function SettingsScreen() {
                   importedCount++;
                   console.log('Successfully added expense');
                 }
-              } else {
-                console.warn('Skipping row - missing required fields:', row);
+              } catch (expenseError) {
+                const errMsg = expenseError instanceof Error ? expenseError.message : 'Invalid data';
+                console.error('Expense import error:', errMsg);
+                errors.push(`Row ${i + 2}: ${errMsg}`);
               }
               break;
             case 'income':
-              if (row.date && row.type && row.amount && row.livestockType) {
-                const normalizedDate = new Date(row.date).toISOString().split('T')[0];
-                const parsedAmount = parseFloat(row.amount) || 0;
+              if (!row.date || !row.type || !row.amount || !row.livestockType) {
+                console.warn('Skipping row - missing required fields:', row);
+                errors.push(`Row ${i + 2}: Missing required field (date, type, amount, or livestockType)`);
+                break;
+              }
+              
+              try {
+                const dateObj = new Date(row.date);
+                if (isNaN(dateObj.getTime())) {
+                  throw new Error(`Invalid date: "${row.date}"`);
+                }
+                const normalizedDate = dateObj.toISOString().split('T')[0];
+                const parsedAmount = parseFloat(row.amount);
+                if (isNaN(parsedAmount)) {
+                  throw new Error(`Invalid amount: "${row.amount}"`);
+                }
+                
                 const existingIncome = livestock.income.find(
                   i => i.date === normalizedDate && i.amount === parsedAmount && i.type === row.type
                 );
@@ -667,8 +697,10 @@ export default function SettingsScreen() {
                   importedCount++;
                   console.log('Successfully added income');
                 }
-              } else {
-                console.warn('Skipping row - missing required fields:', row);
+              } catch (incomeError) {
+                const errMsg = incomeError instanceof Error ? incomeError.message : 'Invalid data';
+                console.error('Income import error:', errMsg);
+                errors.push(`Row ${i + 2}: ${errMsg}`);
               }
               break;
             case 'breeding':
