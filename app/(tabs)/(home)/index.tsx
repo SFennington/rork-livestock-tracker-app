@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
-  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount } = useLivestock();
+  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate } = useLivestock();
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
   const { colors } = useTheme();
@@ -23,7 +23,7 @@ export default function DashboardScreen() {
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const totalIncome = income.reduce((sum, i) => sum + i.amount, 0);
     const activeBreedings = breedingRecords.filter(b => b.status === 'bred').length;
-    const activeChickens = chickens.filter(c => c.status === 'active').reduce((sum, c) => sum + c.quantity, 0);
+    const activeChickens = getChickenCountOnDate(today);
     const activeRabbits = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
     const { roosters, hens } = getRoostersAndHensCount(today);
     
@@ -46,7 +46,7 @@ export default function DashboardScreen() {
       roosters,
       hens,
     };
-  }, [chickens, rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount]);
+  }, [rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount, getChickenCountOnDate]);
 
   if (isLoading) {
     return (
