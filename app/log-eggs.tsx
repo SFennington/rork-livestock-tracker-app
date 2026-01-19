@@ -11,7 +11,7 @@ export default function LogEggsScreen() {
   const params = useLocalSearchParams<{ date?: string }>();
   const [quantity, setQuantity] = useState<number | null>(null);
   const [quantityInput, setQuantityInput] = useState("");
-  const [type, setType] = useState<'laid' | 'broken' | 'consumed'>('laid');
+  const [type, setType] = useState<'laid' | 'broken' | 'donated'>('laid');
   const [date, setDate] = useState(params.date || getLocalDateString());
 
   const getDateString = (daysAgo: number): string => {
@@ -26,7 +26,7 @@ export default function LogEggsScreen() {
     const quantities = sortedRecords.map(e => {
       if (type === 'laid' && e.laid) return e.laid;
       if (type === 'broken' && e.broken) return e.broken;
-      if (type === 'consumed' && e.consumed) return e.consumed;
+      if (type === 'donated' && e.donated) return e.donated;
       return null;
     }).filter((q): q is number => q !== null && q > 0);
     
@@ -45,19 +45,19 @@ export default function LogEggsScreen() {
     console.log('Saving egg production:', { date, quantity, type });
     const existingEntry = eggProduction.find(e => e.date === date);
     console.log('Existing entry:', existingEntry);
-    let newData: { laid?: number; broken?: number; consumed?: number } = {};
+    let newData: { laid?: number; broken?: number; donated?: number } = {};
     
     if (existingEntry) {
       newData = {
         laid: existingEntry.laid,
         broken: existingEntry.broken,
-        consumed: existingEntry.consumed,
+        donated: existingEntry.donated,
       };
     }
     
     if (type === 'laid') newData.laid = quantity;
     else if (type === 'broken') newData.broken = quantity;
-    else if (type === 'consumed') newData.consumed = quantity;
+    else if (type === 'donated') newData.donated = quantity;
     
     const totalCount = newData.laid || 0;
     console.log('Total count to save:', totalCount, 'newData:', newData);
@@ -67,7 +67,7 @@ export default function LogEggsScreen() {
       count: totalCount,
       laid: newData.laid || undefined,
       broken: newData.broken || undefined,
-      consumed: newData.consumed || undefined,
+      donated: newData.donated || undefined,
     });
 
     console.log('Egg production saved');
@@ -144,11 +144,11 @@ export default function LogEggsScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.typeButton, type === 'consumed' && styles.typeButtonActive]}
-                onPress={() => setType('consumed')}
+                style={[styles.typeButton, type === 'donated' && styles.typeButtonActive]}
+                onPress={() => setType('donated')}
               >
-                <Text style={[styles.typeButtonText, type === 'consumed' && styles.typeButtonTextActive]}>
-                  Consumed
+                <Text style={[styles.typeButtonText, type === 'donated' && styles.typeButtonTextActive]}>
+                  Donated
                 </Text>
               </TouchableOpacity>
             </View>

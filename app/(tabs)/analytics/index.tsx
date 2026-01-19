@@ -29,14 +29,16 @@ export default function AnalyticsScreen() {
     let totalSold = 0;
     let totalLaid = 0;
     let totalBroken = 0;
+    let totalDonated = 0;
     
     eggProduction.forEach(record => {
       totalSold += record.sold || 0;
       totalLaid += record.laid || record.count;
       totalBroken += record.broken || 0;
+      totalDonated += record.donated || 0;
     });
     
-    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken;
+    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
     const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
     const totalIncomeWithSavings = totalIncome + consumptionSavings;
     
@@ -45,8 +47,6 @@ export default function AnalyticsScreen() {
 
     const monthlyEggsByYear: { [monthKey: string]: { [year: string]: number } } = {};
     const seasonalEggs = { spring: 0, summer: 0, fall: 0, winter: 0 };
-    
-    let totalConsumed = 0;
     
     eggProduction.forEach(record => {
       const date = new Date(record.date);
@@ -64,8 +64,6 @@ export default function AnalyticsScreen() {
       else if (month >= 5 && month <= 7) seasonalEggs.summer += record.count;
       else if (month >= 8 && month <= 10) seasonalEggs.fall += record.count;
       else seasonalEggs.winter += record.count;
-      
-      totalConsumed += record.consumed || 0;
     });
 
     const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
@@ -219,7 +217,8 @@ export default function AnalyticsScreen() {
       totalSold,
       totalLaid,
       totalBroken,
-      totalConsumed,
+      totalDonated,
+      eggsConsumed,
       dailyEggHistory,
       maxDailyEggs,
       eggsPerChickenHistory,
@@ -762,8 +761,12 @@ export default function AnalyticsScreen() {
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Broken</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalConsumed}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Consumed</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalDonated}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Donated</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.eggsConsumed}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Consumed</Text>
           </View>
         </View>
 

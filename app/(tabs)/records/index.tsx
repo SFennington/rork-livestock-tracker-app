@@ -413,7 +413,7 @@ export default function RecordsScreen() {
                         <Text style={styles.headText}>Broken</Text>
                       </View>
                       <View style={[styles.cell, styles.cellXsm]}>
-                        <Text style={styles.headText}>Consumed</Text>
+                        <Text style={styles.headText}>Donated</Text>
                       </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setEggSort(prev => toggleSort(prev, 'notes'))} testID="eggs-sort-notes">
                         <Text style={styles.headText}>Notes</Text>
@@ -444,7 +444,7 @@ export default function RecordsScreen() {
                           <Text style={styles.bodyText}>{record.broken ?? 0}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellXsm]}>
-                          <Text style={styles.bodyText}>{record.consumed ?? 0}</Text>
+                          <Text style={styles.bodyText}>{record.donated ?? 0}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id && editingField === 'notes' ? (

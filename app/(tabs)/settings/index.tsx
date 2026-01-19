@@ -425,7 +425,7 @@ export default function SettingsScreen() {
 
       switch (type) {
         case 'eggs':
-          csvContent = 'date,laid,sold,broken,consumed,notes\n2025-01-01,12,10,1,1,"Good production"\n2025-01-02,10,8,0,2,""';
+          csvContent = 'date,laid,sold,broken,donated,notes\n2025-01-01,12,10,1,1,"Good production"\n2025-01-02,10,8,0,2,""';
           fileName = 'egg-production-template.csv';
           break;
         case 'expenses':
@@ -571,8 +571,8 @@ export default function SettingsScreen() {
               const laid = parseInt(row.laid || '0') || 0;
               const sold = parseInt(row.sold || '0') || 0;
               const broken = parseInt(row.broken || '0') || 0;
-              const consumed = parseInt(row.consumed || '0') || 0;
-              const totalCount = laid + sold + broken + consumed;
+              const donated = parseInt(row.donated || '0') || 0;
+              const totalCount = laid + sold + broken + donated;
               
               if (totalCount > 0) {
                 const normalizedDate = new Date(row.date).toISOString().split('T')[0];
@@ -582,14 +582,14 @@ export default function SettingsScreen() {
                 if (existingRecord) {
                   console.log('Skipping duplicate egg production for date:', normalizedDate);
                 } else {
-                  console.log('Adding egg production:', normalizedDate, 'laid:', laid, 'sold:', sold, 'broken:', broken, 'consumed:', consumed);
+                  console.log('Adding egg production:', normalizedDate, 'laid:', laid, 'sold:', sold, 'broken:', broken, 'donated:', donated);
                   await livestock.addEggProduction({
                     date: normalizedDate,
                     count: totalCount,
                     laid,
                     sold,
                     broken,
-                    consumed,
+                    donated,
                     notes: row.notes || '',
                   });
                   importedCount++;
@@ -905,7 +905,7 @@ export default function SettingsScreen() {
 
           <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 12 }]}>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              💡 Consumed eggs = Total laid - Sold - On hand - Broken. This calculates the value of eggs your household consumed, adding to your total income as savings.
+              💡 Consumed eggs = Total laid - Sold - On hand - Broken - Donated. This calculates the value of eggs your household consumed, adding to your total income as savings.
             </Text>
           </View>
         </View>

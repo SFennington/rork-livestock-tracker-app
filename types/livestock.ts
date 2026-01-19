@@ -84,7 +84,7 @@ export interface EggProduction {
   sold?: number;
   laid?: number;
   broken?: number;
-  consumed?: number;
+  donated?: number;
   notes?: string;
 }
 
