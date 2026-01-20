@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock, useRabbitBreeding, useRabbitHealth } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe } from "lucide-react-native";
+import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe, MoreVertical } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
 
@@ -170,7 +170,18 @@ export default function LivestockScreen() {
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
                         <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{breed}</Text>
-                        <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
+                        <View style={styles.breedItemRight}>
+                          <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
+                          <TouchableOpacity 
+                            style={styles.breedMenuButton}
+                            onPress={() => router.push({
+                              pathname: '/manage-animals',
+                              params: { type: 'chicken', breed }
+                            })}
+                          >
+                            <MoreVertical size={16} color={colors.textMuted} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     ))}
                   </View>
@@ -241,7 +252,18 @@ export default function LivestockScreen() {
                     {rabbitBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
                         <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{breed}</Text>
-                        <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
+                        <View style={styles.breedItemRight}>
+                          <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
+                          <TouchableOpacity 
+                            style={styles.breedMenuButton}
+                            onPress={() => router.push({
+                              pathname: '/manage-animals',
+                              params: { type: 'rabbit', breed }
+                            })}
+                          >
+                            <MoreVertical size={16} color={colors.textMuted} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     ))}
                   </View>
@@ -488,15 +510,25 @@ const styles = StyleSheet.create({
   breedItem: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
+  },
+  breedItemRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   breedName: {
     fontSize: 14,
     includeFontPadding: false,
+    flex: 1,
   },
   breedCount: {
     fontSize: 16,
     fontWeight: "600" as const,
+  },
+  breedMenuButton: {
+    padding: 4,
   },
   chickenTypeCounts: {
     flexDirection: "row",
