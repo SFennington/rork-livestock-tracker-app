@@ -7,6 +7,7 @@ import { useAppSettings } from "@/hooks/app-settings-store";
 import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
 import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
+import { StorageAccessFramework } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -73,7 +74,7 @@ export default function SettingsScreen() {
 
       console.log('Requesting directory permissions...');
       // Use Storage Access Framework on Android for directory selection
-      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
       console.log('Permissions result:', permissions);
       
       if (permissions.granted) {
@@ -139,7 +140,7 @@ export default function SettingsScreen() {
       } else {
         // Write to selected folder using Storage Access Framework
         const folderUri = backup.settings.folderUri;
-        const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+        const fileUri = await StorageAccessFramework.createFileAsync(
           folderUri,
           fileName,
           'application/json'
@@ -662,9 +663,20 @@ export default function SettingsScreen() {
               }
               break;
             case 'income':
-              if (!row.date || !row.type || !row.amount || !row.livestockType) {
-                console.warn('Skipping row - missing required fields:', row);
-                errors.push(`Row ${i + 2}: Missing required field (date, type, amount, or livestockType)`);
+              if (!row.date) {
+                errors.push(`Row ${i + 2}: Missing required field 'date'`);
+                break;
+              }
+              if (!row.type) {
+                errors.push(`Row ${i + 2}: Missing required field 'type'`);
+                break;
+              }
+              if (!row.amount) {
+                errors.push(`Row ${i + 2}: Missing required field 'amount'`);
+                break;
+              }
+              if (!row.livestockType) {
+                errors.push(`Row ${i + 2}: Missing required field 'livestockType'`);
                 break;
               }
               
