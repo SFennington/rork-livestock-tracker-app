@@ -166,8 +166,8 @@ export default function DashboardScreen() {
         <View style={[styles.statCard, { backgroundColor: colors.primary }]}>
           <View style={styles.statHeader}>
             <TrendingUp size={24} color="#fff" />
-            <Text style={[styles.statValue, stats.profit < 0 && { color: '#fca5a5' }]}>
-              ${Math.abs(stats.profit).toFixed(2)}
+            <Text style={[styles.statValue, stats.profit < 0 && { color: '#fca5a5' }]} numberOfLines={1} adjustsFontSizeToFit>
+              ${Math.abs(Math.round(stats.profit)).toLocaleString()}
             </Text>
           </View>
           <Text style={styles.statLabel}>{stats.profit >= 0 ? 'Profit' : 'Loss'}</Text>
@@ -345,6 +345,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700" as const,
     color: "#fff",
+    flexShrink: 1,
   },
   statLabel: {
     fontSize: 12,

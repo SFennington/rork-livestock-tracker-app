@@ -421,8 +421,8 @@ export default function AnalyticsScreen() {
             <DollarSign size={24} color="#fff" />
             <Text style={styles.roiTitle}>Return on Investment</Text>
           </View>
-          <Text style={[styles.roiAmount, analytics.roi < 0 && styles.negativeAmount]}>
-            {analytics.roi >= 0 ? '+' : ''} ${Math.abs(analytics.roi).toFixed(2)}
+          <Text style={[styles.roiAmount, analytics.roi < 0 && styles.negativeAmount]} numberOfLines={1} adjustsFontSizeToFit>
+            {analytics.roi >= 0 ? '+' : ''}${Math.abs(Math.round(analytics.roi)).toLocaleString()}
           </Text>
           <Text style={styles.roiPercentage}>
             {analytics.roiPercentage >= 0 ? '↑' : '↓'} {Math.abs(analytics.roiPercentage).toFixed(1)}% ROI
@@ -430,19 +430,19 @@ export default function AnalyticsScreen() {
           <View style={styles.roiDetails}>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Income (Sales)</Text>
-              <Text style={styles.roiDetailValue}>${analytics.totalIncome.toFixed(2)}</Text>
+              <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.totalIncome).toLocaleString()}</Text>
             </View>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Egg Savings</Text>
-              <Text style={styles.roiDetailValue}>${analytics.consumptionSavings.toFixed(2)}</Text>
+              <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.consumptionSavings).toLocaleString()}</Text>
             </View>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Total Income</Text>
-              <Text style={styles.roiDetailValue}>${analytics.totalIncomeWithSavings.toFixed(2)}</Text>
+              <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.totalIncomeWithSavings).toLocaleString()}</Text>
             </View>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Expenses</Text>
-              <Text style={styles.roiDetailValue}>${analytics.totalExpenses.toFixed(2)}</Text>
+              <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.totalExpenses).toLocaleString()}</Text>
             </View>
           </View>
         </View>
@@ -851,6 +851,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: "700",
     color: "#fff",
+    flexShrink: 1,
   },
   negativeAmount: {
     color: "#fca5a5",
@@ -879,6 +880,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
     marginTop: 4,
+    flexShrink: 1,
   },
   chartCard: {
     borderRadius: 16,
