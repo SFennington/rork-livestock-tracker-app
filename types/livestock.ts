@@ -190,3 +190,16 @@ export interface Income {
   quantity?: number;
   description: string;
 }
+
+export interface IndividualAnimal {
+  id: string;
+  type: 'chicken' | 'rabbit' | 'goat' | 'duck';
+  breed: string;
+  name?: string;
+  number: number;
+  dateAdded: string;
+  status: 'alive' | 'dead' | 'consumed' | 'sold';
+  notes?: string;
+  deathDate?: string;
+  deathReason?: string;
+}
