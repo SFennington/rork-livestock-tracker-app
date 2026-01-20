@@ -269,7 +269,7 @@ export default function AnalyticsScreen() {
   const perChickenDayWidth = BASE_DAY_WIDTH * perChickenZoom;
   const perChickenContentWidth = Math.max(perChickenData.length, 30) * perChickenDayWidth;
   const perChickenHighlightWidth = Math.min(perChickenData.length, 30) * perChickenDayWidth;
-  const perChickenHighlightX = yAxisWidth + chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
+  const perChickenHighlightX = chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
   const perChickenLabelInterval = Math.max(1, Math.floor(30 / 10));
   const perChickenGridInterval = Math.max(1, Math.floor(perChickenData.length / 12));
   const last30DaysPerChicken = perChickenData.slice(-30);
@@ -296,7 +296,7 @@ export default function AnalyticsScreen() {
   const dayWidth = BASE_DAY_WIDTH * zoomScale;
   const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;
   const highlightWidth = Math.min(chartData.length, 30) * dayWidth;
-  const highlightX = yAxisWidth + chartPadding + Math.max(0, chartContentWidth - highlightWidth);
+  const highlightX = chartPadding + Math.max(0, chartContentWidth - highlightWidth);
   const labelInterval = Math.max(1, Math.floor(30 / 10));
   const gridInterval = Math.max(1, Math.floor(chartData.length / 12));
   const last30DaysData = chartData.slice(-30);
@@ -371,13 +371,13 @@ export default function AnalyticsScreen() {
 
   const getPointCoordinates = useCallback(
     (value: number, index: number, maxValue: number, width: number) => {
-      const x = yAxisWidth + chartPadding + index * width + width / 2;
+      const x = chartPadding + index * width + width / 2;
       const normalized = maxValue === 0 ? 0 : value / maxValue;
       const usableHeight = chartHeight - chartPadding * 2;
       const y = chartPadding + (1 - normalized) * usableHeight;
       return { x, y };
     },
-    [chartPadding, chartHeight, yAxisWidth]
+    [chartPadding, chartHeight]
   );
 
   const linePoints = chartData
@@ -467,40 +467,43 @@ export default function AnalyticsScreen() {
               ) : (
                 <View style={styles.lineChartContainer}>
                   <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Pinch to zoom · last 30 days highlighted</Text>
-                  <PinchGestureHandler onGestureEvent={handlePinchGesture} onHandlerStateChange={handlePinchStateChange}>
-                    <ScrollView
-                      ref={chartScrollRef}
-                      horizontal
-                      scrollEnabled={true}
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.chartScrollContent, { width: yAxisWidth + chartContentWidth + chartPadding * 2 }]}
-                    >
-                      <Svg width={yAxisWidth + chartContentWidth + chartPadding * 2} height={chartHeight}>
-                        {yAxisValues.map((value, index) => {
-                          const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
-                          return (
-                            <SvgText
-                              key={`yaxis-${index}`}
-                              x={yAxisWidth - 8}
-                              y={y + 4}
-                              fill={colors.text}
-                              fontSize={11}
-                              fontWeight="600"
-                              textAnchor="end"
-                            >
-                              {value}
-                            </SvgText>
-                          );
-                        })}
-                        <SvgLine
-                          x1={yAxisWidth}
-                          y1={chartPadding}
-                          x2={yAxisWidth}
-                          y2={chartHeight - chartPadding}
-                          stroke={colors.border}
-                          strokeWidth={1}
-                          opacity={0.3}
-                        />
+                  <View style={{ flexDirection: 'row' }}>
+                    <Svg width={yAxisWidth} height={chartHeight} style={{ position: 'absolute', left: 0, zIndex: 1 }}>
+                      {yAxisValues.map((value, index) => {
+                        const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
+                        return (
+                          <SvgText
+                            key={`yaxis-${index}`}
+                            x={yAxisWidth - 8}
+                            y={y + 4}
+                            fill={colors.text}
+                            fontSize={11}
+                            fontWeight="600"
+                            textAnchor="end"
+                          >
+                            {value}
+                          </SvgText>
+                        );
+                      })}
+                      <SvgLine
+                        x1={yAxisWidth}
+                        y1={chartPadding}
+                        x2={yAxisWidth}
+                        y2={chartHeight - chartPadding}
+                        stroke={colors.border}
+                        strokeWidth={1}
+                        opacity={0.3}
+                      />
+                    </Svg>
+                    <PinchGestureHandler onGestureEvent={handlePinchGesture} onHandlerStateChange={handlePinchStateChange}>
+                      <ScrollView
+                        ref={chartScrollRef}
+                        horizontal
+                        scrollEnabled={true}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={[styles.chartScrollContent, { width: chartContentWidth + chartPadding * 2, paddingLeft: yAxisWidth }]}
+                      >
+                        <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
                         {highlightWidth > 0 && (
                           <Rect
                             x={highlightX}
@@ -517,9 +520,9 @@ export default function AnalyticsScreen() {
                           return (
                             <SvgLine
                               key={`ygrid-${index}`}
-                              x1={yAxisWidth}
+                              x1={chartPadding}
                               y1={y}
-                              x2={yAxisWidth + chartPadding + chartContentWidth}
+                              x2={chartPadding + chartContentWidth}
                               y2={y}
                               stroke={colors.border}
                               strokeWidth={1}
@@ -529,7 +532,7 @@ export default function AnalyticsScreen() {
                         })}
                         {chartData.map((_, index) => {
                           if (index % gridInterval !== 0) return null;
-                          const x = yAxisWidth + chartPadding + index * dayWidth + dayWidth / 2;
+                          const x = chartPadding + index * dayWidth + dayWidth / 2;
                           return (
                             <SvgLine
                               key={`grid-${index}`}
@@ -544,9 +547,9 @@ export default function AnalyticsScreen() {
                           );
                         })}
                         <SvgLine
-                          x1={yAxisWidth + chartPadding}
+                          x1={chartPadding}
                           y1={chartHeight - chartPadding}
-                          x2={yAxisWidth + chartPadding + chartContentWidth}
+                          x2={chartPadding + chartContentWidth}
                           y2={chartHeight - chartPadding}
                           stroke={colors.border}
                           strokeWidth={1}
@@ -563,7 +566,7 @@ export default function AnalyticsScreen() {
                         {latestPointCoords && <Circle cx={latestPointCoords.x} cy={latestPointCoords.y} r={5.5} fill={colors.primary} stroke="#ffffff" strokeWidth={2} />}
                         {chartData.map((day, index) => {
                           if (index % 3 !== 0 && index !== chartData.length - 1) return null;
-                          const x = yAxisWidth + chartPadding + index * dayWidth + dayWidth / 2;
+                          const x = chartPadding + index * dayWidth + dayWidth / 2;
                           const date = new Date(day.date + "T00:00:00");
                           const label = `${date.getMonth() + 1}/${date.getDate()}`;
                           return (
@@ -575,6 +578,7 @@ export default function AnalyticsScreen() {
                       </Svg>
                     </ScrollView>
                   </PinchGestureHandler>
+                  </View>
                   <View style={[styles.chartSummary, { borderTopColor: colors.border }]}>
                     <View style={styles.chartSummaryItem}>
                       <Text style={[styles.chartSummaryLabel, { color: colors.textMuted }]}>Last 30 days</Text>
