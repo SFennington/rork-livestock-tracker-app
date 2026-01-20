@@ -194,7 +194,7 @@ export default function SettingsScreen() {
       console.log('Starting data export...');
 
       const allData = {
-        version: '1.0.0',
+        version: '1.2.0',
         exportDate: new Date().toISOString(),
         data: {
           chickens: livestock.chickens,
@@ -209,6 +209,7 @@ export default function SettingsScreen() {
           expenses: livestock.expenses,
           income: livestock.income,
           chickenHistory: livestock.chickenHistory,
+          animals: livestock.animals,
         }
       };
 
@@ -321,6 +322,7 @@ export default function SettingsScreen() {
               EXPENSES: 'livestock_expenses',
               INCOME: 'livestock_income',
               CHICKEN_HISTORY: 'livestock_chicken_history',
+              ANIMALS: 'livestock_animals',
             } as const;
 
             await Promise.all([
@@ -336,6 +338,7 @@ export default function SettingsScreen() {
               AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(importedData.data.chickenHistory ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(importedData.data.animals ?? [])),
             ]);
 
             console.log('Import completed successfully (web)');
@@ -373,6 +376,7 @@ export default function SettingsScreen() {
                     EXPENSES: 'livestock_expenses',
                     INCOME: 'livestock_income',
                     CHICKEN_HISTORY: 'livestock_chicken_history',
+                    ANIMALS: 'livestock_animals',
                   } as const;
 
                   await Promise.all([
@@ -388,6 +392,7 @@ export default function SettingsScreen() {
                     AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(importedData.data.chickenHistory ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(importedData.data.animals ?? [])),
                   ]);
 
                   console.log('Import completed successfully');
