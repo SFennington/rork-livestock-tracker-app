@@ -9,7 +9,7 @@ import DatePicker from "@/components/DatePicker";
 
 type SortDirection = "asc" | "desc";
 
-type EggSortKey = "date" | "count" | "notes";
+type EggSortKey = "date" | "count" | "notes" | "laid" | "broken";
 
 type BreedSortKey = "breedingDate" | "expectedKindlingDate" | "status" | "litterSize";
 
@@ -118,6 +118,10 @@ export default function RecordsScreen() {
           return dir * (new Date(a.date).getTime() - new Date(b.date).getTime());
         case 'count':
           return dir * (a.count - b.count);
+        case 'laid':
+          return dir * ((a.laid ?? a.count) - (b.laid ?? b.count));
+        case 'broken':
+          return dir * ((a.broken ?? 0) - (b.broken ?? 0));
         case 'notes':
           return dir * ((a.notes ?? '').localeCompare(b.notes ?? ''));
       }
@@ -405,13 +409,14 @@ export default function RecordsScreen() {
                         <Text style={styles.headText} numberOfLines={1}>Date</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'date'} />
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'count'))} testID="eggs-sort-count">
+                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'laid'))} testID="eggs-sort-laid">
                         <Text style={styles.headText} numberOfLines={1}>Laid</Text>
-                        <SortIcon dir={eggSort.dir} active={eggSort.key === 'count'} />
+                        <SortIcon dir={eggSort.dir} active={eggSort.key === 'laid'} />
                       </TouchableOpacity>
-                      <View style={[styles.cell, styles.cellXsm]}>
+                      <TouchableOpacity style={[styles.cell, styles.cellXsm]} onPress={() => setEggSort(prev => toggleSort(prev, 'broken'))} testID="eggs-sort-broken">
                         <Text style={styles.headText} numberOfLines={1}>Broken</Text>
-                      </View>
+                        <SortIcon dir={eggSort.dir} active={eggSort.key === 'broken'} />
+                      </TouchableOpacity>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setEggSort(prev => toggleSort(prev, 'notes'))} testID="eggs-sort-notes">
                         <Text style={styles.headText} numberOfLines={1}>Notes</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'notes'} />
