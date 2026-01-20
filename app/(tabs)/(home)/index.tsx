@@ -143,7 +143,7 @@ export default function DashboardScreen() {
           <View style={[styles.statCard, { backgroundColor: colors.accent }]}>
             <View style={styles.statHeader}>
               <Egg size={24} color="#fff" />
-              <Text style={styles.statValue}>{stats.todayEggs}</Text>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stats.todayEggs}</Text>
             </View>
             <Text style={styles.statLabel}>Eggs Today</Text>
             <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day</Text>
@@ -154,7 +154,7 @@ export default function DashboardScreen() {
           <TouchableOpacity testID="stat-active-breedings" style={[styles.statCard, { backgroundColor: colors.secondary }]} onPress={() => router.push('/breeding-calendar')}>
             <View style={styles.statHeader}>
               <Heart size={24} color="#fff" />
-              <Text style={styles.statValue}>{activeBreedings.length}</Text>
+              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{activeBreedings.length}</Text>
             </View>
             <Text style={styles.statLabel}>Active Breedings</Text>
             <Text style={styles.statSubtext}>
@@ -177,7 +177,7 @@ export default function DashboardScreen() {
         <View style={[styles.statCard, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
           <View style={styles.statHeader}>
             <Bird size={24} color={colors.text} />
-            <Text style={[styles.statValue, { color: colors.text }]}>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
               {(settings.enabledAnimals.chickens ? stats.activeChickens : 0) + (settings.enabledAnimals.rabbits ? stats.activeRabbits : 0)}
             </Text>
           </View>

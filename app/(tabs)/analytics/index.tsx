@@ -742,18 +742,18 @@ export default function AnalyticsScreen() {
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Egg size={20} color="#f59e0b" />
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalLaid}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.totalLaid}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Laid</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#10b981" />
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.avgEggsPerDay7d.toFixed(1)}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.avgEggsPerDay7d.toFixed(1)}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg/Day</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>7 day</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TrendingUp size={20} color="#3b82f6" />
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.dozenPerWeek.toFixed(1)}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.dozenPerWeek.toFixed(1)}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz/Wk</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>4 wk avg</Text>
           </View>
@@ -761,15 +761,15 @@ export default function AnalyticsScreen() {
 
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalBroken}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.totalBroken}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Broken</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalDonated}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.totalDonated}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Donated</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>{analytics.eggsConsumed}</Text>
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.eggsConsumed}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Consumed</Text>
           </View>
         </View>
