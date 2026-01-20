@@ -40,7 +40,7 @@ export default function SettingsScreen() {
   const [isImportingCSV, setIsImportingCSV] = useState(false);
   const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
-  const [eggsOnHandInput, setEggsOnHandInput] = useState(settings.eggsOnHand.toString());
+  const [eggsOnHandInput, setEggsOnHandInput] = useState(Math.round(settings.eggsOnHand / 12).toString());
   const [eggValueInput, setEggValueInput] = useState(settings.eggValuePerDozen.toString());
 
   const handlePaletteChange = (newPalette: ThemePalette) => {
@@ -937,14 +937,14 @@ export default function SettingsScreen() {
 
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { color: colors.text }]}>Eggs on Hand</Text>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Eggs on Hand (Dozens)</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                 value={eggsOnHandInput}
                 onChangeText={setEggsOnHandInput}
                 onBlur={() => {
                   const num = parseInt(eggsOnHandInput) || 0;
-                  updateEggsOnHand(num);
+                  updateEggsOnHand(num * 12);
                   setEggsOnHandInput(num.toString());
                 }}
                 keyboardType="numeric"

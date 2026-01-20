@@ -33,11 +33,25 @@ export default function DashboardScreen() {
       .filter(e => new Date(e.date) >= last30Days)
       .reduce((sum, e) => sum + e.count, 0);
     
+    let totalLaid = 0;
+    let totalSold = 0;
+    let totalBroken = 0;
+    let totalDonated = 0;
+    eggProduction.forEach(record => {
+      totalSold += record.sold || 0;
+      totalLaid += record.laid || record.count;
+      totalBroken += record.broken || 0;
+      totalDonated += record.donated || 0;
+    });
+    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
+    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
+    const totalIncomeWithSavings = totalIncome + consumptionSavings;
+    
     return {
       todayEggs,
       totalExpenses,
       totalIncome,
-      profit: totalIncome - totalExpenses,
+      profit: totalIncomeWithSavings - totalExpenses,
       activeBreedings,
       activeChickens,
       activeRabbits,
@@ -46,7 +60,7 @@ export default function DashboardScreen() {
       roosters,
       hens,
     };
-  }, [rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount, getChickenCountOnDate]);
+  }, [rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen]);
 
   if (isLoading) {
     return (
