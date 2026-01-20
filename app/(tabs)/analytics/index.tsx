@@ -31,11 +31,20 @@ export default function AnalyticsScreen() {
     let totalBroken = 0;
     let totalDonated = 0;
     
+    // Get sold and donated from income records (quantity already in eggs)
+    income.forEach(record => {
+      if (record.type === 'eggs' && record.quantity) {
+        if (record.amount === 0) {
+          totalDonated += record.quantity;
+        } else {
+          totalSold += record.quantity;
+        }
+      }
+    });
+    
     eggProduction.forEach(record => {
-      totalSold += record.sold || 0;
       totalLaid += record.laid || record.count;
       totalBroken += record.broken || 0;
-      totalDonated += record.donated || 0;
     });
     
     const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;

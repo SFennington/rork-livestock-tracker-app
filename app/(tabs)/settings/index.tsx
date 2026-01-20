@@ -441,7 +441,7 @@ export default function SettingsScreen() {
           fileName = 'expenses-template.csv';
           break;
         case 'income':
-          csvContent = 'date,type,amount,livestockType,quantity,description\n2025-01-01,eggs,30.00,chicken,24,"Sold 2 dozen eggs"\n2025-01-02,livestock,100.00,rabbit,1,"Sold rabbit"';
+          csvContent = 'date,type,amount,livestockType,quantity,description\n2025-01-01,eggs,30.00,chicken,2,"Sold 2 dozen eggs"\n2025-01-02,eggs,0,chicken,1,"Donated 1 dozen eggs"\n2025-01-03,livestock,100.00,rabbit,1,"Sold rabbit"';
           fileName = 'income-template.csv';
           break;
         case 'breeding':
@@ -701,12 +701,15 @@ export default function SettingsScreen() {
                   console.log('Skipping duplicate income:', normalizedDate, row.type, parsedAmount);
                 } else {
                   console.log('Adding income:', normalizedDate, row.type, parsedAmount);
+                  const parsedQuantity = row.quantity ? parseInt(row.quantity) : undefined;
+                  // Convert dozens to eggs for egg-related income
+                  const finalQuantity = (row.type === 'eggs' && parsedQuantity) ? parsedQuantity * 12 : parsedQuantity;
                   await livestock.addIncome({
                     date: normalizedDate,
                     type: row.type as any,
                     amount: parsedAmount,
                     livestockType: row.livestockType as any,
-                    quantity: row.quantity ? parseInt(row.quantity) : undefined,
+                    quantity: finalQuantity,
                     description: row.description || '',
                   });
                   importedCount++;
