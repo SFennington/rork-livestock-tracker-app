@@ -37,7 +37,7 @@ export default function RecordsScreen() {
   const [activeTab, setActiveTab] = useState<'eggs' | 'breeding' | 'financial'>('eggs');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [eggForm, setEggForm] = useState<{ date: string; count: string; notes: string } | null>(null);
+  const [eggForm, setEggForm] = useState<{ date: string; count: string; notes: string; laid?: string; broken?: string } | null>(null);
   const [breedForm, setBreedForm] = useState<{ breedingDate: string; expectedKindlingDate?: string; status?: string; litterSize?: string } | null>(null);
   const [moneyForm, setMoneyForm] = useState<{ date: string; amount: string; description?: string; isIncome: boolean; type?: string } | null>(null);
 
@@ -435,10 +435,102 @@ export default function RecordsScreen() {
                           <Text style={styles.bodyText}>{record.date}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellSm]}>
-                          <Text style={styles.bodyText}>{record.laid ?? record.count}</Text>
+                          {editingId === record.id && editingField === 'laid' ? (
+                            <View style={styles.inlineEditContainer}>
+                              <TextInput 
+                                testID={`egg-laid-${record.id}`} 
+                                style={styles.inlineInputSmall} 
+                                value={eggForm?.laid ?? String(record.laid ?? record.count)} 
+                                onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), laid: t }))} 
+                                keyboardType="numeric"
+                                placeholder="0"
+                              />
+                              <TouchableOpacity testID={`egg-save-laid-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const parsed = parseInt(eggForm?.laid ?? String(record.laid ?? record.count), 10);
+                                  if (Number.isNaN(parsed)) {
+                                    Alert.alert('Invalid', 'Laid must be a number');
+                                    return;
+                                  }
+                                  await updateEggProduction(record.id, { laid: parsed, count: parsed });
+                                  setEditingId(null);
+                                  setEditingField(null);
+                                  setEggForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save');
+                                }
+                              }}>
+                                <Text style={styles.inlineSaveText}>✓</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity style={styles.inlineCancelButton} onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(null);
+                                setEditingField(null);
+                                setEggForm(null);
+                              }}>
+                                <Text style={styles.inlineCancelText}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <TouchableOpacity onPress={(e) => {
+                              e.stopPropagation();
+                              setEditingId(record.id);
+                              setEditingField('laid');
+                              setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '', laid: String(record.laid ?? record.count) });
+                            }}>
+                              <Text style={styles.bodyText}>{record.laid ?? record.count}</Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                         <View style={[styles.cell, styles.cellXsm]}>
-                          <Text style={styles.bodyText}>{record.broken ?? 0}</Text>
+                          {editingId === record.id && editingField === 'broken' ? (
+                            <View style={styles.inlineEditContainer}>
+                              <TextInput 
+                                testID={`egg-broken-${record.id}`} 
+                                style={styles.inlineInputSmall} 
+                                value={eggForm?.broken ?? String(record.broken ?? 0)} 
+                                onChangeText={(t) => setEggForm(prev => ({ ...(prev ?? { date: record.date, count: String(record.count), notes: record.notes ?? '' }), broken: t }))} 
+                                keyboardType="numeric"
+                                placeholder="0"
+                              />
+                              <TouchableOpacity testID={`egg-save-broken-${record.id}`} style={styles.inlineSaveButton} onPress={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const parsed = parseInt(eggForm?.broken ?? String(record.broken ?? 0), 10);
+                                  if (Number.isNaN(parsed)) {
+                                    Alert.alert('Invalid', 'Broken must be a number');
+                                    return;
+                                  }
+                                  await updateEggProduction(record.id, { broken: parsed });
+                                  setEditingId(null);
+                                  setEditingField(null);
+                                  setEggForm(null);
+                                } catch (e) {
+                                  Alert.alert('Error', 'Failed to save');
+                                }
+                              }}>
+                                <Text style={styles.inlineSaveText}>✓</Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity style={styles.inlineCancelButton} onPress={(e) => {
+                                e.stopPropagation();
+                                setEditingId(null);
+                                setEditingField(null);
+                                setEggForm(null);
+                              }}>
+                                <Text style={styles.inlineCancelText}>✕</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <TouchableOpacity onPress={(e) => {
+                              e.stopPropagation();
+                              setEditingId(record.id);
+                              setEditingField('broken');
+                              setEggForm({ date: record.date, count: String(record.count), notes: record.notes ?? '', broken: String(record.broken ?? 0) });
+                            }}>
+                              <Text style={styles.bodyText}>{record.broken ?? 0}</Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id && editingField === 'notes' ? (
