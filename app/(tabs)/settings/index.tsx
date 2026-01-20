@@ -549,8 +549,9 @@ export default function SettingsScreen() {
         throw new Error('CSV file is empty or invalid');
       }
 
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '').replace(/^\uFEFF/, ''));
       console.log('Headers:', headers);
+      console.log('Header names:', headers.map((h, i) => `[${i}]: "${h}" (${h.length} chars)`));
       const rows = lines.slice(1);
       console.log('Data rows:', rows.length);
 
@@ -663,6 +664,8 @@ export default function SettingsScreen() {
               }
               break;
             case 'income':
+              console.log(`Validating income row ${i + 2}:`, { date: row.date, type: row.type, amount: row.amount, livestockType: row.livestockType });
+              console.log('Available fields:', Object.keys(row));
               if (!row.date) {
                 errors.push(`Row ${i + 2}: Missing required field 'date'`);
                 break;
