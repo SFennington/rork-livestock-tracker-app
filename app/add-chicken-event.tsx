@@ -1,16 +1,16 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, Modal } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
-import { Hash, FileText, DollarSign, User, Calendar, ChevronDown } from "lucide-react-native";
+import { Hash, FileText, DollarSign, User, Calendar, ChevronDown, List } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
 import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function AddChickenEventScreen() {
-  const { addChickenHistoryEvent } = useLivestock();
+  const { addChickenHistoryEvent, getAliveAnimals, updateAnimal } = useLivestock();
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
   const [eventType, setEventType] = useState(settings.chickenEventTypes[0] || 'acquired');
@@ -21,6 +21,8 @@ export default function AddChickenEventScreen() {
   const [sex, setSex] = useState<'M' | 'F' | ''>('');
   const [notes, setNotes] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([]);
+  const [showAnimalPicker, setShowAnimalPicker] = useState(false);
 
   const getDateString = (daysAgo: number) => {
     const date = new Date();
@@ -48,6 +50,14 @@ export default function AddChickenEventScreen() {
       return;
     }
 
+    // For death/consumed events, validate selected animals match quantity
+    if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
+      if (selectedAnimalIds.length !== qty) {
+        Alert.alert("Error", `Please select exactly ${qty} animal(s)`);
+        return;
+      }
+    }
+
     await addChickenHistoryEvent({
       date,
       type: eventType,
@@ -57,6 +67,17 @@ export default function AddChickenEventScreen() {
       sex: sex || undefined,
       notes: notes || undefined,
     });
+
+    // Mark selected animals as dead/consumed
+    if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
+      for (const animalId of selectedAnimalIds) {
+        await updateAnimal(animalId, {
+          status: eventType === 'consumed' ? 'consumed' : 'dead',
+          deathDate: date,
+          deathReason: notes || undefined,
+        });
+      }
+    }
 
     router.back();
   };
@@ -164,6 +185,25 @@ export default function AddChickenEventScreen() {
             />
           </View>
 
+          {(eventType === 'death' || eventType === 'consumed') && (
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <List size={16} color="#6b7280" />
+                <Text style={styles.label}>Select Animals (optional)</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.animalPickerButton}
+                onPress={() => setShowAnimalPicker(true)}
+              >
+                <Text style={styles.animalPickerButtonText}>
+                  {selectedAnimalIds.length > 0 
+                    ? `${selectedAnimalIds.length} animal(s) selected`
+                    : 'Tap to select specific animals'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>
               <User size={16} color="#6b7280" />
@@ -239,6 +279,60 @@ export default function AddChickenEventScreen() {
             </TouchableOpacity>
           </View>
       </View>
+
+      {/* Animal Picker Modal */}
+      <Modal
+        visible={showAnimalPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAnimalPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Chickens</Text>
+              <TouchableOpacity onPress={() => setShowAnimalPicker(false)}>
+                <Text style={styles.modalClose}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalList}>
+              {getAliveAnimals('chicken', breed || undefined)
+                .sort((a, b) => {
+                  if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
+                  return a.number - b.number;
+                })
+                .map((animal) => {
+                  const isSelected = selectedAnimalIds.includes(animal.id);
+                  return (
+                    <TouchableOpacity
+                      key={animal.id}
+                      style={[styles.animalItem, isSelected && styles.animalItemSelected]}
+                      onPress={() => {
+                        setSelectedAnimalIds(prev => 
+                          isSelected 
+                            ? prev.filter(id => id !== animal.id)
+                            : [...prev, animal.id]
+                        );
+                      }}
+                    >
+                      <View style={styles.animalItemContent}>
+                        <Text style={styles.animalItemNumber}>#{animal.number}</Text>
+                        {animal.name && <Text style={styles.animalItemName}>{animal.name}</Text>}
+                        <Text style={styles.animalItemBreed}>{animal.breed}</Text>
+                      </View>
+                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                        {isSelected && <Text style={styles.checkboxCheck}>✓</Text>}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              {getAliveAnimals('chicken', breed || undefined).length === 0 && (
+                <Text style={styles.emptyModalText}>No chickens available</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -399,5 +493,107 @@ const styles = StyleSheet.create({
   calendarToggleText: {
     fontSize: 13,
     color: "#6b7280",
+  },
+  animalPickerButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+  },
+  animalPickerButtonText: {
+    fontSize: 14,
+    color: "#6b7280",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  modalClose: {
+    fontSize: 16,
+    color: "#10b981",
+    fontWeight: "600",
+  },
+  modalList: {
+    padding: 16,
+  },
+  animalItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    marginBottom: 8,
+  },
+  animalItemSelected: {
+    backgroundColor: "#d1fae5",
+    borderColor: "#10b981",
+  },
+  animalItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  animalItemNumber: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  animalItemName: {
+    fontSize: 14,
+    color: "#6b7280",
+  },
+  animalItemBreed: {
+    fontSize: 13,
+    color: "#9ca3af",
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#d1d5db",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxSelected: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  checkboxCheck: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyModalText: {
+    textAlign: "center",
+    color: "#9ca3af",
+    fontSize: 14,
+    paddingVertical: 32,
   },
 });
