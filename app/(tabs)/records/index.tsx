@@ -402,21 +402,18 @@ export default function RecordsScreen() {
                         </TouchableOpacity>
                       </View>
                       <TouchableOpacity style={[styles.cell, styles.cellMd]} onPress={() => setEggSort(prev => toggleSort(prev, 'date'))} testID="eggs-sort-date">
-                        <Text style={styles.headText}>Date</Text>
+                        <Text style={styles.headText} numberOfLines={1}>Date</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'date'} />
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'count'))} testID="eggs-sort-count">
-                        <Text style={styles.headText}>Laid</Text>
+                        <Text style={styles.headText} numberOfLines={1}>Laid</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'count'} />
                       </TouchableOpacity>
                       <View style={[styles.cell, styles.cellXsm]}>
-                        <Text style={styles.headText}>Broken</Text>
-                      </View>
-                      <View style={[styles.cell, styles.cellXsm]}>
-                        <Text style={styles.headText}>Donated</Text>
+                        <Text style={styles.headText} numberOfLines={1}>Broken</Text>
                       </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setEggSort(prev => toggleSort(prev, 'notes'))} testID="eggs-sort-notes">
-                        <Text style={styles.headText}>Notes</Text>
+                        <Text style={styles.headText} numberOfLines={1}>Notes</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'notes'} />
                       </TouchableOpacity>
                     </View>
@@ -442,9 +439,6 @@ export default function RecordsScreen() {
                         </View>
                         <View style={[styles.cell, styles.cellXsm]}>
                           <Text style={styles.bodyText}>{record.broken ?? 0}</Text>
-                        </View>
-                        <View style={[styles.cell, styles.cellXsm]}>
-                          <Text style={styles.bodyText}>{record.donated ?? 0}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id && editingField === 'notes' ? (
