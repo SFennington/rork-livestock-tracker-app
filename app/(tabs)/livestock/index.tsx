@@ -522,6 +522,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     includeFontPadding: false,
     flex: 1,
+    minWidth: 100,
+    fontWeight: "500" as const,
   },
   breedCount: {
     fontSize: 16,

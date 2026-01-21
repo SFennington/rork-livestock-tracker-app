@@ -565,9 +565,24 @@ export default function SettingsScreen() {
 
       for (let i = 0; i < rows.length; i++) {
         try {
-          const values = rows[i].match(/(?:"([^"]*)"|([^,]+)|(?=,))/g)?.map(v => 
-            v ? v.replace(/^"|"$/g, '').replace(/^,/, '').trim() : ''
-          ) || [];
+          // Parse CSV with proper comma handling - split by commas, respecting quotes
+          const values: string[] = [];
+          let currentValue = '';
+          let insideQuotes = false;
+          
+          for (let j = 0; j < rows[i].length; j++) {
+            const char = rows[i][j];
+            
+            if (char === '"') {
+              insideQuotes = !insideQuotes;
+            } else if (char === ',' && !insideQuotes) {
+              values.push(currentValue.trim());
+              currentValue = '';
+            } else {
+              currentValue += char;
+            }
+          }
+          values.push(currentValue.trim()); // Push the last value
           
           const row: Record<string, string> = {};
           headers.forEach((header, index) => {

@@ -3,7 +3,7 @@ import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
 import { X, Plus, Save, Trash2, Eye, EyeOff } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
@@ -23,6 +23,9 @@ export default function ManageAnimalsScreen() {
     removeAnimal,
     getAliveAnimals,
     getAllAnimals,
+    chickenHistory,
+    rabbits,
+    getChickenCountOnDate,
   } = useLivestock();
 
   const [filterType, setFilterType] = useState<'chicken' | 'rabbit' | 'goat' | 'duck'>((params.type as any) ?? 'chicken');
@@ -48,6 +51,76 @@ export default function ManageAnimalsScreen() {
     dateAdded: new Date().toISOString().split('T')[0],
   });
 
+  // Auto-populate animals from breed counts on first load
+  useEffect(() => {
+    const checkAndPopulate = async () => {
+      // If breed is specified but no animals exist for that breed/type, check if we need to create them
+      if (filterBreed && filterType === 'chicken') {
+        const existing = getAllAnimals(filterType, filterBreed);
+        if (existing.length === 0) {
+          // Check if there's a chicken count from history
+          const today = new Date().toISOString().split('T')[0];
+          const breakdown: { [breed: string]: number } = {};
+          const sortedEvents = [...chickenHistory].sort((a, b) => 
+            new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+          
+          for (const event of sortedEvents) {
+            if (new Date(event.date).getTime() > new Date(today).getTime()) break;
+            const breed = event.breed || 'Unknown';
+            if (!breakdown[breed]) breakdown[breed] = 0;
+            
+            if (event.type === 'acquired') {
+              breakdown[breed] += event.quantity;
+            } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+              breakdown[breed] -= event.quantity;
+            }
+          }
+          
+          const count = breakdown[filterBreed] || 0;
+          if (count > 0) {
+            // Create individual animals
+            const newAnimals: Omit<IndividualAnimal, 'id'>[] = [];
+            for (let i = 1; i <= count; i++) {
+              newAnimals.push({
+                type: 'chicken',
+                breed: filterBreed,
+                number: i,
+                dateAdded: today,
+                status: 'alive',
+              });
+            }
+            await addAnimalsBatch(newAnimals);
+          }
+        }
+      } else if (filterBreed && filterType === 'rabbit') {
+        const existing = getAllAnimals(filterType, filterBreed);
+        if (existing.length === 0) {
+          // Check rabbit breed count
+          const activeRabbits = rabbits.filter(r => r.status === 'active' && r.breed === filterBreed);
+          const count = activeRabbits.reduce((sum, r) => sum + r.quantity, 0);
+          
+          if (count > 0) {
+            const newAnimals: Omit<IndividualAnimal, 'id'>[] = [];
+            const today = new Date().toISOString().split('T')[0];
+            for (let i = 1; i <= count; i++) {
+              newAnimals.push({
+                type: 'rabbit',
+                breed: filterBreed,
+                number: i,
+                dateAdded: today,
+                status: 'alive',
+              });
+            }
+            await addAnimalsBatch(newAnimals);
+          }
+        }
+      }
+    };
+    
+    checkAndPopulate();
+  }, [filterBreed, filterType]);
+
   const filteredAnimals = useMemo(() => {
     const list = showAll 
       ? getAllAnimals(filterType, filterBreed || undefined)
@@ -60,18 +133,45 @@ export default function ManageAnimalsScreen() {
   }, [filterType, filterBreed, showAll, getAllAnimals, getAliveAnimals]);
 
   const getBreedList = (): string[] => {
-    switch (filterType) {
-      case 'chicken': return CHICKEN_BREEDS;
-      case 'rabbit': return RABBIT_BREEDS;
-      default: return [];
+    // Get unique breeds from alive animals of the selected type
+    const aliveAnimals = getAliveAnimals(filterType);
+    const uniqueBreeds = Array.from(new Set(aliveAnimals.map(a => a.breed)));
+    
+    // Sort breeds alphabetically and add 'Other' at the end if not present
+    const sorted = uniqueBreeds.sort((a, b) => a.localeCompare(b));
+    if (!sorted.includes('Other')) {
+      sorted.push('Other');
     }
+    
+    return sorted.length > 0 ? sorted : [
+      ...(filterType === 'chicken' ? CHICKEN_BREEDS : RABBIT_BREEDS)
+    ];
   };
 
   const handleSaveEdit = async (animal: IndividualAnimal) => {
     try {
+      const newNumber = form.number ? parseInt(form.number, 10) : animal.number;
+      
+      // Check for duplicate number in the same type and breed
+      const duplicate = animals.find(
+        a => a.id !== animal.id && 
+             a.type === animal.type && 
+             a.breed === animal.breed && 
+             a.number === newNumber &&
+             a.status === 'alive'
+      );
+      
+      if (duplicate) {
+        Alert.alert(
+          'Duplicate Number', 
+          `Number ${newNumber} is already assigned to another ${animal.breed} ${animal.type}.`
+        );
+        return;
+      }
+      
       await updateAnimal(animal.id, {
         name: form.name,
-        number: form.number ? parseInt(form.number, 10) : animal.number,
+        number: newNumber,
         notes: form.notes,
       });
       setEditingId(null);
@@ -147,6 +247,40 @@ export default function ManageAnimalsScreen() {
     }
   };
 
+  const handleMigrateData = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const breakdown: { [breed: string]: number } = {};
+      const sortedEvents = [...chickenHistory].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      
+      for (const event of sortedEvents) {
+        if (new Date(event.date).getTime() > new Date(today).getTime()) break;
+        const breed = event.breed || 'Unknown';
+        if (!breakdown[breed]) breakdown[breed] = 0;
+        
+        if (event.type === 'acquired') {
+          breakdown[breed] += event.quantity;
+        } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+          breakdown[breed] -= event.quantity;
+        }
+      }
+      
+      let totalCreated = 0;
+      for (const [breed, count] of Object.entries(breakdown)) {
+        if (count > 0) {
+          await addAnimalsBatch('chicken', breed, count, today);
+          totalCreated += count;
+        }
+      }
+      
+      Alert.alert('Success', `Created ${totalCreated} chickens from history data`);
+    } catch (error) {
+      Alert.alert('Error', 'Migration failed: ' + error);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -205,7 +339,27 @@ export default function ManageAnimalsScreen() {
       </View>
 
       <ScrollView style={styles.list}>
-        {filteredAnimals.length === 0 ? (
+        {filteredAnimals.length === 0 && filterBreed ? (
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No {filterType}s found for {filterBreed}
+            </Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+              Migration may not have run. Check your data on the livestock tab.
+            </Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary, marginTop: 10 }]}>
+              Debug: animals.length = {animals.length}, filterType = {filterType}, filterBreed = {filterBreed}
+            </Text>
+            {animals.length === 0 && (
+              <TouchableOpacity 
+                style={[styles.migrateButton, { backgroundColor: colors.primary, marginTop: 20 }]}
+                onPress={handleMigrateData}
+              >
+                <Text style={styles.migrateButtonText}>Migrate Data from History</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : filteredAnimals.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               No {filterType}s found
@@ -220,7 +374,7 @@ export default function ManageAnimalsScreen() {
               key={animal.id}
               style={[
                 styles.animalCard,
-                { backgroundColor: '#fff', borderColor: colors.border },
+                { backgroundColor: colors.card, borderColor: colors.border },
                 animal.status !== 'alive' && styles.animalCardInactive,
               ]}
             >
@@ -234,6 +388,7 @@ export default function ManageAnimalsScreen() {
                       onChangeText={(t) => setForm(prev => ({ ...prev, number: t }))}
                       keyboardType="numeric"
                       placeholder="Number"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
                   <View style={styles.editRow}>
@@ -243,6 +398,7 @@ export default function ManageAnimalsScreen() {
                       value={form.name ?? animal.name ?? ''}
                       onChangeText={(t) => setForm(prev => ({ ...prev, name: t }))}
                       placeholder="Optional"
+                      placeholderTextColor={colors.textSecondary}
                     />
                   </View>
                   <View style={styles.editRow}>
@@ -252,6 +408,7 @@ export default function ManageAnimalsScreen() {
                       value={form.notes ?? animal.notes ?? ''}
                       onChangeText={(t) => setForm(prev => ({ ...prev, notes: t }))}
                       placeholder="Optional"
+                      placeholderTextColor={colors.textSecondary}
                       multiline
                       numberOfLines={2}
                     />
@@ -301,7 +458,7 @@ export default function ManageAnimalsScreen() {
                       {animal.status}
                     </Text>
                   </View>
-                  <Text style={[styles.animalBreed, { color: colors.textSecondary }]}>
+                  <Text style={[styles.animalBreed, { color: colors.text }]}>
                     {animal.breed}
                   </Text>
                   {animal.notes && (
@@ -667,6 +824,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  migrateButton: {
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  migrateButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
