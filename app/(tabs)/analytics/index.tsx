@@ -227,7 +227,6 @@ export default function AnalyticsScreen() {
       totalLaid,
       totalBroken,
       totalDonated,
-      eggsConsumed,
       dailyEggHistory,
       maxDailyEggs,
       eggsPerChickenHistory,

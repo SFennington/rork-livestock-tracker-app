@@ -60,7 +60,7 @@ export default function AddChickenEventScreen() {
 
     await addChickenHistoryEvent({
       date,
-      type: eventType,
+      type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
       quantity: qty,
       breed: breed || undefined,
       cost: cost ? parseFloat(cost) : undefined,

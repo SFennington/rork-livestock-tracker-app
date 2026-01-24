@@ -44,7 +44,7 @@ export default function AddIncomeScreen() {
     }
 
     await addIncome({
-      type,
+      type: type as 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other',
       amount: price * qty,
       date,
       livestockType,

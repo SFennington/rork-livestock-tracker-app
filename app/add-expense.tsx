@@ -61,7 +61,7 @@ export default function AddTransactionScreen() {
 
     if (transactionType === 'expense') {
       await addExpense({
-        category: expenseCategory,
+        category: expenseCategory as 'feed' | 'bedding' | 'medical' | 'equipment' | 'other',
         amount: transactionAmount,
         date,
         livestockType,
@@ -69,7 +69,7 @@ export default function AddTransactionScreen() {
       });
     } else {
       await addIncome({
-        type: incomeType,
+        type: incomeType as 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other',
         amount: transactionAmount,
         date,
         livestockType: livestockType === 'general' ? 'chicken' : livestockType,

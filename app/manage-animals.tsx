@@ -98,18 +98,7 @@ export default function ManageAnimalsScreen() {
           
           const count = breakdown[filterBreed] || 0;
           if (count > 0) {
-            // Create individual animals
-            const newAnimals: Omit<IndividualAnimal, 'id'>[] = [];
-            for (let i = 1; i <= count; i++) {
-              newAnimals.push({
-                type: 'chicken',
-                breed: filterBreed,
-                number: i,
-                dateAdded: today,
-                status: 'alive',
-              });
-            }
-            await addAnimalsBatch(newAnimals);
+            await addAnimalsBatch('chicken', filterBreed, count, today);
           }
         }
       } else if (filterBreed && filterType === 'rabbit') {
@@ -120,18 +109,8 @@ export default function ManageAnimalsScreen() {
           const count = activeRabbits.reduce((sum, r) => sum + r.quantity, 0);
           
           if (count > 0) {
-            const newAnimals: Omit<IndividualAnimal, 'id'>[] = [];
             const today = new Date().toISOString().split('T')[0];
-            for (let i = 1; i <= count; i++) {
-              newAnimals.push({
-                type: 'rabbit',
-                breed: filterBreed,
-                number: i,
-                dateAdded: today,
-                status: 'alive',
-              });
-            }
-            await addAnimalsBatch(newAnimals);
+            await addAnimalsBatch('rabbit', filterBreed, count, today);
           }
         }
       }

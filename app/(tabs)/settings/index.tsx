@@ -73,7 +73,12 @@ export default function SettingsScreen() {
 
       console.log('Requesting directory permissions...');
       // Use Storage Access Framework on Android for directory selection
-      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      const StorageAccessFramework = (FileSystem as any).StorageAccessFramework;
+      if (!StorageAccessFramework) {
+        Alert.alert('Not Supported', 'Storage access framework is not available on this platform.');
+        return;
+      }
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
       console.log('Permissions result:', permissions);
       
       if (permissions.granted) {
@@ -139,7 +144,8 @@ export default function SettingsScreen() {
       } else {
         // Write to selected folder using Storage Access Framework
         const folderUri = backup.settings.folderUri;
-        const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+        const StorageAccessFramework = (FileSystem as any).StorageAccessFramework;
+        const fileUri = await StorageAccessFramework.createFileAsync(
           folderUri,
           fileName,
           'application/json'
