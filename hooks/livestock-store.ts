@@ -513,7 +513,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return newAnimal;
   }, [getNextAnimalNumber]);
 
-  const addAnimalsBatch = useCallback(async (type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string, count: number, dateAdded: string) => {
+  const addAnimalsBatch = useCallback(async (type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string, count: number, dateAdded: string, sex?: 'M' | 'F') => {
     const startNumber = getNextAnimalNumber(type, breed);
     const newAnimals: IndividualAnimal[] = [];
     
@@ -525,6 +525,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         number: startNumber + i,
         dateAdded,
         status: 'alive',
+        sex,
       });
     }
     
@@ -533,9 +534,21 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
       return updated;
     });
+
+    // Create a history event for chickens
+    if (type === 'chicken') {
+      await addChickenEvent({
+        type: 'acquired',
+        quantity: count,
+        date: dateAdded,
+        breed,
+        sex,
+        notes: `Batch created ${count} ${sex === 'M' ? 'roosters' : sex === 'F' ? 'hens' : 'chickens'}`,
+      });
+    }
     
     return newAnimals;
-  }, [getNextAnimalNumber]);
+  }, [getNextAnimalNumber, addChickenEvent]);
 
   const updateAnimal = useCallback(async (id: string, updates: Partial<IndividualAnimal>) => {
     const updated = animals.map(a => a.id === id ? { ...a, ...updates } : a);

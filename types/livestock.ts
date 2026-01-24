@@ -199,6 +199,7 @@ export interface IndividualAnimal {
   number: number;
   dateAdded: string;
   status: 'alive' | 'dead' | 'consumed' | 'sold';
+  sex?: 'M' | 'F';
   notes?: string;
   deathDate?: string;
   deathReason?: string;

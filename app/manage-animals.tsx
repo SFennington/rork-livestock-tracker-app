@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { X, Plus, Save, Trash2, Eye, EyeOff } from "lucide-react-native";
+import { X, Plus, Save, Trash2, Eye, EyeOff, Skull } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState, useMemo, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,6 +26,7 @@ export default function ManageAnimalsScreen() {
     chickenHistory,
     rabbits,
     getChickenCountOnDate,
+    addChickenEvent,
   } = useLivestock();
 
   const [filterType, setFilterType] = useState<'chicken' | 'rabbit' | 'goat' | 'duck'>((params.type as any) ?? 'chicken');
@@ -34,22 +35,40 @@ export default function ManageAnimalsScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBatchForm, setShowBatchForm] = useState(false);
+  const [showDeathDialog, setShowDeathDialog] = useState(false);
+  const [selectedAnimalForDeath, setSelectedAnimalForDeath] = useState<IndividualAnimal | null>(null);
   
   const [form, setForm] = useState<{
     name?: string;
     number?: string;
     notes?: string;
+    sex?: 'M' | 'F';
   }>({});
 
   const [batchForm, setBatchForm] = useState<{
     breed: string;
     count: string;
     dateAdded: string;
+    sex?: 'M' | 'F';
   }>({
     breed: filterBreed,
     count: '',
     dateAdded: new Date().toISOString().split('T')[0],
+    sex: undefined,
   });
+
+  // Breed name normalization - map abbreviated names to full names
+  const breedNameMap: Record<string, string> = {
+    'RIR': 'Rhode Island Red',
+    'BO': 'Orpington',
+    'PR': 'Plymouth Rock (Barred)',
+    'ISA': 'ISA Brown',
+    'WL': 'White Leghorn',
+  };
+
+  const getFullBreedName = (breed: string): string => {
+    return breedNameMap[breed] || breed;
+  };
 
   // Auto-populate animals from breed counts on first load
   useEffect(() => {
@@ -189,6 +208,7 @@ export default function ManageAnimalsScreen() {
         name: form.name,
         number: newNumber,
         notes: form.notes,
+        sex: form.sex,
       });
       setEditingId(null);
       setForm({});
@@ -216,6 +236,25 @@ export default function ManageAnimalsScreen() {
         },
       ]
     );
+  };
+
+  const handleDeathEvent = async (eventType: 'death' | 'consumed') => {
+    if (!selectedAnimalForDeath) return;
+
+    try {
+      await addChickenEvent({
+        type: eventType,
+        quantity: 1,
+        date: new Date().toISOString().split('T')[0],
+        breed: selectedAnimalForDeath.breed,
+        notes: `${selectedAnimalForDeath.name || `#${selectedAnimalForDeath.number}`}`,
+      });
+      await updateAnimal(selectedAnimalForDeath.id, { status: 'dead' });
+      setShowDeathDialog(false);
+      setSelectedAnimalForDeath(null);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to record death event');
+    }
   };
 
   const handleAddSingle = async () => {
@@ -255,9 +294,9 @@ export default function ManageAnimalsScreen() {
     }
 
     try {
-      await addAnimalsBatch(filterType, batchForm.breed, count, batchForm.dateAdded);
+      await addAnimalsBatch(filterType, batchForm.breed, count, batchForm.dateAdded, batchForm.sex);
       setShowBatchForm(false);
-      setBatchForm(prev => ({ ...prev, breed: filterBreed, count: '', dateAdded: new Date().toISOString().split('T')[0] }));
+      setBatchForm(prev => ({ ...prev, breed: filterBreed, count: '', dateAdded: new Date().toISOString().split('T')[0], sex: undefined }));
     } catch (error) {
       Alert.alert('Error', 'Failed to create animals');
     }
@@ -429,6 +468,33 @@ export default function ManageAnimalsScreen() {
                       numberOfLines={2}
                     />
                   </View>
+                  {filterType === 'chicken' && (
+                    <View style={styles.editRow}>
+                      <Text style={[styles.editLabel, { color: colors.text }]}>Gender:</Text>
+                      <View style={styles.genderButtons}>
+                        <TouchableOpacity
+                          style={[
+                            styles.genderButton,
+                            { borderColor: colors.border },
+                            (form.sex ?? animal.sex) === 'M' && { backgroundColor: colors.primary },
+                          ]}
+                          onPress={() => setForm(prev => ({ ...prev, sex: 'M' }))}
+                        >
+                          <Text style={[styles.genderButtonText, { color: (form.sex ?? animal.sex) === 'M' ? '#fff' : colors.text }]}>Rooster</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.genderButton,
+                            { borderColor: colors.border },
+                            (form.sex ?? animal.sex) === 'F' && { backgroundColor: colors.primary },
+                          ]}
+                          onPress={() => setForm(prev => ({ ...prev, sex: 'F' }))}
+                        >
+                          <Text style={[styles.genderButtonText, { color: (form.sex ?? animal.sex) === 'F' ? '#fff' : colors.text }]}>Hen</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
                   <View style={styles.editActions}>
                     <TouchableOpacity
                       style={[styles.editButton, { backgroundColor: colors.primary }]}
@@ -458,6 +524,7 @@ export default function ManageAnimalsScreen() {
                       name: animal.name,
                       number: String(animal.number),
                       notes: animal.notes,
+                      sex: animal.sex,
                     });
                   }}
                 >
@@ -466,7 +533,7 @@ export default function ManageAnimalsScreen() {
                       #{animal.number}
                     </Text>
                     {animal.name && (
-                      <Text style={[styles.animalName, { color: colors.text }]}>
+                      <Text style={[styles.animalName, { color: colors.text }]} numberOfLines={1}>
                         {animal.name}
                       </Text>
                     )}
@@ -475,7 +542,7 @@ export default function ManageAnimalsScreen() {
                     </Text>
                   </View>
                   <Text style={[styles.animalBreed, { color: colors.text }]}>
-                    {animal.breed}
+                    {getFullBreedName(animal.breed)}
                   </Text>
                   {animal.notes && (
                     <Text style={[styles.animalNotes, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -486,15 +553,27 @@ export default function ManageAnimalsScreen() {
                     Added: {animal.dateAdded}
                   </Text>
                   {animal.status === 'alive' && (
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleDelete(animal.id);
-                      }}
-                    >
-                      <Trash2 size={16} color={colors.error} />
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity
+                        style={styles.deathButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          setSelectedAnimalForDeath(animal);
+                          setShowDeathDialog(true);
+                        }}
+                      >
+                        <Skull size={16} color={colors.textMuted} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleDelete(animal.id);
+                        }}
+                      >
+                        <Trash2 size={16} color={colors.error} />
+                      </TouchableOpacity>
+                    </>
                   )}
                 </TouchableOpacity>
               )}
@@ -605,6 +684,34 @@ export default function ManageAnimalsScreen() {
               />
             </View>
 
+            {filterType === 'chicken' && (
+              <View style={styles.formGroup}>
+                <Text style={[styles.formLabel, { color: colors.text }]}>Gender:</Text>
+                <View style={styles.genderButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.genderButton,
+                      { borderColor: colors.border },
+                      batchForm.sex === 'M' && { backgroundColor: colors.primary },
+                    ]}
+                    onPress={() => setBatchForm(prev => ({ ...prev, sex: 'M' }))}
+                  >
+                    <Text style={[styles.genderButtonText, { color: batchForm.sex === 'M' ? '#fff' : colors.text }]}>Roosters</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.genderButton,
+                      { borderColor: colors.border },
+                      batchForm.sex === 'F' && { backgroundColor: colors.primary },
+                    ]}
+                    onPress={() => setBatchForm(prev => ({ ...prev, sex: 'F' }))}
+                  >
+                    <Text style={[styles.genderButtonText, { color: batchForm.sex === 'F' ? '#fff' : colors.text }]}>Hens</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             <TouchableOpacity
               style={[styles.submitButton, { backgroundColor: colors.primary }]}
               onPress={handleBatchCreate}
@@ -612,6 +719,46 @@ export default function ManageAnimalsScreen() {
               <Plus size={20} color="#fff" />
               <Text style={styles.submitButtonText}>Create {batchForm.count || '0'} {filterType}s</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Death Event Dialog */}
+      {showDeathDialog && selectedAnimalForDeath && (
+        <View style={[styles.modal, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Record Death for {selectedAnimalForDeath.name || `#${selectedAnimalForDeath.number}`}
+              </Text>
+              <TouchableOpacity onPress={() => {
+                setShowDeathDialog(false);
+                setSelectedAnimalForDeath(null);
+              }}>
+                <X size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={[styles.deathDialogText, { color: colors.textSecondary }]}>
+              How did this {filterType} die?
+            </Text>
+
+            <View style={styles.deathOptions}>
+              <TouchableOpacity
+                style={[styles.deathOptionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => handleDeathEvent('death')}
+              >
+                <Skull size={24} color={colors.textMuted} />
+                <Text style={[styles.deathOptionText, { color: colors.text }]}>Died (Natural)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.deathOptionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => handleDeathEvent('consumed')}
+              >
+                <Text style={{ fontSize: 24 }}>🍖</Text>
+                <Text style={[styles.deathOptionText, { color: colors.text }]}>Consumed</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -714,11 +861,13 @@ const styles = StyleSheet.create({
   },
   animalContent: {
     gap: 8,
+    paddingRight: 70,
   },
   animalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'nowrap',
   },
   animalNumber: {
     fontSize: 18,
@@ -746,6 +895,12 @@ const styles = StyleSheet.create({
   },
   animalDate: {
     fontSize: 12,
+  },
+  deathButton: {
+    position: 'absolute',
+    top: 0,
+    right: 32,
+    padding: 8,
   },
   deleteButton: {
     position: 'absolute',
@@ -855,6 +1010,44 @@ const styles = StyleSheet.create({
   migrateButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  deathDialogText: {
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  deathOptions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deathOptionButton: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  deathOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  genderButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  genderButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  genderButtonText: {
+    fontSize: 14,
     fontWeight: '600',
   },
 });
