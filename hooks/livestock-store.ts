@@ -531,7 +531,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return newAnimal;
   }, [getNextAnimalNumber]);
 
-  const addAnimalsBatch = useCallback(async (type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string, count: number, dateAdded: string, sex?: 'M' | 'F') => {
+  const addAnimalsBatch = useCallback(async (type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string, count: number, dateAdded: string, sex?: 'M' | 'F', skipEvent?: boolean) => {
     const startNumber = getNextAnimalNumber(type, breed);
     const newAnimals: IndividualAnimal[] = [];
     
@@ -553,8 +553,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       return updated;
     });
 
-    // Create a history event for chickens
-    if (type === 'chicken') {
+    // Create a history event for chickens (unless skipEvent is true)
+    if (type === 'chicken' && !skipEvent) {
       await addChickenHistoryEvent({
         type: 'acquired',
         quantity: count,

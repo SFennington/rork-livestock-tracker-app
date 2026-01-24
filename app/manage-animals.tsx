@@ -79,7 +79,7 @@ export default function ManageAnimalsScreen() {
         if (existing.length === 0) {
           // Check if there's a chicken count from history
           const today = new Date().toISOString().split('T')[0];
-          const breakdown: { [breed: string]: number } = {};
+          const breakdown: { [breed: string]: { M?: number; F?: number } } = {};
           const sortedEvents = [...chickenHistory].sort((a, b) => 
             new Date(a.date).getTime() - new Date(b.date).getTime()
           );
@@ -87,18 +87,30 @@ export default function ManageAnimalsScreen() {
           for (const event of sortedEvents) {
             if (new Date(event.date).getTime() > new Date(today).getTime()) break;
             const breed = event.breed || 'Unknown';
-            if (!breakdown[breed]) breakdown[breed] = 0;
+            const sex = event.sex;
+            
+            if (!breakdown[breed]) breakdown[breed] = {};
             
             if (event.type === 'acquired') {
-              breakdown[breed] += event.quantity;
+              if (sex) {
+                breakdown[breed][sex] = (breakdown[breed][sex] || 0) + event.quantity;
+              }
             } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
-              breakdown[breed] -= event.quantity;
+              if (sex) {
+                breakdown[breed][sex] = (breakdown[breed][sex] || 0) - event.quantity;
+              }
             }
           }
           
-          const count = breakdown[filterBreed] || 0;
-          if (count > 0) {
-            await addAnimalsBatch('chicken', filterBreed, count, today);
+          // Create individual animals for each sex
+          const breedData = breakdown[filterBreed];
+          if (breedData) {
+            if (breedData.M && breedData.M > 0) {
+              await addAnimalsBatch('chicken', filterBreed, breedData.M, today, 'M', true);
+            }
+            if (breedData.F && breedData.F > 0) {
+              await addAnimalsBatch('chicken', filterBreed, breedData.F, today, 'F', true);
+            }
           }
         }
       } else if (filterBreed && filterType === 'rabbit') {
@@ -351,27 +363,6 @@ export default function ManageAnimalsScreen() {
       </View>
 
       <View style={[styles.filters, { borderBottomColor: colors.border }]}>
-        <View style={styles.filterRow}>
-          <Text style={[styles.filterLabel, { color: colors.text }]}>Type:</Text>
-          <View style={styles.typeButtons}>
-            {(['chicken', 'rabbit', 'goat', 'duck'] as const).map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.typeButton,
-                  { borderColor: colors.border },
-                  filterType === type && { backgroundColor: colors.primary },
-                ]}
-                onPress={() => setFilterType(type)}
-              >
-                <Text style={[styles.typeButtonText, { color: filterType === type ? '#fff' : colors.text }]}>
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        
         <View style={styles.filterRow}>
           <Text style={[styles.filterLabel, { color: colors.text }]}>Breed:</Text>
           <BreedPicker
