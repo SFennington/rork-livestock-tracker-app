@@ -51,6 +51,7 @@ function RootLayoutNav() {
       <Stack.Screen name="add-chicken" options={{ presentation: "modal", title: "Add Chicken" }} />
       <Stack.Screen name="add-rabbit" options={{ presentation: "modal", title: "Add Rabbit" }} />
       <Stack.Screen name="add-chicken-event" options={{ presentation: "modal", title: "Log Chicken Event" }} />
+      <Stack.Screen name="edit-chicken-event/[id]" options={{ presentation: "modal", title: "Edit Event" }} />
       <Stack.Screen name="add-expense" options={{ presentation: "modal", title: "Add Transaction" }} />
       <Stack.Screen name="add-income" options={{ presentation: "modal", title: "Add Income" }} />
       <Stack.Screen name="log-eggs" options={{ presentation: "modal", title: "Log Egg Production" }} />

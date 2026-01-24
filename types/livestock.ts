@@ -203,4 +203,5 @@ export interface IndividualAnimal {
   notes?: string;
   deathDate?: string;
   deathReason?: string;
+  eventId?: string; // Links to the ChickenHistoryEvent that created this animal
 }

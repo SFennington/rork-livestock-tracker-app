@@ -487,17 +487,14 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       return updated;
     });
 
-    // If deleting an acquired event, remove associated individual chickens
+    // If deleting an acquired event, remove all chickens linked to this event
     if (event?.type === 'acquired') {
       const associatedChickens = animals.filter(a => 
-        a.type === 'chicken' &&
-        a.dateAdded === event.date &&
-        a.breed === event.breed &&
-        a.sex === event.sex
+        a.type === 'chicken' && a.eventId === id
       );
 
       if (associatedChickens.length > 0) {
-        const updatedAnimals = animals.filter(a => !associatedChickens.some(ac => ac.id === a.id));
+        const updatedAnimals = animals.filter(a => a.eventId !== id);
         setAnimals(updatedAnimals);
         await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updatedAnimals));
       }
@@ -531,7 +528,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return newAnimal;
   }, [getNextAnimalNumber]);
 
-  const addAnimalsBatch = useCallback(async (type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string, count: number, dateAdded: string, sex?: 'M' | 'F', skipEvent?: boolean) => {
+  const addAnimalsBatch = useCallback(async (type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string, count: number, dateAdded: string, sex?: 'M' | 'F', skipEvent?: boolean, eventId?: string) => {
     const startNumber = getNextAnimalNumber(type, breed);
     const newAnimals: IndividualAnimal[] = [];
     
@@ -544,6 +541,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         dateAdded,
         status: 'alive',
         sex,
+        eventId,
       });
     }
     
@@ -555,13 +553,24 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
     // Create a history event for chickens (unless skipEvent is true)
     if (type === 'chicken' && !skipEvent) {
-      await addChickenHistoryEvent({
+      const newEvent = await addChickenHistoryEvent({
         type: 'acquired',
         quantity: count,
         date: dateAdded,
         breed,
         sex,
       });
+      
+      // Update the animals with the event ID
+      if (newEvent && !eventId) {
+        setAnimals(prev => {
+          const updated = prev.map(a => 
+            newAnimals.some(na => na.id === a.id) ? { ...a, eventId: newEvent.id } : a
+          );
+          void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+          return updated;
+        });
+      }
     }
     
     return newAnimals;
@@ -575,58 +584,73 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     setAnimals(updated);
     await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
 
-    // For chickens, if sex is changing, update the history events
-    if (animal.type === 'chicken' && updates.sex && updates.sex !== animal.sex) {
-      // Use a closure to ensure we operate on fresh chickenHistory state
-      setChickenHistory(prev => {
-        const oldEvent = prev.find(e => 
-          e.type === 'acquired' &&
-          e.date === animal.dateAdded &&
-          e.breed === animal.breed &&
-          e.sex === animal.sex
-        );
-
-        const newEvent = prev.find(e => 
-          e.type === 'acquired' &&
-          e.date === animal.dateAdded &&
-          e.breed === animal.breed &&
-          e.sex === updates.sex
-        );
-
-        let updatedHistory = [...prev];
-
-        // Decrement or remove old event
-        if (oldEvent) {
-          if (oldEvent.quantity > 1) {
-            updatedHistory = updatedHistory.map(e => 
-              e.id === oldEvent.id ? { ...e, quantity: e.quantity - 1 } : e
+    // For chickens with eventId, update the linked event when sex/breed changes
+    if (animal.type === 'chicken' && animal.eventId && (updates.sex || updates.breed)) {
+      const linkedEvent = chickenHistory.find(e => e.id === animal.eventId);
+      
+      if (linkedEvent && linkedEvent.type === 'acquired') {
+        // If sex or breed changed, we need to move this animal to a different event
+        if ((updates.sex && updates.sex !== animal.sex) || (updates.breed && updates.breed !== animal.breed)) {
+          setChickenHistory(prev => {
+            let updatedHistory = [...prev];
+            
+            // Decrement or remove old event
+            const oldEvent = updatedHistory.find(e => e.id === animal.eventId);
+            if (oldEvent) {
+              if (oldEvent.quantity > 1) {
+                updatedHistory = updatedHistory.map(e => 
+                  e.id === oldEvent.id ? { ...e, quantity: e.quantity - 1 } : e
+                );
+              } else {
+                updatedHistory = updatedHistory.filter(e => e.id !== oldEvent.id);
+              }
+            }
+            
+            // Find or create new event with updated attributes
+            const newBreed = updates.breed || animal.breed;
+            const newSex = updates.sex || animal.sex;
+            const newEvent = updatedHistory.find(e => 
+              e.type === 'acquired' &&
+              e.date === animal.dateAdded &&
+              e.breed === newBreed &&
+              e.sex === newSex
             );
-          } else {
-            updatedHistory = updatedHistory.filter(e => e.id !== oldEvent.id);
-          }
-        }
-
-        // Increment or create new event
-        if (newEvent) {
-          updatedHistory = updatedHistory.map(e => 
-            e.id === newEvent.id ? { ...e, quantity: e.quantity + 1 } : e
-          );
-        } else {
-          updatedHistory.push({
-            id: createId(),
-            type: 'acquired',
-            quantity: 1,
-            date: animal.dateAdded,
-            breed: animal.breed,
-            sex: updates.sex,
+            
+            if (newEvent) {
+              updatedHistory = updatedHistory.map(e => 
+                e.id === newEvent.id ? { ...e, quantity: e.quantity + 1 } : e
+              );
+              // Update animal's eventId
+              setAnimals(prev => {
+                const updated = prev.map(a => a.id === id ? { ...a, eventId: newEvent.id } : a);
+                void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+                return updated;
+              });
+            } else {
+              const createdEvent = {
+                id: createId(),
+                type: 'acquired' as const,
+                quantity: 1,
+                date: animal.dateAdded,
+                breed: newBreed,
+                sex: newSex,
+              };
+              updatedHistory.push(createdEvent);
+              // Update animal's eventId
+              setAnimals(prev => {
+                const updated = prev.map(a => a.id === id ? { ...a, eventId: createdEvent.id } : a);
+                void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+                return updated;
+              });
+            }
+            
+            void storage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(updatedHistory));
+            return updatedHistory;
           });
         }
-
-        void storage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(updatedHistory));
-        return updatedHistory;
-      });
+      }
     }
-  }, [animals]);
+  }, [animals, chickenHistory]);
 
   const removeAnimal = useCallback(async (id: string) => {
     const animal = animals.find(a => a.id === id);
@@ -637,15 +661,10 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
 
     // For chickens, decrement the acquired event that created this animal
-    if (animal.type === 'chicken') {
-      const acquiredEvent = chickenHistory.find(e => 
-        e.type === 'acquired' &&
-        e.date === animal.dateAdded &&
-        e.breed === animal.breed &&
-        e.sex === animal.sex
-      );
+    if (animal.type === 'chicken' && animal.eventId) {
+      const acquiredEvent = chickenHistory.find(e => e.id === animal.eventId);
 
-      if (acquiredEvent) {
+      if (acquiredEvent && acquiredEvent.type === 'acquired') {
         if (acquiredEvent.quantity > 1) {
           await updateChickenHistoryEvent(acquiredEvent.id, { 
             quantity: acquiredEvent.quantity - 1 

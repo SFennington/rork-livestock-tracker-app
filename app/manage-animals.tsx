@@ -366,7 +366,7 @@ export default function ManageAnimalsScreen() {
         <View style={styles.filterRow}>
           <Text style={[styles.filterLabel, { color: colors.text }]}>Breed:</Text>
           <BreedPicker
-            breeds={getBreedList().map(b => getFullBreedName(b))}
+            breeds={getBreedList()}
             value={getFullBreedName(filterBreed)}
             onChange={(b) => setFilterBreed(b)}
             placeholder="All breeds"
@@ -814,7 +814,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   filters: {
-    padding: 16,
+    padding: 8,
+    paddingHorizontal: 16,
     gap: 12,
     borderBottomWidth: 1,
   },

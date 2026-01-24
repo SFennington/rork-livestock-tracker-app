@@ -10,7 +10,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function EditChickenEventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent } = useLivestock();
+  const { chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent, animals, removeAnimal, addAnimalsBatch } = useLivestock();
   const insets = useSafeAreaInsets();
   
   const event = chickenHistory.find(e => e.id === id);
@@ -47,6 +47,29 @@ export default function EditChickenEventScreen() {
         Alert.alert("Error", "Quantity must be a positive number");
       }
       return;
+    }
+
+    // If this is an acquired event and key attributes changed, update associated individual animals
+    if (event && event.type === 'acquired') {
+      const breedChanged = breed !== event.breed;
+      const sexChanged = sex !== event.sex;
+      const dateChanged = date !== event.date;
+      const quantityChanged = qty !== event.quantity;
+      
+      if (breedChanged || sexChanged || dateChanged || quantityChanged) {
+        // Find all individual chickens linked to this event
+        const linkedChickens = animals.filter(a => a.eventId === event.id);
+
+        // Remove all linked chickens
+        for (const chicken of linkedChickens) {
+          await removeAnimal(chicken.id);
+        }
+
+        // Recreate with new attributes, linked to this event
+        if (qty > 0) {
+          await addAnimalsBatch('chicken', breed || 'Unknown', qty, date, sex as 'M' | 'F' | undefined, true, event.id);
+        }
+      }
     }
 
     await updateChickenHistoryEvent(id, {
