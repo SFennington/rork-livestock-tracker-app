@@ -7,7 +7,6 @@ import { useAppSettings } from "@/hooks/app-settings-store";
 import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
 import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
-import { StorageAccessFramework } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -74,7 +73,7 @@ export default function SettingsScreen() {
 
       console.log('Requesting directory permissions...');
       // Use Storage Access Framework on Android for directory selection
-      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
       console.log('Permissions result:', permissions);
       
       if (permissions.granted) {
@@ -140,14 +139,12 @@ export default function SettingsScreen() {
       } else {
         // Write to selected folder using Storage Access Framework
         const folderUri = backup.settings.folderUri;
-        const fileUri = await StorageAccessFramework.createFileAsync(
+        const fileUri = await FileSystem.StorageAccessFramework.createFileAsync(
           folderUri,
           fileName,
           'application/json'
         );
-        await FileSystem.writeAsStringAsync(fileUri, jsonString, {
-          encoding: FileSystem.EncodingType.UTF8,
-        });
+        await FileSystem.writeAsStringAsync(fileUri, jsonString);
         console.log('Backup written to:', fileUri);
       }
 

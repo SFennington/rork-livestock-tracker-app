@@ -39,3 +39,9 @@ google-play-service-account.json
 # typescript
 *.tsbuildinfo
 .vercel
+
+ios/
+android/
+.rork
+.env
+rork-eslint.config.js

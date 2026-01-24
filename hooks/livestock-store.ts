@@ -280,7 +280,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
                 count: production.count,
                 laid: production.laid ?? e.laid,
                 broken: production.broken ?? e.broken,
-                consumed: production.consumed ?? e.consumed,
+                donated: production.donated ?? e.donated,
                 notes: production.notes ?? e.notes,
                 sold: production.sold ?? e.sold,
               } 
