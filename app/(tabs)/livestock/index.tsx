@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { useState, useMemo } from "react";
 
 export default function LivestockScreen() {
-  const { chickenHistory, rabbits, isLoading, getChickenCountOnDate, getRoostersAndHensCount } = useLivestock();
+  const { chickenHistory, rabbits, isLoading, getChickenCountOnDate, getRoostersAndHensCount, getAliveAnimals } = useLivestock();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'rabbits'>('chickens');
   const { activeBreedings } = useRabbitBreeding();
@@ -33,29 +33,40 @@ export default function LivestockScreen() {
   }, [rabbits]);
 
   const chickenBreedBreakdown = useMemo(() => {
+    // Get breed breakdown from individual animals (primary source)
+    const aliveChickens = getAliveAnimals('chicken');
     const breakdown: { [breed: string]: number } = {};
-    const today = new Date().toISOString().split('T')[0];
-    const sortedEvents = [...chickenHistory].sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
     
-    for (const event of sortedEvents) {
-      if (new Date(event.date).getTime() > new Date(today).getTime()) break;
+    for (const animal of aliveChickens) {
+      const breed = animal.breed || 'Unknown';
+      breakdown[breed] = (breakdown[breed] || 0) + 1;
+    }
+    
+    // If no individual animals, fall back to computing from history events
+    if (Object.keys(breakdown).length === 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const sortedEvents = [...chickenHistory].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
       
-      const breed = event.breed || 'Unknown';
-      if (!breakdown[breed]) breakdown[breed] = 0;
-      
-      if (event.type === 'acquired') {
-        breakdown[breed] += event.quantity;
-      } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
-        breakdown[breed] -= event.quantity;
+      for (const event of sortedEvents) {
+        if (new Date(event.date).getTime() > new Date(today).getTime()) break;
+        
+        const breed = event.breed || 'Unknown';
+        if (!breakdown[breed]) breakdown[breed] = 0;
+        
+        if (event.type === 'acquired') {
+          breakdown[breed] += event.quantity;
+        } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+          breakdown[breed] -= event.quantity;
+        }
       }
     }
     
     return Object.entries(breakdown)
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1]);
-  }, [chickenHistory]);
+  }, [chickenHistory, getAliveAnimals]);
 
   const rabbitBreedBreakdown = useMemo(() => {
     const breakdown: { [breed: string]: number } = {};

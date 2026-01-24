@@ -126,6 +126,22 @@ export default function ManageAnimalsScreen() {
       ? getAllAnimals(filterType, filterBreed || undefined)
       : getAliveAnimals(filterType, filterBreed || undefined);
     
+    // If no animals found and a breed filter is active, try to find close matches (case-insensitive, partial match)
+    if (list.length === 0 && filterBreed) {
+      const allAnimals = showAll ? getAllAnimals(filterType) : getAliveAnimals(filterType);
+      const lowerFilterBreed = filterBreed.toLowerCase();
+      const closeMatches = allAnimals.filter(a => 
+        a.breed.toLowerCase().includes(lowerFilterBreed) || 
+        lowerFilterBreed.includes(a.breed.toLowerCase())
+      );
+      if (closeMatches.length > 0) {
+        return closeMatches.sort((a, b) => {
+          if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
+          return a.number - b.number;
+        });
+      }
+    }
+    
     return list.sort((a, b) => {
       if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
       return a.number - b.number;
@@ -712,11 +728,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
+    flexShrink: 1,
   },
   animalStatus: {
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'capitalize',
+    flexShrink: 0,
+    marginLeft: 8,
   },
   animalBreed: {
     fontSize: 14,
