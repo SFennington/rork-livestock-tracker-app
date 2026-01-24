@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { X, Plus, Save, Trash2, Eye, EyeOff, Skull } from "lucide-react-native";
+import { X, Plus, Save, Trash2, Eye, EyeOff, Skull, ChevronLeft } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState, useMemo, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -75,7 +75,13 @@ export default function ManageAnimalsScreen() {
     const checkAndPopulate = async () => {
       // If breed is specified but no animals exist for that breed/type, check if we need to create them
       if (filterBreed && filterType === 'chicken') {
-        const existing = getAllAnimals(filterType, filterBreed);
+        // Check for existing animals using normalized breed comparison
+        const allChickens = getAllAnimals(filterType);
+        const normalizedFilterBreed = getFullBreedName(filterBreed);
+        const existing = allChickens.filter(a => 
+          getFullBreedName(a.breed) === normalizedFilterBreed || a.breed === filterBreed
+        );
+        
         if (existing.length === 0) {
           // Check if there's a chicken count from history
           const today = new Date().toISOString().split('T')[0];
@@ -89,7 +95,11 @@ export default function ManageAnimalsScreen() {
             const breed = event.breed || 'Unknown';
             const sex = event.sex || 'F'; // Default to F if not specified for backwards compatibility
             
-            if (breed === filterBreed) {
+            // Compare normalized breed names
+            const normalizedEventBreed = getFullBreedName(breed);
+            const normalizedFilterBreed = getFullBreedName(filterBreed);
+            
+            if (normalizedEventBreed === normalizedFilterBreed || breed === filterBreed) {
               if (event.type === 'acquired') {
                 if (!sexBreakdown[sex][event.date]) sexBreakdown[sex][event.date] = 0;
                 sexBreakdown[sex][event.date] += event.quantity;
@@ -108,11 +118,11 @@ export default function ManageAnimalsScreen() {
             }
           }
           
-          // Create individual animals for each sex and date
+          // Create individual animals for each sex and date (use normalized breed name)
           for (const sex of ['M', 'F'] as const) {
             for (const [date, count] of Object.entries(sexBreakdown[sex])) {
               if (count > 0) {
-                await addAnimalsBatch('chicken', filterBreed, count, date, sex, true);
+                await addAnimalsBatch('chicken', normalizedFilterBreed, count, date, sex, true);
               }
             }
           }
@@ -136,9 +146,21 @@ export default function ManageAnimalsScreen() {
   }, [filterBreed, filterType]);
 
   const filteredAnimals = useMemo(() => {
-    const list = showAll 
-      ? getAllAnimals(filterType, filterBreed || undefined)
-      : getAliveAnimals(filterType, filterBreed || undefined);
+    // Get all animals of this type first, then filter by normalized breed
+    const allOfType = showAll ? getAllAnimals(filterType) : getAliveAnimals(filterType);
+    
+    if (!filterBreed) {
+      return allOfType.sort((a, b) => {
+        if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
+        return a.number - b.number;
+      });
+    }
+    
+    // Filter by normalized breed name
+    const normalizedFilterBreed = getFullBreedName(filterBreed);
+    const list = allOfType.filter(a => 
+      getFullBreedName(a.breed) === normalizedFilterBreed || a.breed === filterBreed
+    );
     
     // If no animals found and a breed filter is active, try to find close matches (case-insensitive, partial match)
     if (list.length === 0 && filterBreed) {
@@ -347,9 +369,9 @@ export default function ManageAnimalsScreen() {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-            <X size={24} color={colors.text} />
+            <ChevronLeft size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Manage {filterType}s</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Manage Chickens</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={() => setShowAll(!showAll)} style={styles.headerButton}>
@@ -370,9 +392,9 @@ export default function ManageAnimalsScreen() {
         <View style={styles.filterRow}>
           <Text style={[styles.filterLabel, { color: colors.text }]}>Breed:</Text>
           <BreedPicker
-            breeds={getBreedList()}
-            value={filterBreed}
-            onChange={setFilterBreed}
+            breeds={getBreedList().map(b => getFullBreedName(b))}
+            value={getFullBreedName(filterBreed)}
+            onChange={(b) => setFilterBreed(b)}
             placeholder="All breeds"
           />
         </View>
@@ -528,8 +550,8 @@ export default function ManageAnimalsScreen() {
                   </View>
                   <Text style={[styles.animalBreed, { color: colors.text }]}>
                     {getFullBreedName(animal.breed)}
-                    {filterType === 'chicken' && animal.sex && (
-                      <Text style={{ color: colors.textMuted }}> • {animal.sex === 'M' ? 'Rooster' : 'Hen'}</Text>
+                    {filterType === 'chicken' && (
+                      <Text style={{ color: colors.textMuted }}> • {animal.sex === 'M' ? 'Rooster' : animal.sex === 'F' ? 'Hen' : 'Unknown'}</Text>
                     )}
                   </Text>
                   {animal.notes && (
