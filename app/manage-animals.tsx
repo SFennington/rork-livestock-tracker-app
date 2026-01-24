@@ -185,19 +185,15 @@ export default function ManageAnimalsScreen() {
   }, [filterType, filterBreed, showAll, getAllAnimals, getAliveAnimals]);
 
   const getBreedList = (): string[] => {
-    // Get unique breeds from alive animals of the selected type
-    const aliveAnimals = getAliveAnimals(filterType);
-    const uniqueBreeds = Array.from(new Set(aliveAnimals.map(a => a.breed)));
+    // Get unique breeds from chicken history events
+    const breedsFromHistory = chickenHistory
+      .filter(e => e.breed)
+      .map(e => getFullBreedName(e.breed!));
     
-    // Sort breeds alphabetically and add 'Other' at the end if not present
-    const sorted = uniqueBreeds.sort((a, b) => a.localeCompare(b));
-    if (!sorted.includes('Other')) {
-      sorted.push('Other');
-    }
+    const uniqueBreeds = Array.from(new Set(breedsFromHistory));
     
-    return sorted.length > 0 ? sorted : [
-      ...(filterType === 'chicken' ? CHICKEN_BREEDS : RABBIT_BREEDS)
-    ];
+    // Sort breeds alphabetically
+    return uniqueBreeds.sort((a, b) => a.localeCompare(b));
   };
 
   const handleSaveEdit = async (animal: IndividualAnimal) => {
@@ -366,28 +362,6 @@ export default function ManageAnimalsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-            <ChevronLeft size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Manage Chickens</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={() => setShowAll(!showAll)} style={styles.headerButton}>
-            {showAll ? <EyeOff size={20} color={colors.text} /> : <Eye size={20} color={colors.text} />}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowBatchForm(true)} style={styles.headerButton}>
-            <Plus size={20} color={colors.text} />
-            <Text style={[styles.headerButtonText, { color: colors.text }]}>Batch</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowAddForm(true)} style={styles.headerButton}>
-            <Plus size={20} color={colors.text} />
-            <Text style={[styles.headerButtonText, { color: colors.text }]}>Add</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <View style={[styles.filters, { borderBottomColor: colors.border }]}>
         <View style={styles.filterRow}>
           <Text style={[styles.filterLabel, { color: colors.text }]}>Breed:</Text>
