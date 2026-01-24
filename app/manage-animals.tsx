@@ -533,6 +533,9 @@ export default function ManageAnimalsScreen() {
                   </View>
                   <Text style={[styles.animalBreed, { color: colors.text }]}>
                     {getFullBreedName(animal.breed)}
+                    {filterType === 'chicken' && animal.sex && (
+                      <Text style={{ color: colors.textMuted }}> • {animal.sex === 'M' ? 'Rooster' : 'Hen'}</Text>
+                    )}
                   </Text>
                   {animal.notes && (
                     <Text style={[styles.animalNotes, { color: colors.textSecondary }]} numberOfLines={2}>

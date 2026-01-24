@@ -48,33 +48,39 @@ export default function LivestockScreen() {
   }, [rabbits]);
 
   const chickenBreedBreakdown = useMemo(() => {
-    // Get breed breakdown from individual animals (primary source)
-    const aliveChickens = getAliveAnimals('chicken');
     const breakdown: { [breed: string]: number } = {};
     
+    // Get counts from individual animals (primary source)
+    const aliveChickens = getAliveAnimals('chicken');
     for (const animal of aliveChickens) {
       const breed = animal.breed || 'Unknown';
       breakdown[breed] = (breakdown[breed] || 0) + 1;
     }
     
-    // If no individual animals, fall back to computing from history events
-    if (Object.keys(breakdown).length === 0) {
-      const today = new Date().toISOString().split('T')[0];
-      const sortedEvents = [...chickenHistory].sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
+    // Also compute from history events for breeds without individual animals
+    const today = new Date().toISOString().split('T')[0];
+    const sortedEvents = [...chickenHistory].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    const historyBreakdown: { [breed: string]: number } = {};
+    for (const event of sortedEvents) {
+      if (new Date(event.date).getTime() > new Date(today).getTime()) break;
       
-      for (const event of sortedEvents) {
-        if (new Date(event.date).getTime() > new Date(today).getTime()) break;
-        
-        const breed = event.breed || 'Unknown';
-        if (!breakdown[breed]) breakdown[breed] = 0;
-        
-        if (event.type === 'acquired') {
-          breakdown[breed] += event.quantity;
-        } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
-          breakdown[breed] -= event.quantity;
-        }
+      const breed = event.breed || 'Unknown';
+      if (!historyBreakdown[breed]) historyBreakdown[breed] = 0;
+      
+      if (event.type === 'acquired') {
+        historyBreakdown[breed] += event.quantity;
+      } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+        historyBreakdown[breed] -= event.quantity;
+      }
+    }
+    
+    // Merge: use individual animal count if exists, otherwise use history count
+    for (const [breed, count] of Object.entries(historyBreakdown)) {
+      if (count > 0 && !breakdown[breed]) {
+        breakdown[breed] = count;
       }
     }
     
@@ -242,7 +248,12 @@ export default function LivestockScreen() {
                           <Text style={[styles.historyCardTitle, { color: colors.text }]}>{typeLabel}</Text>
                           <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
                           {event.breed ? (
-                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{getFullBreedName(event.breed)}</Text>
+                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>
+                              {getFullBreedName(event.breed)}
+                              {event.sex && (
+                                <Text> • {event.sex === 'M' ? 'Roosters' : 'Hens'}</Text>
+                              )}
+                            </Text>
                           ) : null}
                         </View>
                         <View style={styles.historyCardRight}>

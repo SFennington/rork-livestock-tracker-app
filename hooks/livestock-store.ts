@@ -561,7 +561,6 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         date: dateAdded,
         breed,
         sex,
-        notes: `Batch created ${count} ${sex === 'M' ? 'roosters' : sex === 'F' ? 'hens' : 'chickens'}`,
       });
     }
     
@@ -569,10 +568,56 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   }, [getNextAnimalNumber, addChickenHistoryEvent]);
 
   const updateAnimal = useCallback(async (id: string, updates: Partial<IndividualAnimal>) => {
+    const animal = animals.find(a => a.id === id);
+    if (!animal) return;
+
     const updated = animals.map(a => a.id === id ? { ...a, ...updates } : a);
     setAnimals(updated);
     await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
-  }, [animals]);
+
+    // For chickens, if sex is changing, update the history events
+    if (animal.type === 'chicken' && updates.sex && updates.sex !== animal.sex) {
+      // Find and decrement the old event
+      const oldEvent = chickenHistory.find(e => 
+        e.type === 'acquired' &&
+        e.date === animal.dateAdded &&
+        e.breed === animal.breed &&
+        e.sex === animal.sex
+      );
+
+      if (oldEvent) {
+        if (oldEvent.quantity > 1) {
+          await updateChickenHistoryEvent(oldEvent.id, { 
+            quantity: oldEvent.quantity - 1 
+          });
+        } else {
+          await deleteChickenHistoryEvent(oldEvent.id);
+        }
+      }
+
+      // Find or create the new event
+      const newEvent = chickenHistory.find(e => 
+        e.type === 'acquired' &&
+        e.date === animal.dateAdded &&
+        e.breed === animal.breed &&
+        e.sex === updates.sex
+      );
+
+      if (newEvent) {
+        await updateChickenHistoryEvent(newEvent.id, { 
+          quantity: newEvent.quantity + 1 
+        });
+      } else {
+        await addChickenHistoryEvent({
+          type: 'acquired',
+          quantity: 1,
+          date: animal.dateAdded,
+          breed: animal.breed,
+          sex: updates.sex,
+        });
+      }
+    }
+  }, [animals, chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent, addChickenHistoryEvent]);
 
   const removeAnimal = useCallback(async (id: string) => {
     const animal = animals.find(a => a.id === id);
