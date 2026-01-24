@@ -479,12 +479,30 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   }, [chickenHistory]);
 
   const deleteChickenHistoryEvent = useCallback(async (id: string) => {
+    const event = chickenHistory.find(e => e.id === id);
+    
     setChickenHistory(prev => {
       const updated = prev.filter(e => e.id !== id);
       void storage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(updated));
       return updated;
     });
-  }, []);
+
+    // If deleting an acquired event, remove associated individual chickens
+    if (event?.type === 'acquired') {
+      const associatedChickens = animals.filter(a => 
+        a.type === 'chicken' &&
+        a.dateAdded === event.date &&
+        a.breed === event.breed &&
+        a.sex === event.sex
+      );
+
+      if (associatedChickens.length > 0) {
+        const updatedAnimals = animals.filter(a => !associatedChickens.some(ac => ac.id === a.id));
+        setAnimals(updatedAnimals);
+        await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updatedAnimals));
+      }
+    }
+  }, [chickenHistory, animals]);
 
   // Individual animal operations
   const getNextAnimalNumber = useCallback((type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string): number => {
@@ -557,10 +575,33 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   }, [animals]);
 
   const removeAnimal = useCallback(async (id: string) => {
+    const animal = animals.find(a => a.id === id);
+    if (!animal) return;
+
     const updated = animals.filter(a => a.id !== id);
     setAnimals(updated);
     await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
-  }, [animals]);
+
+    // For chickens, decrement the acquired event that created this animal
+    if (animal.type === 'chicken') {
+      const acquiredEvent = chickenHistory.find(e => 
+        e.type === 'acquired' &&
+        e.date === animal.dateAdded &&
+        e.breed === animal.breed &&
+        e.sex === animal.sex
+      );
+
+      if (acquiredEvent) {
+        if (acquiredEvent.quantity > 1) {
+          await updateChickenHistoryEvent(acquiredEvent.id, { 
+            quantity: acquiredEvent.quantity - 1 
+          });
+        } else {
+          await deleteChickenHistoryEvent(acquiredEvent.id);
+        }
+      }
+    }
+  }, [animals, chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent]);
 
   const getAliveAnimals = useCallback((type?: 'chicken' | 'rabbit' | 'goat' | 'duck', breed?: string) => {
     return animals.filter(a => 

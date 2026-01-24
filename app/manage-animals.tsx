@@ -242,6 +242,11 @@ export default function ManageAnimalsScreen() {
       return;
     }
 
+    if (filterType === 'chicken' && !form.sex) {
+      Alert.alert('Error', 'Please select a gender');
+      return;
+    }
+
     try {
       await addAnimal({
         type: filterType,
@@ -250,6 +255,7 @@ export default function ManageAnimalsScreen() {
         dateAdded: batchForm.dateAdded,
         status: 'alive',
         notes: form.notes,
+        sex: form.sex,
       });
       setShowAddForm(false);
       setForm({});
@@ -269,6 +275,11 @@ export default function ManageAnimalsScreen() {
     
     if (isNaN(count) || count < 1) {
       Alert.alert('Error', 'Please enter a valid count');
+      return;
+    }
+
+    if (filterType === 'chicken' && !batchForm.sex) {
+      Alert.alert('Error', 'Please select a gender');
       return;
     }
 
@@ -612,6 +623,34 @@ export default function ManageAnimalsScreen() {
               />
             </View>
 
+            {filterType === 'chicken' && (
+              <View style={styles.formGroup}>
+                <Text style={[styles.formLabel, { color: colors.text }]}>Gender: *</Text>
+                <View style={styles.genderButtons}>
+                  <TouchableOpacity
+                    style={[
+                      styles.genderButton,
+                      { borderColor: colors.border },
+                      form.sex === 'M' && { backgroundColor: colors.primary },
+                    ]}
+                    onPress={() => setForm(prev => ({ ...prev, sex: 'M' }))}
+                  >
+                    <Text style={[styles.genderButtonText, { color: form.sex === 'M' ? '#fff' : colors.text }]}>Rooster</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.genderButton,
+                      { borderColor: colors.border },
+                      form.sex === 'F' && { backgroundColor: colors.primary },
+                    ]}
+                    onPress={() => setForm(prev => ({ ...prev, sex: 'F' }))}
+                  >
+                    <Text style={[styles.genderButtonText, { color: form.sex === 'F' ? '#fff' : colors.text }]}>Hen</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             <TouchableOpacity
               style={[styles.submitButton, { backgroundColor: colors.primary }]}
               onPress={handleAddSingle}
@@ -665,7 +704,7 @@ export default function ManageAnimalsScreen() {
 
             {filterType === 'chicken' && (
               <View style={styles.formGroup}>
-                <Text style={[styles.formLabel, { color: colors.text }]}>Gender:</Text>
+                <Text style={[styles.formLabel, { color: colors.text }]}>Gender: *</Text>
                 <View style={styles.genderButtons}>
                   <TouchableOpacity
                     style={[
