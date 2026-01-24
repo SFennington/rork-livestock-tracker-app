@@ -79,7 +79,7 @@ export default function ManageAnimalsScreen() {
         if (existing.length === 0) {
           // Check if there's a chicken count from history
           const today = new Date().toISOString().split('T')[0];
-          const breakdown: { [breed: string]: { M?: number; F?: number } } = {};
+          const sexBreakdown: { M: { [date: string]: number }, F: { [date: string]: number } } = { M: {}, F: {} };
           const sortedEvents = [...chickenHistory].sort((a, b) => 
             new Date(a.date).getTime() - new Date(b.date).getTime()
           );
@@ -87,29 +87,33 @@ export default function ManageAnimalsScreen() {
           for (const event of sortedEvents) {
             if (new Date(event.date).getTime() > new Date(today).getTime()) break;
             const breed = event.breed || 'Unknown';
-            const sex = event.sex;
+            const sex = event.sex || 'F'; // Default to F if not specified for backwards compatibility
             
-            if (!breakdown[breed]) breakdown[breed] = {};
-            
-            if (event.type === 'acquired') {
-              if (sex) {
-                breakdown[breed][sex] = (breakdown[breed][sex] || 0) + event.quantity;
-              }
-            } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
-              if (sex) {
-                breakdown[breed][sex] = (breakdown[breed][sex] || 0) - event.quantity;
+            if (breed === filterBreed) {
+              if (event.type === 'acquired') {
+                if (!sexBreakdown[sex][event.date]) sexBreakdown[sex][event.date] = 0;
+                sexBreakdown[sex][event.date] += event.quantity;
+              } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+                // Decrement from the most recent acquired date for this sex
+                const dates = Object.keys(sexBreakdown[sex]).sort();
+                let remaining = event.quantity;
+                for (let i = dates.length - 1; i >= 0 && remaining > 0; i--) {
+                  const date = dates[i];
+                  const available = sexBreakdown[sex][date];
+                  const toRemove = Math.min(available, remaining);
+                  sexBreakdown[sex][date] -= toRemove;
+                  remaining -= toRemove;
+                }
               }
             }
           }
           
-          // Create individual animals for each sex
-          const breedData = breakdown[filterBreed];
-          if (breedData) {
-            if (breedData.M && breedData.M > 0) {
-              await addAnimalsBatch('chicken', filterBreed, breedData.M, today, 'M', true);
-            }
-            if (breedData.F && breedData.F > 0) {
-              await addAnimalsBatch('chicken', filterBreed, breedData.F, today, 'F', true);
+          // Create individual animals for each sex and date
+          for (const sex of ['M', 'F'] as const) {
+            for (const [date, count] of Object.entries(sexBreakdown[sex])) {
+              if (count > 0) {
+                await addAnimalsBatch('chicken', filterBreed, count, date, sex, true);
+              }
             }
           }
         }

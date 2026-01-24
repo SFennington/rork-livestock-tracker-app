@@ -50,6 +50,12 @@ export default function AddChickenEventScreen() {
       return;
     }
 
+    // Gender is required for acquired events
+    if (eventType === 'acquired' && !sex) {
+      Alert.alert("Error", "Please select a gender for acquired chickens");
+      return;
+    }
+
     // For death/consumed events, validate selected animals match quantity
     if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
       if (selectedAnimalIds.length !== qty) {
@@ -207,7 +213,7 @@ export default function AddChickenEventScreen() {
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>
               <User size={16} color="#6b7280" />
-              <Text style={styles.label}>Sex (optional)</Text>
+              <Text style={styles.label}>Sex *</Text>
             </View>
             <View style={styles.sexButtons}>
               <TouchableOpacity 
@@ -224,14 +230,6 @@ export default function AddChickenEventScreen() {
               >
                 <Text style={[styles.sexButtonText, sex === 'F' && styles.sexButtonTextActive]}>
                   Hen
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.sexButton, sex === '' && styles.sexButtonActive]}
-                onPress={() => setSex('')}
-              >
-                <Text style={[styles.sexButtonText, sex === '' && styles.sexButtonTextActive]}>
-                  N/A
                 </Text>
               </TouchableOpacity>
             </View>
