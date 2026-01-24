@@ -537,7 +537,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
     // Create a history event for chickens
     if (type === 'chicken') {
-      await addChickenEvent({
+      await addChickenHistoryEvent({
         type: 'acquired',
         quantity: count,
         date: dateAdded,
@@ -548,7 +548,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     }
     
     return newAnimals;
-  }, [getNextAnimalNumber, addChickenEvent]);
+  }, [getNextAnimalNumber, addChickenHistoryEvent]);
 
   const updateAnimal = useCallback(async (id: string, updates: Partial<IndividualAnimal>) => {
     const updated = animals.map(a => a.id === id ? { ...a, ...updates } : a);

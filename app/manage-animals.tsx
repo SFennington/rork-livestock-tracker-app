@@ -26,7 +26,7 @@ export default function ManageAnimalsScreen() {
     chickenHistory,
     rabbits,
     getChickenCountOnDate,
-    addChickenEvent,
+    addChickenHistoryEvent,
   } = useLivestock();
 
   const [filterType, setFilterType] = useState<'chicken' | 'rabbit' | 'goat' | 'duck'>((params.type as any) ?? 'chicken');
@@ -242,7 +242,7 @@ export default function ManageAnimalsScreen() {
     if (!selectedAnimalForDeath) return;
 
     try {
-      await addChickenEvent({
+      await addChickenHistoryEvent({
         type: eventType,
         quantity: 1,
         date: new Date().toISOString().split('T')[0],
