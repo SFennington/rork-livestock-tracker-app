@@ -12,6 +12,21 @@ export default function LivestockScreen() {
   const { activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
 
+  // Breed name normalization - map abbreviated names to full names
+  const breedNameMap: Record<string, string> = {
+    'RIR': 'Rhode Island Red',
+    'BO': 'Orpington',
+    'BR': 'Plymouth Rock (Barred)',
+    'PR': 'Plymouth Rock (Barred)',
+    'ISA': 'ISA Brown',
+    'WL': 'White Leghorn',
+    'SG': 'Silver Spangled Hamburg',
+  };
+
+  const getFullBreedName = (breed: string): string => {
+    return breedNameMap[breed] || breed;
+  };
+
   const sortedChickenHistory = useMemo(() => {
     return [...chickenHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [chickenHistory]);
@@ -180,7 +195,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
                     {chickenBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{getFullBreedName(breed)}</Text>
                         <View style={styles.breedItemRight}>
                           <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                           <TouchableOpacity 
@@ -227,7 +242,7 @@ export default function LivestockScreen() {
                           <Text style={[styles.historyCardTitle, { color: colors.text }]}>{typeLabel}</Text>
                           <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
                           {event.breed ? (
-                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{event.breed}</Text>
+                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{getFullBreedName(event.breed)}</Text>
                           ) : null}
                         </View>
                         <View style={styles.historyCardRight}>
@@ -262,7 +277,7 @@ export default function LivestockScreen() {
                   <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]} testID="rabbit-breed-breakdown">
                     {rabbitBreedBreakdown.map(([breed, count]) => (
                       <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{breed}</Text>
+                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{getFullBreedName(breed)}</Text>
                         <View style={styles.breedItemRight}>
                           <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
                           <TouchableOpacity 
@@ -304,7 +319,7 @@ export default function LivestockScreen() {
                         <Text style={[styles.historyCardTitle, { color: colors.text }]}>{r.name || 'Rabbit'}</Text>
                         <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>Acquired {r.dateAcquired}</Text>
                         {r.breed ? (
-                          <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{r.breed} • {r.gender === 'buck' ? 'Buck' : 'Doe'}</Text>
+                          <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>{getFullBreedName(r.breed)} • {r.gender === 'buck' ? 'Buck' : 'Doe'}</Text>
                         ) : null}
                       </View>
                       <View style={styles.historyCardRight}>
