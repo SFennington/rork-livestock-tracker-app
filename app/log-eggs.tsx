@@ -2,11 +2,13 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInp
 import { useState, useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function LogEggsScreen() {
   const { addEggProduction, eggProduction } = useLivestock();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string }>();
   const [quantity, setQuantity] = useState<number | null>(null);
@@ -77,7 +79,7 @@ export default function LogEggsScreen() {
 
 
   return (
-    <View style={[styles.backgroundContainer, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.backgroundContainer, { paddingBottom: insets.bottom, backgroundColor: colors.accent }]}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           <Text style={styles.screenTitle}>Log Egg Record</Text>
@@ -89,7 +91,7 @@ export default function LogEggsScreen() {
                 recentQuantities.map((qty) => (
                   <TouchableOpacity
                     key={qty}
-                    style={[styles.quantityButton, quantity === qty && styles.quantityButtonActive]}
+                    style={[styles.quantityButton, quantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                     onPress={() => { setQuantity(qty); setQuantityInput(qty.toString()); }}
                   >
                     <Text style={[styles.quantityButtonText, quantity === qty && styles.quantityButtonTextActive]}>
@@ -101,7 +103,7 @@ export default function LogEggsScreen() {
                 ['10', '12', '15'].map((qty) => (
                   <TouchableOpacity
                     key={qty}
-                    style={[styles.quantityButton, quantity === parseInt(qty) && styles.quantityButtonActive]}
+                    style={[styles.quantityButton, quantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                     onPress={() => { setQuantity(parseInt(qty)); setQuantityInput(qty); }}
                   >
                     <Text style={[styles.quantityButtonText, quantity === parseInt(qty) && styles.quantityButtonTextActive]}>
@@ -128,7 +130,7 @@ export default function LogEggsScreen() {
             <Text style={styles.sectionTitle}>Type</Text>
             <View style={styles.buttonGrid}>
               <TouchableOpacity
-                style={[styles.typeButton, type === 'laid' && styles.typeButtonActive]}
+                style={[styles.typeButton, type === 'laid' && [styles.typeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setType('laid')}
               >
                 <Text style={[styles.typeButtonText, type === 'laid' && styles.typeButtonTextActive]}>
@@ -136,7 +138,7 @@ export default function LogEggsScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.typeButton, type === 'broken' && styles.typeButtonActive]}
+                style={[styles.typeButton, type === 'broken' && [styles.typeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setType('broken')}
               >
                 <Text style={[styles.typeButtonText, type === 'broken' && styles.typeButtonTextActive]}>
@@ -144,7 +146,7 @@ export default function LogEggsScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.typeButton, type === 'donated' && styles.typeButtonActive]}
+                style={[styles.typeButton, type === 'donated' && [styles.typeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setType('donated')}
               >
                 <Text style={[styles.typeButtonText, type === 'donated' && styles.typeButtonTextActive]}>
@@ -158,7 +160,7 @@ export default function LogEggsScreen() {
             <Text style={styles.sectionTitle}>Date</Text>
             <View style={styles.buttonGrid}>
               <TouchableOpacity
-                style={[styles.dateButton, date === getDateString(0) && styles.dateButtonActive]}
+                style={[styles.dateButton, date === getDateString(0) && [styles.dateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setDate(getDateString(0))}
               >
                 <Text style={[styles.dateButtonText, date === getDateString(0) && styles.dateButtonTextActive]}>
@@ -166,7 +168,7 @@ export default function LogEggsScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.dateButton, date === getDateString(1) && styles.dateButtonActive]}
+                style={[styles.dateButton, date === getDateString(1) && [styles.dateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setDate(getDateString(1))}
               >
                 <Text style={[styles.dateButtonText, date === getDateString(1) && styles.dateButtonTextActive]}>
@@ -174,7 +176,7 @@ export default function LogEggsScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.dateButton, date === getDateString(2) && styles.dateButtonActive]}
+                style={[styles.dateButton, date === getDateString(2) && [styles.dateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setDate(getDateString(2))}
               >
                 <Text style={[styles.dateButtonText, date === getDateString(2) && styles.dateButtonTextActive]}>
@@ -194,7 +196,7 @@ export default function LogEggsScreen() {
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.saveButton, quantity === null && styles.saveButtonDisabled]} 
+              style={[styles.saveButton, quantity === null && styles.saveButtonDisabled, quantity !== null && { backgroundColor: colors.accent }]} 
               onPress={handleSave}
               disabled={quantity === null}
             >

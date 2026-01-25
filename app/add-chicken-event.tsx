@@ -3,6 +3,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
+import { useTheme } from "@/hooks/theme-store";
 import { Hash, FileText, DollarSign, User, Calendar, ChevronDown, List } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -12,6 +13,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 export default function AddChickenEventScreen() {
   const { addChickenHistoryEvent, getAliveAnimals, updateAnimal } = useLivestock();
   const { settings } = useAppSettings();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [eventType, setEventType] = useState(settings.chickenEventTypes[0] || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -103,7 +105,7 @@ export default function AddChickenEventScreen() {
                 return (
                   <TouchableOpacity
                     key={evtType}
-                    style={[styles.eventTypeButton, eventType === evtType && styles.eventTypeButtonActive]}
+                    style={[styles.eventTypeButton, eventType === evtType && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                     onPress={() => setEventType(evtType)}
                   >
                     <Text style={[styles.eventTypeButtonText, eventType === evtType && styles.eventTypeButtonTextActive]}>
@@ -123,7 +125,7 @@ export default function AddChickenEventScreen() {
             
             <View style={styles.quickDateButtons}>
               <TouchableOpacity 
-                style={[styles.quickDateButton, date === getDateString(0) && styles.quickDateButtonActive]}
+                style={[styles.quickDateButton, date === getDateString(0) && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => setDate(getDateString(0))}
               >
                 <Text style={[styles.quickDateText, date === getDateString(0) && styles.quickDateTextActive]}>
@@ -131,7 +133,7 @@ export default function AddChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.quickDateButton, date === getDateString(1) && styles.quickDateButtonActive]}
+                style={[styles.quickDateButton, date === getDateString(1) && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => setDate(getDateString(1))}
               >
                 <Text style={[styles.quickDateText, date === getDateString(1) && styles.quickDateTextActive]}>
@@ -139,7 +141,7 @@ export default function AddChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.quickDateButton, date === getDateString(2) && styles.quickDateButtonActive]}
+                style={[styles.quickDateButton, date === getDateString(2) && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => setDate(getDateString(2))}
               >
                 <Text style={[styles.quickDateText, date === getDateString(2) && styles.quickDateTextActive]}>
@@ -217,7 +219,7 @@ export default function AddChickenEventScreen() {
             </View>
             <View style={styles.sexButtons}>
               <TouchableOpacity 
-                style={[styles.sexButton, sex === 'M' && styles.sexButtonActive]}
+                style={[styles.sexButton, sex === 'M' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => setSex('M')}
               >
                 <Text style={[styles.sexButtonText, sex === 'M' && styles.sexButtonTextActive]}>
@@ -225,7 +227,7 @@ export default function AddChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.sexButton, sex === 'F' && styles.sexButtonActive]}
+                style={[styles.sexButton, sex === 'F' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
                 onPress={() => setSex('F')}
               >
                 <Text style={[styles.sexButtonText, sex === 'F' && styles.sexButtonTextActive]}>
@@ -272,7 +274,7 @@ export default function AddChickenEventScreen() {
             <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
               <Text style={styles.saveButtonText}>Add Event</Text>
             </TouchableOpacity>
           </View>
@@ -290,7 +292,7 @@ export default function AddChickenEventScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Chickens</Text>
               <TouchableOpacity onPress={() => setShowAnimalPicker(false)}>
-                <Text style={styles.modalClose}>Done</Text>
+                <Text style={[styles.modalClose, { color: colors.accent }]}>Done</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalList}>
@@ -304,7 +306,7 @@ export default function AddChickenEventScreen() {
                   return (
                     <TouchableOpacity
                       key={animal.id}
-                      style={[styles.animalItem, isSelected && styles.animalItemSelected]}
+                      style={[styles.animalItem, isSelected && { backgroundColor: `${colors.accent}15`, borderColor: colors.accent }]}
                       onPress={() => {
                         setSelectedAnimalIds(prev => 
                           isSelected 
@@ -318,7 +320,7 @@ export default function AddChickenEventScreen() {
                         {animal.name && <Text style={styles.animalItemName}>{animal.name}</Text>}
                         <Text style={styles.animalItemBreed}>{animal.breed}</Text>
                       </View>
-                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                      <View style={[styles.checkbox, isSelected && { backgroundColor: colors.accent, borderColor: colors.accent }]}>
                         {isSelected && <Text style={styles.checkboxCheck}>✓</Text>}
                       </View>
                     </TouchableOpacity>

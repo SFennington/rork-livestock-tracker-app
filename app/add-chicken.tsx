@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { DollarSign, Palette, FileText, Hash, Calendar, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -10,6 +11,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function AddChickenScreen() {
   const { addChicken } = useLivestock();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
@@ -51,7 +53,7 @@ export default function AddChickenScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top, backgroundColor: colors.accent }]}>
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
@@ -87,7 +89,7 @@ export default function AddChickenScreen() {
           
           <View style={styles.quickDateButtons}>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateAcquired === getDateString(0) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateAcquired === getDateString(0) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateAcquired(getDateString(0))}
             >
               <Text style={[styles.quickDateText, dateAcquired === getDateString(0) && styles.quickDateTextActive]}>
@@ -95,7 +97,7 @@ export default function AddChickenScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateAcquired === getDateString(1) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateAcquired === getDateString(1) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateAcquired(getDateString(1))}
             >
               <Text style={[styles.quickDateText, dateAcquired === getDateString(1) && styles.quickDateTextActive]}>
@@ -103,7 +105,7 @@ export default function AddChickenScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateAcquired === getDateString(2) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateAcquired === getDateString(2) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateAcquired(getDateString(2))}
             >
               <Text style={[styles.quickDateText, dateAcquired === getDateString(2) && styles.quickDateTextActive]}>
@@ -162,9 +164,9 @@ export default function AddChickenScreen() {
         </View>
 
         {totalCost > 0 && (
-          <View style={styles.totalDisplay}>
+          <View style={[styles.totalDisplay, { borderColor: colors.accent }]}>
             <Text style={styles.totalLabel}>Total Cost:</Text>
-            <Text style={styles.totalValue}>${totalCost.toFixed(2)}</Text>
+            <Text style={[styles.totalValue, { color: colors.accent }]}>${totalCost.toFixed(2)}</Text>
           </View>
         )}
 
@@ -202,7 +204,7 @@ export default function AddChickenScreen() {
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Add Chicken</Text>
           </TouchableOpacity>
         </View>

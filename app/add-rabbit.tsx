@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { DollarSign, Weight, Hash, FileText, Award, Heart, Calendar, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -10,6 +11,7 @@ import { RABBIT_BREEDS } from "@/constants/breeds";
 
 export default function AddRabbitScreen() {
   const { addRabbit } = useLivestock();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
@@ -71,7 +73,7 @@ export default function AddRabbitScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top, backgroundColor: colors.accent }]}>
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
@@ -103,7 +105,7 @@ export default function AddRabbitScreen() {
           <Text style={styles.label}>Gender *</Text>
           <View style={styles.genderButtons}>
             <TouchableOpacity 
-              style={[styles.genderButton, gender === 'buck' && styles.genderButtonActive]}
+              style={[styles.genderButton, gender === 'buck' && [styles.genderButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setGender('buck')}
             >
               <Text style={[styles.genderButtonText, gender === 'buck' && styles.genderButtonTextActive]}>
@@ -111,7 +113,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.genderButton, gender === 'doe' && styles.genderButtonActive]}
+              style={[styles.genderButton, gender === 'doe' && [styles.genderButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setGender('doe')}
             >
               <Text style={[styles.genderButtonText, gender === 'doe' && styles.genderButtonTextActive]}>
@@ -129,7 +131,7 @@ export default function AddRabbitScreen() {
           
           <View style={styles.quickDateButtons}>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateOfBirth === getDateString(0) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateOfBirth === getDateString(0) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateOfBirth(getDateString(0))}
             >
               <Text style={[styles.quickDateText, dateOfBirth === getDateString(0) && styles.quickDateTextActive]}>
@@ -137,7 +139,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateOfBirth === getDateString(1) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateOfBirth === getDateString(1) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateOfBirth(getDateString(1))}
             >
               <Text style={[styles.quickDateText, dateOfBirth === getDateString(1) && styles.quickDateTextActive]}>
@@ -145,7 +147,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateOfBirth === getDateString(2) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateOfBirth === getDateString(2) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateOfBirth(getDateString(2))}
             >
               <Text style={[styles.quickDateText, dateOfBirth === getDateString(2) && styles.quickDateTextActive]}>
@@ -181,7 +183,7 @@ export default function AddRabbitScreen() {
           
           <View style={styles.quickDateButtons}>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateAcquired === getDateString(0) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateAcquired === getDateString(0) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateAcquired(getDateString(0))}
             >
               <Text style={[styles.quickDateText, dateAcquired === getDateString(0) && styles.quickDateTextActive]}>
@@ -189,7 +191,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateAcquired === getDateString(1) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateAcquired === getDateString(1) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateAcquired(getDateString(1))}
             >
               <Text style={[styles.quickDateText, dateAcquired === getDateString(1) && styles.quickDateTextActive]}>
@@ -197,7 +199,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.quickDateButton, dateAcquired === getDateString(2) && styles.quickDateButtonActive]}
+              style={[styles.quickDateButton, dateAcquired === getDateString(2) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setDateAcquired(getDateString(2))}
             >
               <Text style={[styles.quickDateText, dateAcquired === getDateString(2) && styles.quickDateTextActive]}>
@@ -256,9 +258,9 @@ export default function AddRabbitScreen() {
         </View>
 
         {totalCost > 0 && (
-          <View style={styles.totalDisplay}>
+          <View style={[styles.totalDisplay, { borderColor: colors.accent }]}>
             <Text style={styles.totalLabel}>Total Cost:</Text>
-            <Text style={styles.totalValue}>${totalCost.toFixed(2)}</Text>
+            <Text style={[styles.totalValue, { color: colors.accent }]}>${totalCost.toFixed(2)}</Text>
           </View>
         )}
 
@@ -334,7 +336,7 @@ export default function AddRabbitScreen() {
           <Text style={styles.label}>Show Quality</Text>
           <View style={styles.qualityButtons}>
             <TouchableOpacity 
-              style={[styles.qualityButton, showQuality === 'pet' && styles.qualityButtonActive]}
+              style={[styles.qualityButton, showQuality === 'pet' && [styles.qualityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setShowQuality('pet')}
             >
               <Text style={[styles.qualityButtonText, showQuality === 'pet' && styles.qualityButtonTextActive]}>
@@ -342,7 +344,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.qualityButton, showQuality === 'brood' && styles.qualityButtonActive]}
+              style={[styles.qualityButton, showQuality === 'brood' && [styles.qualityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setShowQuality('brood')}
             >
               <Text style={[styles.qualityButtonText, showQuality === 'brood' && styles.qualityButtonTextActive]}>
@@ -350,7 +352,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.qualityButton, showQuality === 'show' && styles.qualityButtonActive]}
+              style={[styles.qualityButton, showQuality === 'show' && [styles.qualityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setShowQuality('show')}
             >
               <Text style={[styles.qualityButtonText, showQuality === 'show' && styles.qualityButtonTextActive]}>
@@ -364,7 +366,7 @@ export default function AddRabbitScreen() {
           <Text style={styles.label}>Temperament</Text>
           <View style={styles.temperamentButtons}>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'calm' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'calm' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('calm')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'calm' && styles.temperamentButtonTextActive]}>
@@ -372,7 +374,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'active' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'active' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('active')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'active' && styles.temperamentButtonTextActive]}>
@@ -380,7 +382,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'aggressive' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'aggressive' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('aggressive')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'aggressive' && styles.temperamentButtonTextActive]}>
@@ -388,7 +390,7 @@ export default function AddRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'shy' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'shy' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('shy')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'shy' && styles.temperamentButtonTextActive]}>
@@ -434,7 +436,7 @@ export default function AddRabbitScreen() {
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Add Rabbit</Text>
           </TouchableOpacity>
         </View>

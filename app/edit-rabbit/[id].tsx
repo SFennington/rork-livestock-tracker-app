@@ -2,11 +2,13 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { DollarSign, Weight, Hash, FileText, Award, Heart, Trash2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function EditRabbitScreen() {
+  const { colors } = useTheme();
   const { updateRabbit, deleteRabbit, rabbits } = useLivestock();
   const { id } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
@@ -138,7 +140,7 @@ export default function EditRabbitScreen() {
           <Text style={styles.label}>Gender *</Text>
           <View style={styles.genderButtons}>
             <TouchableOpacity 
-              style={[styles.genderButton, gender === 'buck' && styles.genderButtonActive]}
+              style={[styles.genderButton, gender === 'buck' && [styles.genderButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setGender('buck')}
             >
               <Text style={[styles.genderButtonText, gender === 'buck' && styles.genderButtonTextActive]}>
@@ -146,7 +148,7 @@ export default function EditRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.genderButton, gender === 'doe' && styles.genderButtonActive]}
+              style={[styles.genderButton, gender === 'doe' && [styles.genderButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setGender('doe')}
             >
               <Text style={[styles.genderButtonText, gender === 'doe' && styles.genderButtonTextActive]}>
@@ -274,7 +276,7 @@ export default function EditRabbitScreen() {
           <Text style={styles.label}>Show Quality</Text>
           <View style={styles.qualityButtons}>
             <TouchableOpacity 
-              style={[styles.qualityButton, showQuality === 'pet' && styles.qualityButtonActive]}
+              style={[styles.qualityButton, showQuality === 'pet' && [styles.qualityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setShowQuality('pet')}
             >
               <Text style={[styles.qualityButtonText, showQuality === 'pet' && styles.qualityButtonTextActive]}>
@@ -282,7 +284,7 @@ export default function EditRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.qualityButton, showQuality === 'brood' && styles.qualityButtonActive]}
+              style={[styles.qualityButton, showQuality === 'brood' && [styles.qualityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setShowQuality('brood')}
             >
               <Text style={[styles.qualityButtonText, showQuality === 'brood' && styles.qualityButtonTextActive]}>
@@ -290,7 +292,7 @@ export default function EditRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.qualityButton, showQuality === 'show' && styles.qualityButtonActive]}
+              style={[styles.qualityButton, showQuality === 'show' && [styles.qualityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setShowQuality('show')}
             >
               <Text style={[styles.qualityButtonText, showQuality === 'show' && styles.qualityButtonTextActive]}>
@@ -304,7 +306,7 @@ export default function EditRabbitScreen() {
           <Text style={styles.label}>Temperament</Text>
           <View style={styles.temperamentButtons}>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'calm' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'calm' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('calm')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'calm' && styles.temperamentButtonTextActive]}>
@@ -312,7 +314,7 @@ export default function EditRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'active' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'active' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('active')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'active' && styles.temperamentButtonTextActive]}>
@@ -320,7 +322,7 @@ export default function EditRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'aggressive' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'aggressive' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('aggressive')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'aggressive' && styles.temperamentButtonTextActive]}>
@@ -328,7 +330,7 @@ export default function EditRabbitScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.temperamentButton, temperament === 'shy' && styles.temperamentButtonActive]}
+              style={[styles.temperamentButton, temperament === 'shy' && [styles.temperamentButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
               onPress={() => setTemperament('shy')}
             >
               <Text style={[styles.temperamentButtonText, temperament === 'shy' && styles.temperamentButtonTextActive]}>

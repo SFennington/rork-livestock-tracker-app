@@ -48,18 +48,18 @@ function RootLayoutNav() {
         }}
       >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="add-chicken" options={{ presentation: "modal", title: "Add Chicken" }} />
-      <Stack.Screen name="add-rabbit" options={{ presentation: "modal", title: "Add Rabbit" }} />
-      <Stack.Screen name="add-chicken-event" options={{ presentation: "modal", title: "Log Chicken Event" }} />
-      <Stack.Screen name="edit-chicken-event/[id]" options={{ presentation: "modal", title: "Edit Event" }} />
+      <Stack.Screen name="add-chicken" options={{ presentation: "modal", title: "Add Chicken", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="add-rabbit" options={{ presentation: "modal", title: "Add Rabbit", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="add-chicken-event" options={{ presentation: "modal", title: "Log Chicken Event", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="edit-chicken-event/[id]" options={{ presentation: "modal", title: "Edit Event", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-expense" options={{ presentation: "modal", title: "Add Transaction" }} />
       <Stack.Screen name="add-income" options={{ presentation: "modal", title: "Add Income" }} />
-      <Stack.Screen name="log-eggs" options={{ presentation: "modal", title: "Log Egg Production" }} />
-      <Stack.Screen name="add-breeding" options={{ presentation: "modal", title: "Record Breeding" }} />
-      <Stack.Screen name="breeding-calendar" options={{ title: "Breeding Calendar" }} />
-      <Stack.Screen name="rabbit-health" options={{ title: "Rabbit Health" }} />
-      <Stack.Screen name="rabbit-offspring-summary" options={{ title: "Offspring Summary" }} />
-      <Stack.Screen name="rabbit-offspring/[id]" options={{ title: "Offspring Details" }} />
+      <Stack.Screen name="log-eggs" options={{ presentation: "modal", title: "Log Egg Production", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="add-breeding" options={{ presentation: "modal", title: "Record Breeding", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="breeding-calendar" options={{ title: "Breeding Calendar", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="rabbit-health" options={{ title: "Rabbit Health", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="rabbit-offspring-summary" options={{ title: "Offspring Summary", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="rabbit-offspring/[id]" options={{ title: "Offspring Details", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="app-configuration" options={{ title: "App Configuration" }} />
       </Stack>
     </>

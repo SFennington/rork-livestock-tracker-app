@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { DollarSign, Palette, FileText, Hash } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -11,6 +12,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 export default function EditChickenScreen() {
   const { updateChicken, chickens } = useLivestock();
   const { id } = useLocalSearchParams();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
@@ -55,7 +57,7 @@ export default function EditChickenScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top, backgroundColor: colors.accent }]}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
         <View style={styles.inputGroup}>
@@ -151,7 +153,7 @@ export default function EditChickenScreen() {
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Update Chicken</Text>
           </TouchableOpacity>
         </View>

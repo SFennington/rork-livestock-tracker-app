@@ -2,12 +2,14 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { FileText, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function AddBreedingScreen() {
   const { rabbits, addBreedingRecord } = useLivestock();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [selectedBuck, setSelectedBuck] = useState("");
   const [selectedDoe, setSelectedDoe] = useState("");
@@ -55,7 +57,7 @@ export default function AddBreedingScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top, backgroundColor: colors.accent }]}>
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
@@ -86,7 +88,7 @@ export default function AddBreedingScreen() {
               bucks.map((buck) => (
                 <TouchableOpacity
                   key={buck.id}
-                  style={[styles.selectionCard, selectedBuck === buck.id && styles.selectedCard]}
+                  style={[styles.selectionCard, selectedBuck === buck.id && [styles.selectedCard, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                   onPress={() => setSelectedBuck(buck.id)}
                 >
                   <Text style={[styles.selectionName, selectedBuck === buck.id && styles.selectedText]}>
@@ -110,7 +112,7 @@ export default function AddBreedingScreen() {
               does.map((doe) => (
                 <TouchableOpacity
                   key={doe.id}
-                  style={[styles.selectionCard, selectedDoe === doe.id && styles.selectedCard]}
+                  style={[styles.selectionCard, selectedDoe === doe.id && [styles.selectedCard, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                   onPress={() => setSelectedDoe(doe.id)}
                 >
                   <Text style={[styles.selectionName, selectedDoe === doe.id && styles.selectedText]}>
@@ -171,7 +173,7 @@ export default function AddBreedingScreen() {
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Record Breeding</Text>
           </TouchableOpacity>
         </View>

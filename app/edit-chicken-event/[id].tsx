@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
 import { Hash, FileText, DollarSign, Trash2, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -11,6 +12,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 export default function EditChickenEventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent, animals, removeAnimal, addAnimal } = useLivestock();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   
   const event = chickenHistory.find(e => e.id === id);
@@ -121,14 +123,14 @@ export default function EditChickenEventScreen() {
   }
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top, backgroundColor: colors.accent }]}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
             <View style={styles.eventTypeButtons}>
               <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'acquired' && styles.eventTypeButtonActive]}
+                style={[styles.eventTypeButton, eventType === 'acquired' && [styles.eventTypeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setEventType('acquired')}
               >
                 <Text style={[styles.eventTypeButtonText, eventType === 'acquired' && styles.eventTypeButtonTextActive]}>
@@ -136,7 +138,7 @@ export default function EditChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'death' && styles.eventTypeButtonActive]}
+                style={[styles.eventTypeButton, eventType === 'death' && [styles.eventTypeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setEventType('death')}
               >
                 <Text style={[styles.eventTypeButtonText, eventType === 'death' && styles.eventTypeButtonTextActive]}>
@@ -144,7 +146,7 @@ export default function EditChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'sold' && styles.eventTypeButtonActive]}
+                style={[styles.eventTypeButton, eventType === 'sold' && [styles.eventTypeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setEventType('sold')}
               >
                 <Text style={[styles.eventTypeButtonText, eventType === 'sold' && styles.eventTypeButtonTextActive]}>
@@ -152,7 +154,7 @@ export default function EditChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.eventTypeButton, eventType === 'consumed' && styles.eventTypeButtonActive]}
+                style={[styles.eventTypeButton, eventType === 'consumed' && [styles.eventTypeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setEventType('consumed')}
               >
                 <Text style={[styles.eventTypeButtonText, eventType === 'consumed' && styles.eventTypeButtonTextActive]}>
@@ -201,7 +203,7 @@ export default function EditChickenEventScreen() {
             </View>
             <View style={styles.sexButtons}>
               <TouchableOpacity 
-                style={[styles.sexButton, sex === 'M' && styles.sexButtonActive]}
+                style={[styles.sexButton, sex === 'M' && [styles.sexButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setSex('M')}
               >
                 <Text style={[styles.sexButtonText, sex === 'M' && styles.sexButtonTextActive]}>
@@ -209,7 +211,7 @@ export default function EditChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.sexButton, sex === 'F' && styles.sexButtonActive]}
+                style={[styles.sexButton, sex === 'F' && [styles.sexButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setSex('F')}
               >
                 <Text style={[styles.sexButtonText, sex === 'F' && styles.sexButtonTextActive]}>
@@ -217,7 +219,7 @@ export default function EditChickenEventScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.sexButton, sex === '' && styles.sexButtonActive]}
+                style={[styles.sexButton, sex === '' && [styles.sexButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
                 onPress={() => setSex('')}
               >
                 <Text style={[styles.sexButtonText, sex === '' && styles.sexButtonTextActive]}>
@@ -271,7 +273,7 @@ export default function EditChickenEventScreen() {
             <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
               <Text style={styles.saveButtonText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
