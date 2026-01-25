@@ -56,12 +56,11 @@ export default function AddIncomeScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <ScrollView 
-        style={styles.container} 
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-        showsVerticalScrollIndicator={false}
-      >
+    <ScrollView 
+      style={[styles.container, { paddingTop: insets.top }]} 
+      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.form}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Income Type *</Text>
@@ -225,15 +224,10 @@ export default function AddIncomeScreen() {
         </View>
         </View>
       </ScrollView>
-    </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
-  backgroundContainer: {
-    flex: 1,
-    backgroundColor: "#10b981",
-  },
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",

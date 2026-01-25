@@ -806,11 +806,11 @@ export default function RecordsScreen() {
           {activeTab === 'financial' && (
             <View>
               <View style={styles.addRecordRow}>
-                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-income')}>
+                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf, { backgroundColor: "#10b981" }]} onPress={() => router.push('/add-income')}>
                   <Plus size={20} color="#fff" />
                   <Text style={styles.addRecordButtonText}>Add Income</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-expense')}>
+                <TouchableOpacity style={[styles.addRecordButton, styles.addRecordButtonHalf, { backgroundColor: "#ef4444" }]} onPress={() => router.push('/add-expense')}>
                   <Plus size={20} color="#fff" />
                   <Text style={styles.addRecordButtonText}>Add Expense</Text>
                 </TouchableOpacity>

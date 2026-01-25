@@ -81,12 +81,11 @@ export default function AddTransactionScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <ScrollView 
-        style={styles.container} 
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-        showsVerticalScrollIndicator={false}
-      >
+    <ScrollView 
+      style={[styles.container, { paddingTop: insets.top }]} 
+      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.form}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Transaction Type *</Text>
@@ -267,15 +266,10 @@ export default function AddTransactionScreen() {
         </View>
         </View>
       </ScrollView>
-    </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
-  backgroundContainer: {
-    flex: 1,
-    backgroundColor: "#10b981",
-  },
   container: {
     flex: 1,
     backgroundColor: "#f9fafb",
@@ -326,8 +320,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   categoryButtonActive: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
+    backgroundColor: "#ef4444",
+    borderColor: "#ef4444",
   },
   categoryButtonText: {
     fontSize: 14,
@@ -354,8 +348,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   typeButtonActive: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
+    backgroundColor: "#ef4444",
+    borderColor: "#ef4444",
   },
   typeButtonText: {
     fontSize: 14,
@@ -379,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   dateQuickButtonActive: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#ef4444",
   },
   dateQuickButtonText: {
     fontSize: 13,
@@ -403,8 +397,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   livestockButtonActive: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
+    backgroundColor: "#ef4444",
+    borderColor: "#ef4444",
   },
   livestockButtonText: {
     fontSize: 14,
@@ -452,7 +446,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: "#10b981",
+    backgroundColor: "#ef4444",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
