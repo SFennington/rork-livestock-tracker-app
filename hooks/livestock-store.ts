@@ -473,8 +473,13 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     
     // Auto-create individual animals for acquired events
     if (event.type === 'acquired' && event.quantity > 0) {
-      // Create individual animals directly
+      // Create individual animals directly with proper numbering
       const newAnimals: IndividualAnimal[] = [];
+      const existingNumbers = animals
+        .filter(a => a.type === 'chicken' && a.breed === (event.breed || 'Unknown'))
+        .map(a => a.number || 0);
+      const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
+      
       for (let i = 0; i < event.quantity; i++) {
         newAnimals.push({
           id: createId(),
@@ -483,6 +488,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           dateAdded: event.date,
           status: 'alive',
           sex: event.sex,
+          number: startNumber + i,
           eventId: newEvent.id, // Link to this event
         });
       }

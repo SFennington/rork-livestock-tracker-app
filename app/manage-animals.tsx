@@ -37,6 +37,7 @@ export default function ManageAnimalsScreen() {
   const [showBatchForm, setShowBatchForm] = useState(false);
   const [showDeathDialog, setShowDeathDialog] = useState(false);
   const [selectedAnimalForDeath, setSelectedAnimalForDeath] = useState<IndividualAnimal | null>(null);
+  const [deathNotes, setDeathNotes] = useState('');
   
   const [form, setForm] = useState<{
     name?: string;
@@ -255,16 +256,20 @@ export default function ManageAnimalsScreen() {
     if (!selectedAnimalForDeath) return;
 
     try {
+      const animalIdentifier = selectedAnimalForDeath.name || `#${selectedAnimalForDeath.number || 'Unknown'}`;
+      const notesText = deathNotes.trim() ? `${animalIdentifier} - ${deathNotes}` : animalIdentifier;
+      
       await addChickenHistoryEvent({
         type: eventType,
         quantity: 1,
         date: new Date().toISOString().split('T')[0],
         breed: selectedAnimalForDeath.breed,
-        notes: `${selectedAnimalForDeath.name || `#${selectedAnimalForDeath.number}`}`,
+        notes: notesText,
       });
       await updateAnimal(selectedAnimalForDeath.id, { status: 'dead' });
       setShowDeathDialog(false);
       setSelectedAnimalForDeath(null);
+      setDeathNotes('');
     } catch (error) {
       Alert.alert('Error', 'Failed to record death event');
     }
@@ -746,6 +751,7 @@ export default function ManageAnimalsScreen() {
               <TouchableOpacity onPress={() => {
                 setShowDeathDialog(false);
                 setSelectedAnimalForDeath(null);
+                setDeathNotes('');
               }}>
                 <X size={24} color={colors.text} />
               </TouchableOpacity>
@@ -754,6 +760,19 @@ export default function ManageAnimalsScreen() {
             <Text style={[styles.deathDialogText, { color: colors.textSecondary }]}>
               How did this {filterType} die?
             </Text>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: colors.text }]}>Notes (optional):</Text>
+              <TextInput
+                style={[styles.formInput, styles.formInputMulti, { borderColor: colors.border, color: colors.text }]}
+                value={deathNotes}
+                onChangeText={setDeathNotes}
+                placeholder="Add details about what happened..."
+                placeholderTextColor={colors.textMuted}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
 
             <View style={styles.deathOptions}>
               <TouchableOpacity
