@@ -10,7 +10,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function EditChickenEventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent, animals, removeAnimal, addAnimalsBatch } = useLivestock();
+  const { chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent, animals, removeAnimal, addAnimal } = useLivestock();
   const insets = useSafeAreaInsets();
   
   const event = chickenHistory.find(e => e.id === id);
@@ -67,7 +67,16 @@ export default function EditChickenEventScreen() {
 
         // Recreate with new attributes, linked to this event
         if (qty > 0) {
-          await addAnimalsBatch('chicken', breed || 'Unknown', qty, date, sex as 'M' | 'F' | undefined, true, event.id);
+          for (let i = 0; i < qty; i++) {
+            await addAnimal({
+              type: 'chicken',
+              breed: breed || 'Unknown',
+              dateAdded: date,
+              status: 'alive',
+              sex: sex || undefined,
+              eventId: event.id,
+            });
+          }
         }
       }
     }

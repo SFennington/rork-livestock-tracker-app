@@ -123,14 +123,18 @@ export default function DashboardScreen() {
       {settings.enabledAnimals.chickens && <EggLogChecker />}
 
       <View style={styles.quickActions}>
-        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/log-eggs')}>
-          <Egg size={20} color="#fff" />
-          <Text style={styles.actionText}>Log Eggs</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-breeding')}>
-          <Heart size={20} color="#fff" />
-          <Text style={styles.actionText}>Breeding</Text>
-        </TouchableOpacity>
+        {settings.enabledAnimals.chickens && (
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/log-eggs')}>
+            <Egg size={20} color="#fff" />
+            <Text style={styles.actionText}>Log Eggs</Text>
+          </TouchableOpacity>
+        )}
+        {settings.enabledAnimals.rabbits && (
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-breeding')}>
+            <Heart size={20} color="#fff" />
+            <Text style={styles.actionText}>Breeding</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-expense')}>
           <DollarSign size={20} color="#fff" />
           <Text style={styles.actionText}>Finance</Text>
@@ -193,7 +197,7 @@ export default function DashboardScreen() {
         <View style={[
           styles.statCard, 
           { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-          (!settings.enabledAnimals.chickens && !settings.enabledAnimals.rabbits) ? { width: '100%' } : { width: '48%' }
+          (!settings.enabledAnimals.chickens || !settings.enabledAnimals.rabbits) ? { width: '100%' } : { width: '48%' }
         ]}>
           <View style={styles.statHeader}>
             <Bird size={24} color={colors.text} />
