@@ -140,7 +140,11 @@ export default function DashboardScreen() {
 
       <View style={styles.statsGrid}>
         {settings.enabledAnimals.chickens && (
-          <View style={[styles.statCard, { backgroundColor: colors.accent }]}>
+          <View style={[
+            styles.statCard, 
+            { backgroundColor: colors.accent },
+            !settings.enabledAnimals.rabbits && { width: '48%' }
+          ]}>
             <View style={styles.statHeader}>
               <Egg size={24} color="#fff" />
               <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stats.todayEggs}</Text>
@@ -151,7 +155,15 @@ export default function DashboardScreen() {
         )}
 
         {settings.enabledAnimals.rabbits && (
-          <TouchableOpacity testID="stat-active-breedings" style={[styles.statCard, { backgroundColor: colors.secondary }]} onPress={() => router.push('/breeding-calendar')}>
+          <TouchableOpacity 
+            testID="stat-active-breedings" 
+            style={[
+              styles.statCard, 
+              { backgroundColor: colors.secondary },
+              !settings.enabledAnimals.chickens && { width: '48%' }
+            ]} 
+            onPress={() => router.push('/breeding-calendar')}
+          >
             <View style={styles.statHeader}>
               <Heart size={24} color="#fff" />
               <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{activeBreedings.length}</Text>
@@ -163,7 +175,11 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         )}
 
-        <View style={[styles.statCard, { backgroundColor: colors.primary }]}>
+        <View style={[
+          styles.statCard, 
+          { backgroundColor: colors.primary },
+          (!settings.enabledAnimals.chickens || !settings.enabledAnimals.rabbits) && { width: '48%' }
+        ]}>
           <View style={styles.statHeader}>
             <TrendingUp size={24} color="#fff" />
             <Text style={[styles.statValue, stats.profit < 0 && { color: '#fca5a5' }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -174,7 +190,11 @@ export default function DashboardScreen() {
           <Text style={styles.statSubtext}>All time</Text>
         </View>
 
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+        <View style={[
+          styles.statCard, 
+          { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+          (!settings.enabledAnimals.chickens && !settings.enabledAnimals.rabbits) ? { width: '100%' } : { width: '48%' }
+        ]}>
           <View style={styles.statHeader}>
             <Bird size={24} color={colors.text} />
             <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
