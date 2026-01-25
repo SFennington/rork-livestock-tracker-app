@@ -32,6 +32,7 @@ export default function ManageAnimalsScreen() {
   const [filterType, setFilterType] = useState<'chicken' | 'rabbit' | 'goat' | 'duck'>((params.type as any) ?? 'chicken');
   const [filterBreed, setFilterBreed] = useState<string>((params.breed as string) ?? '');
   const [showAll, setShowAll] = useState(false);
+  const [showDeadAnimals, setShowDeadAnimals] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showBatchForm, setShowBatchForm] = useState(false);
@@ -148,7 +149,7 @@ export default function ManageAnimalsScreen() {
 
   const filteredAnimals = useMemo(() => {
     // Get all animals of this type first, then filter by normalized breed
-    const allOfType = showAll ? getAllAnimals(filterType) : getAliveAnimals(filterType);
+    const allOfType = showDeadAnimals ? getAllAnimals(filterType) : getAliveAnimals(filterType);
     
     if (!filterBreed) {
       return allOfType.sort((a, b) => {
@@ -165,7 +166,7 @@ export default function ManageAnimalsScreen() {
     
     // If no animals found and a breed filter is active, try to find close matches (case-insensitive, partial match)
     if (list.length === 0 && filterBreed) {
-      const allAnimals = showAll ? getAllAnimals(filterType) : getAliveAnimals(filterType);
+      const allAnimals = showDeadAnimals ? getAllAnimals(filterType) : getAliveAnimals(filterType);
       const lowerFilterBreed = filterBreed.toLowerCase();
       const closeMatches = allAnimals.filter(a => 
         a.breed.toLowerCase().includes(lowerFilterBreed) || 
@@ -183,7 +184,7 @@ export default function ManageAnimalsScreen() {
       if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
       return a.number - b.number;
     });
-  }, [filterType, filterBreed, showAll, getAllAnimals, getAliveAnimals]);
+  }, [filterType, filterBreed, showDeadAnimals, getAllAnimals, getAliveAnimals]);
 
   const getBreedList = (): string[] => {
     // Get unique breeds from chicken history events
@@ -377,6 +378,16 @@ export default function ManageAnimalsScreen() {
             onChange={(b) => setFilterBreed(b)}
             placeholder="All breeds"
           />
+          <TouchableOpacity
+            style={styles.toggleDeadButton}
+            onPress={() => setShowDeadAnimals(!showDeadAnimals)}
+          >
+            {showDeadAnimals ? (
+              <Eye size={24} color={colors.text} />
+            ) : (
+              <EyeOff size={24} color={colors.textMuted} />
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -843,6 +854,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  toggleDeadButton: {
+    padding: 8,
   },
   filterLabel: {
     fontSize: 14,

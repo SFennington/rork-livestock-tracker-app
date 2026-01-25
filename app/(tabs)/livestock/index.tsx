@@ -543,6 +543,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     gap: 8,
+    alignItems: 'center',
   },
   breedItem: {
     flexDirection: "row",
