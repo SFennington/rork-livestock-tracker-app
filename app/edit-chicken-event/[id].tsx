@@ -218,14 +218,6 @@ export default function EditChickenEventScreen() {
                   Female
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.sexButton, sex === '' && [styles.sexButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                onPress={() => setSex('')}
-              >
-                <Text style={[styles.sexButtonText, sex === '' && styles.sexButtonTextActive]}>
-                  N/A
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
 

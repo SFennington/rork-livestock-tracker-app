@@ -264,6 +264,7 @@ export default function ManageAnimalsScreen() {
         quantity: 1,
         date: new Date().toISOString().split('T')[0],
         breed: selectedAnimalForDeath.breed,
+        sex: selectedAnimalForDeath.sex,
         notes: notesText,
       });
       await updateAnimal(selectedAnimalForDeath.id, { status: 'dead' });
