@@ -5,6 +5,7 @@
   "build": {
     "production": {
       "node": "22.20.0",
+      "npm": {},
       "android": {
         "buildType": "app-bundle",
         "credentialsSource": "remote"
