@@ -60,6 +60,9 @@ export default function DashboardScreen() {
     const roi = totalIncomeWithSavings - totalExpenses;
     const roiPercentage = totalExpenses > 0 ? ((totalIncomeWithSavings - totalExpenses) / totalExpenses) * 100 : 0;
     
+    // Data validation: warn if income records show more eggs than laid
+    const hasDataIssue = (totalSold + totalDonated) > totalLaid;
+    
     return {
       todayEggs,
       totalExpenses,
@@ -76,6 +79,10 @@ export default function DashboardScreen() {
       avgEggsPerDay: recentEggs / 30,
       roosters,
       hens,
+      hasDataIssue,
+      totalLaid,
+      totalSold,
+      totalDonated,
     };
   }, [rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen]);
 

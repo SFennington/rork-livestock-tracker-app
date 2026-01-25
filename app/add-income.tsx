@@ -154,6 +154,11 @@ export default function AddIncomeScreen() {
             placeholderTextColor="#9ca3af"
             keyboardType="number-pad"
           />
+          {type === 'eggs' && (
+            <Text style={styles.hint}>
+              💡 For eggs, enter individual eggs (not dozens). Example: 144 eggs = 12 dozen
+            </Text>
+          )}
         </View>
 
         {totalAmount > 0 && (
@@ -249,6 +254,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#374151",
     marginBottom: 8,
+  },
+  hint: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 6,
+    fontStyle: "italic",
   },
   input: {
     backgroundColor: "#fff",

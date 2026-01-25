@@ -53,6 +53,9 @@ export default function AnalyticsScreen() {
     
     const roi = totalIncomeWithSavings - totalExpenses;
     const roiPercentage = totalExpenses > 0 ? ((totalIncomeWithSavings - totalExpenses) / totalExpenses) * 100 : 0;
+    
+    // Data validation: warn if income records show more eggs than laid
+    const hasDataIssue = (totalSold + totalDonated) > totalLaid;
 
     const monthlyEggsByYear: { [monthKey: string]: { [year: string]: number } } = {};
     const seasonalEggs = { spring: 0, summer: 0, fall: 0, winter: 0 };
@@ -212,6 +215,9 @@ export default function AnalyticsScreen() {
       eggsConsumed,
       roi,
       roiPercentage,
+      hasDataIssue,
+      totalSold,
+      totalDonated,
       monthlyEggsByYear,
       months,
       sortedYears,
@@ -424,6 +430,17 @@ export default function AnalyticsScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Financial Overview</Text>
+        
+        {analytics.hasDataIssue && (
+          <View style={[styles.warningCard, { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
+            <Text style={styles.warningTitle}>⚠️ Data Issue Detected</Text>
+            <Text style={styles.warningText}>
+              Income records show more eggs sold/donated ({analytics.totalSold + analytics.totalDonated} eggs) than total eggs laid. 
+              Please review your income records for duplicates or errors.
+            </Text>
+          </View>
+        )}
+        
         <View style={[styles.roiCard, { backgroundColor: colors.primary }]}>
           <View style={styles.roiHeader}>
             <DollarSign size={24} color="#fff" />
@@ -843,6 +860,23 @@ const styles = StyleSheet.create({
   roiCard: {
     borderRadius: 16,
     padding: 20,
+  },
+  warningCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+  },
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#92400e",
+    marginBottom: 8,
+  },
+  warningText: {
+    fontSize: 14,
+    color: "#92400e",
+    lineHeight: 20,
   },
   roiHeader: {
     flexDirection: "row",

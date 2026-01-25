@@ -923,6 +923,9 @@ export default function RecordsScreen() {
                         <Text style={styles.headText}>Amount</Text>
                         <SortIcon dir={moneySort.dir} active={moneySort.key === 'amount'} />
                       </TouchableOpacity>
+                      <View style={[styles.cell, styles.cellSm]}>
+                        <Text style={styles.headText}>Qty (doz)</Text>
+                      </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setMoneySort(prev => toggleSort(prev, 'description'))} testID="money-sort-desc">
                         <Text style={styles.headText}>Description</Text>
                         <SortIcon dir={moneySort.dir} active={moneySort.key === 'description'} />
@@ -995,6 +998,14 @@ export default function RecordsScreen() {
                               <Text style={styles.bodyText}>{(record.isIncome ? '+' : '-')}${record.amount.toFixed(2)}</Text>
                             </TouchableOpacity>
                           )}
+                        </View>
+                        <View style={[styles.cell, styles.cellSm]}>
+                          <Text style={styles.bodyText}>
+                            {record.isIncome && 'quantity' in record && record.quantity ? 
+                              `${(record.quantity / 12).toFixed(1)}` : 
+                              '-'
+                            }
+                          </Text>
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
                           {editingId === record.id && editingField === 'description' ? (

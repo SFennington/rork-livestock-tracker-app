@@ -202,6 +202,11 @@ export default function SettingsScreen() {
       const allData = {
         version: '1.2.0',
         exportDate: new Date().toISOString(),
+        _UNITS_GUIDE: {
+          income_quantity: 'EGGS (individual eggs, not dozens). Example: 144 eggs = 12 dozen',
+          eggProduction_count: 'EGGS (individual eggs)',
+          eggProduction_laid: 'EGGS (individual eggs)',
+        },
         data: {
           chickens: livestock.chickens,
           rabbits: livestock.rabbits,
@@ -1065,6 +1070,17 @@ export default function SettingsScreen() {
           <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               💡 Export your data regularly to keep a backup. You can import it later to restore your information.
+            </Text>
+          </View>
+
+          <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b', marginTop: 12 }]}>
+            <Text style={[styles.infoText, { color: '#92400e', fontWeight: '600' }]}>
+              📋 IMPORT UNITS GUIDE
+            </Text>
+            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>
+              • Income quantity: Individual EGGS (not dozens){'\n'}
+              • Example: 144 eggs = 12 dozen{'\n'}
+              • Egg production counts: Individual EGGS{'\n'}
             </Text>
           </View>
 
