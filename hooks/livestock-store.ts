@@ -473,15 +473,27 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     
     // Auto-create individual animals for acquired events
     if (event.type === 'acquired' && event.quantity > 0) {
-      await addAnimalsBatch(
-        'chicken',
-        event.breed || 'Unknown',
-        event.quantity,
-        event.date,
-        event.sex,
-        true, // skipEvent since event already exists
-        newEvent.id // Link animals to this event
-      );
+      // Create individual animals directly
+      const newAnimals: IndividualAnimal[] = [];
+      for (let i = 0; i < event.quantity; i++) {
+        newAnimals.push({
+          id: createId(),
+          type: 'chicken',
+          breed: event.breed || 'Unknown',
+          dateAdded: event.date,
+          status: 'alive',
+          sex: event.sex,
+          eventId: newEvent.id, // Link to this event
+        });
+      }
+      
+      if (newAnimals.length > 0) {
+        setAnimals(prev => {
+          const updated = [...prev, ...newAnimals];
+          void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+          return updated;
+        });
+      }
     }
     
     // Auto-create financial record if cost is provided
@@ -499,7 +511,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     }
     
     return newEvent;
-  }, [addAnimalsBatch]);
+  }, []);
 
   const updateChickenHistoryEvent = useCallback(async (id: string, updates: Partial<ChickenHistoryEvent>) => {
     const event = chickenHistory.find(e => e.id === id);
