@@ -5,7 +5,7 @@
     "owner": "sfennington",
     "version": "1.2.0",
     "orientation": "portrait",
-    "scheme": "myapp",
+    "scheme": "livestock-tracker-app",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
