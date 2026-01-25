@@ -1,7 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFinancialStore } from './financial-store';
 
 export const getLocalDateString = (): string => {
   const now = new Date();
@@ -502,22 +501,32 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       }
     }
     
-    // Auto-create financial record if cost is provided
+    // Auto-create expense/income record if cost is provided
     if (event.cost && event.cost > 0) {
-      const financialStore = useFinancialStore.getState();
-      await financialStore.addRecord({
-        date: event.date,
-        type: event.type === 'sold' ? 'income' : 'expense',
-        category: event.type === 'acquired' ? 'Livestock Purchase' : 
-                  event.type === 'sold' ? 'Livestock Sale' : 'Other',
-        amount: event.cost,
-        description: `${event.type.charAt(0).toUpperCase() + event.type.slice(1)} ${event.quantity} ${event.breed || 'chickens'}${event.notes ? ' - ' + event.notes : ''}`,
-        relatedEventId: newEvent.id,
-      });
+      const description = event.notes || `${event.breed || 'Chickens'}`;
+      
+      if (event.type === 'sold') {
+        await addIncome({
+          type: 'livestock',
+          amount: event.cost,
+          date: event.date,
+          livestockType: 'chicken',
+          quantity: event.quantity,
+          description,
+        });
+      } else {
+        await addExpense({
+          category: event.type === 'acquired' ? 'Livestock Purchase' : 'Other',
+          amount: event.cost,
+          date: event.date,
+          livestockType: 'chicken',
+          description,
+        });
+      }
     }
     
     return newEvent;
-  }, []);
+  }, [animals, addExpense, addIncome]);
 
   const updateChickenHistoryEvent = useCallback(async (id: string, updates: Partial<ChickenHistoryEvent>) => {
     const event = chickenHistory.find(e => e.id === id);
@@ -526,36 +535,6 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     const updated = chickenHistory.map(e => e.id === id ? { ...e, ...updates } : e);
     setChickenHistory(updated);
     await storage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(updated));
-    
-    // Update linked financial record if cost changed
-    if (updates.cost !== undefined) {
-      const financialStore = useFinancialStore.getState();
-      const linkedRecord = financialStore.records.find(r => r.relatedEventId === id);
-      
-      if (updates.cost > 0) {
-        if (linkedRecord) {
-          // Update existing financial record
-          await financialStore.updateRecord(linkedRecord.id, {
-            amount: updates.cost,
-            description: `${event.type.charAt(0).toUpperCase() + event.type.slice(1)} ${updates.quantity || event.quantity} ${updates.breed || event.breed || 'chickens'}${(updates.notes || event.notes) ? ' - ' + (updates.notes || event.notes) : ''}`,
-          });
-        } else {
-          // Create new financial record
-          await financialStore.addRecord({
-            date: updates.date || event.date,
-            type: event.type === 'sold' ? 'income' : 'expense',
-            category: event.type === 'acquired' ? 'Livestock Purchase' : 
-                      event.type === 'sold' ? 'Livestock Sale' : 'Other',
-            amount: updates.cost,
-            description: `${event.type.charAt(0).toUpperCase() + event.type.slice(1)} ${updates.quantity || event.quantity} ${updates.breed || event.breed || 'chickens'}${(updates.notes || event.notes) ? ' - ' + (updates.notes || event.notes) : ''}`,
-            relatedEventId: id,
-          });
-        }
-      } else if (linkedRecord) {
-        // Cost removed, delete financial record
-        await financialStore.deleteRecord(linkedRecord.id);
-      }
-    }
   }, [chickenHistory]);
 
   const deleteChickenHistoryEvent = useCallback(async (id: string) => {
@@ -579,10 +558,6 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updatedAnimals));
       }
     }
-    
-    // Delete linked financial record
-    const financialStore = useFinancialStore.getState();
-    await financialStore.deleteRecordsByEventId(id);
   }, [chickenHistory, animals]);
 
   // Individual animal operations
