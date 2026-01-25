@@ -5,7 +5,9 @@
   "build": {
     "production": {
       "node": "22.20.0",
-      "npm": {},
+      "env": {
+        "EAS_BUILD_PACKAGE_MANAGER": "npm"
+      },
       "android": {
         "buildType": "app-bundle",
         "credentialsSource": "remote"
