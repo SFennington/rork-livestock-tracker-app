@@ -37,21 +37,38 @@ export default function DashboardScreen() {
     let totalSold = 0;
     let totalBroken = 0;
     let totalDonated = 0;
+    
+    // Get sold and donated from income records (quantity already in eggs)
+    income.forEach(record => {
+      if (record.type === 'eggs' && record.quantity) {
+        if (record.amount === 0) {
+          totalDonated += record.quantity;
+        } else {
+          totalSold += record.quantity;
+        }
+      }
+    });
+    
     eggProduction.forEach(record => {
-      totalSold += record.sold || 0;
       totalLaid += record.laid || record.count;
       totalBroken += record.broken || 0;
-      totalDonated += record.donated || 0;
     });
+    
     const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
     const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
     const totalIncomeWithSavings = totalIncome + consumptionSavings;
+    const roi = totalIncomeWithSavings - totalExpenses;
+    const roiPercentage = totalExpenses > 0 ? ((totalIncomeWithSavings - totalExpenses) / totalExpenses) * 100 : 0;
     
     return {
       todayEggs,
       totalExpenses,
       totalIncome,
-      profit: totalIncomeWithSavings - totalExpenses,
+      consumptionSavings,
+      totalIncomeWithSavings,
+      roi,
+      roiPercentage,
+      profit: roi,
       activeBreedings,
       activeChickens,
       activeRabbits,
@@ -185,13 +202,15 @@ export default function DashboardScreen() {
           (!settings.enabledAnimals.chickens || !settings.enabledAnimals.rabbits) && { width: '48%' }
         ]}>
           <View style={styles.statHeader}>
-            <TrendingUp size={24} color="#fff" />
-            <Text style={[styles.statValue, stats.profit < 0 && { color: '#fca5a5' }]} numberOfLines={1} adjustsFontSizeToFit>
-              ${Math.abs(Math.round(stats.profit)).toLocaleString()}
+            <DollarSign size={24} color="#fff" />
+            <Text style={[styles.statValue, stats.roi < 0 && { color: '#fca5a5' }]} numberOfLines={1} adjustsFontSizeToFit>
+              ${Math.abs(Math.round(stats.roi)).toLocaleString()}
             </Text>
           </View>
-          <Text style={styles.statLabel}>{stats.profit >= 0 ? 'Profit' : 'Loss'}</Text>
-          <Text style={styles.statSubtext}>All time</Text>
+          <Text style={styles.statLabel}>Return on Investment</Text>
+          <Text style={styles.statSubtext}>
+            {stats.roiPercentage >= 0 ? '↑' : '↓'} {Math.abs(stats.roiPercentage).toFixed(1)}% ROI
+          </Text>
         </View>
 
         <View style={[
@@ -466,5 +485,53 @@ const styles = StyleSheet.create({
   alertSubtext: {
     fontSize: 12,
     marginTop: 2,
+  },
+  roiCardCompact: {
+    width: "100%",
+    padding: 16,
+    borderRadius: 12,
+  },
+  roiHeaderCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  roiTitleCompact: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#fff",
+  },
+  roiAmountCompact: {
+    fontSize: 32,
+    fontWeight: "700" as const,
+    color: "#fff",
+    marginBottom: 4,
+  },
+  roiPercentageCompact: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginBottom: 12,
+  },
+  roiDetailsCompact: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  roiDetailItemCompact: {
+    flex: 1,
+    alignItems: "center",
+  },
+  roiDetailLabelCompact: {
+    fontSize: 10,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  roiDetailValueCompact: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#fff",
+    textAlign: "center",
   },
 });
