@@ -437,12 +437,12 @@ export default function AnalyticsScreen() {
           </Text>
           <View style={styles.roiDetails}>
             <View style={styles.roiDetailItem}>
-              <Text style={styles.roiDetailLabel}>Income (Sales)</Text>
+              <Text style={styles.roiDetailLabel}>Income</Text>
               <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.totalIncome).toLocaleString()}</Text>
             </View>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Egg Savings</Text>
-              <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.consumptionSavings).toLocaleString()}</Text>
+              <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.abs(Math.round(analytics.consumptionSavings)).toLocaleString()}</Text>
             </View>
             <View style={styles.roiDetailItem}>
               <Text style={styles.roiDetailLabel}>Total Income</Text>
@@ -476,40 +476,13 @@ export default function AnalyticsScreen() {
                 <View style={styles.lineChartContainer}>
                   <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Pinch to zoom · last 30 days highlighted</Text>
                   <View style={{ flexDirection: 'row' }}>
-                    <Svg width={yAxisWidth} height={chartHeight} style={{ position: 'absolute', left: 0, zIndex: 1 }}>
-                      {yAxisValues.map((value, index) => {
-                        const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
-                        return (
-                          <SvgText
-                            key={`yaxis-${index}`}
-                            x={yAxisWidth - 8}
-                            y={y + 4}
-                            fill={colors.text}
-                            fontSize={11}
-                            fontWeight="600"
-                            textAnchor="end"
-                          >
-                            {value}
-                          </SvgText>
-                        );
-                      })}
-                      <SvgLine
-                        x1={yAxisWidth}
-                        y1={chartPadding}
-                        x2={yAxisWidth}
-                        y2={chartHeight - chartPadding}
-                        stroke={colors.border}
-                        strokeWidth={1}
-                        opacity={0.3}
-                      />
-                    </Svg>
                     <PinchGestureHandler onGestureEvent={handlePinchGesture} onHandlerStateChange={handlePinchStateChange}>
                       <ScrollView
                         ref={chartScrollRef}
                         horizontal
                         scrollEnabled={true}
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={[styles.chartScrollContent, { width: chartContentWidth + chartPadding * 2, paddingLeft: yAxisWidth }]}
+                        contentContainerStyle={[styles.chartScrollContent, { width: chartContentWidth + chartPadding * 2 }]}
                       >
                         <Svg width={chartContentWidth + chartPadding * 2} height={chartHeight}>
                         {highlightWidth > 0 && (
@@ -586,6 +559,33 @@ export default function AnalyticsScreen() {
                       </Svg>
                     </ScrollView>
                   </PinchGestureHandler>
+                    <Svg width={yAxisWidth} height={chartHeight} style={{ marginLeft: 8 }}>
+                      {yAxisValues.map((value, index) => {
+                        const y = chartPadding + ((chartHeight - chartPadding * 2) / yAxisSteps) * index;
+                        return (
+                          <SvgText
+                            key={`yaxis-${index}`}
+                            x={8}
+                            y={y + 4}
+                            fill={colors.text}
+                            fontSize={11}
+                            fontWeight="600"
+                            textAnchor="start"
+                          >
+                            {value}
+                          </SvgText>
+                        );
+                      })}
+                      <SvgLine
+                        x1={0}
+                        y1={chartPadding}
+                        x2={0}
+                        y2={chartHeight - chartPadding}
+                        stroke={colors.border}
+                        strokeWidth={1}
+                        opacity={0.3}
+                      />
+                    </Svg>
                   </View>
                   <View style={[styles.chartSummary, { borderTopColor: colors.border }]}>
                     <View style={styles.chartSummaryItem}>
@@ -878,10 +878,12 @@ const styles = StyleSheet.create({
   },
   roiDetailItem: {
     flex: 1,
+    alignItems: "center",
   },
   roiDetailLabel: {
     fontSize: 12,
     color: "rgba(255, 255, 255, 0.7)",
+    textAlign: "center",
   },
   roiDetailValue: {
     fontSize: 18,
@@ -889,6 +891,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginTop: 4,
     flexShrink: 1,
+    textAlign: "center",
   },
   chartCard: {
     borderRadius: 16,

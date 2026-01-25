@@ -10,6 +10,9 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Check if Storage Access Framework is available
+const StorageAccessFramework = FileSystem.StorageAccessFramework;
 import { router } from "expo-router";
 
 const PALETTE_NAMES: Record<ThemePalette, string> = {
