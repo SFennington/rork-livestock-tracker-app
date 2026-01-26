@@ -179,8 +179,6 @@ export default function AppConfigurationScreen() {
           <View style={styles.animalTogglesContainer}>
             {Object.entries(enabledAnimals).map(([animal, enabled]) => {
               const isDisabled = animal !== 'chicken';
-              // Hide non-chicken animals entirely
-              if (isDisabled) return null;
               
               return (
                 <TouchableOpacity
@@ -188,19 +186,30 @@ export default function AppConfigurationScreen() {
                   style={[
                     styles.animalToggle,
                     {
-                      backgroundColor: enabled ? colors.primary : colors.card,
-                      borderColor: enabled ? colors.primary : colors.border,
+                      backgroundColor: enabled && !isDisabled ? colors.primary : colors.card,
+                      borderColor: enabled && !isDisabled ? colors.primary : colors.border,
+                      opacity: isDisabled ? 0.5 : 1,
                     }
                   ]}
                   onPress={() => {
+                    if (isDisabled) {
+                      Alert.alert('Coming Soon', 'Other animals will be available in a future update.');
+                      return;
+                    }
                     const updated = { ...enabledAnimals, [animal]: !enabled };
                     setEnabledAnimals(updated);
                     updateEnabledAnimals(updated);
                   }}
+                  disabled={isDisabled}
                 >
-                  <Text style={[styles.animalToggleText, { color: enabled ? '#fff' : colors.text }]}>
+                  <Text style={[styles.animalToggleText, { color: enabled && !isDisabled ? '#fff' : colors.text }]}>
                     {animal.charAt(0).toUpperCase() + animal.slice(1)}
                   </Text>
+                  {isDisabled && (
+                    <View style={[styles.comingSoonBadge, { backgroundColor: '#f59e0b' }]}>
+                      <Text style={styles.comingSoonText}>Coming Soon</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
