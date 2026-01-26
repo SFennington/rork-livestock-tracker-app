@@ -84,17 +84,20 @@ export default function SettingsScreen() {
       }
 
       console.log('Requesting directory permissions...');
+      console.log('FileSystem.StorageAccessFramework available:', !!FileSystem.StorageAccessFramework);
+      
       // Use Storage Access Framework on Android for directory selection
-      const StorageAccessFramework = FileSystem.StorageAccessFramework;
-      if (!StorageAccessFramework) {
+      if (!FileSystem.StorageAccessFramework) {
+        console.error('StorageAccessFramework is undefined');
         Alert.alert(
           'Feature Unavailable',
-          'This feature requires a newer version of the app. Backups will be saved to the default app folder for now.',
+          'Storage Access Framework is not available. Backups will be saved to the app folder and can be exported via the backup/restore buttons.',
           [{ text: 'OK' }]
         );
         return;
       }
-      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
       console.log('Permissions result:', permissions);
       
       if (permissions.granted) {
