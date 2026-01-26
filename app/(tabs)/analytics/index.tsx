@@ -561,6 +561,7 @@ export default function AnalyticsScreen() {
                   <Svg width="100%" height={200}>
                       {/* Grid lines */}
                       {(() => {
+                        const chartWidth = 350;
                         const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
                         const yMin = analytics.minDailyROI;
                         const midValue = (latestROI + yMin) / 2;
