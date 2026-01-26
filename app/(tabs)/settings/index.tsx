@@ -127,7 +127,7 @@ export default function SettingsScreen() {
       }
 
       const files = await FileSystem.readDirectoryAsync(backupDir);
-      const backupFiles = files.filter(f => f.startsWith('backup-') && f.endsWith('.json'));
+      const backupFiles = files.filter(f => f.startsWith('Livestock_Backup_') && f.endsWith('.json'));
       
       if (backupFiles.length === 0) {
         Alert.alert('No Backups', 'No backup files found.');
@@ -138,11 +138,16 @@ export default function SettingsScreen() {
       const sortedFiles = backupFiles.sort().reverse();
       const latestBackup = `${backupDir}${sortedFiles[0]}`;
       
-      await Sharing.shareAsync(latestBackup, {
-        mimeType: 'application/json',
-        dialogTitle: `Export Backup (${backupFiles.length} total backups available)`,
-        UTI: 'public.json'
-      });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(latestBackup, {
+          mimeType: 'application/json',
+          dialogTitle: `Export Livestock Backup (${backupFiles.length} total available)`,
+          UTI: 'public.json'
+        });
+      } else {
+        Alert.alert('Share Unavailable', 'Sharing is not available on this device');
+      }
     } catch (error) {
       console.error('Export backups error:', error);
       Alert.alert('Error', 'Failed to export backups');
@@ -174,10 +179,10 @@ export default function SettingsScreen() {
       };
 
       const jsonString = JSON.stringify(allData, null, 2);
-      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-      const fileName = `backup-${timestamp}.json`;
+      const timestamp = new Date().toISOString().split('T')[0];
+      const fileName = `Livestock_Backup_${timestamp}.json`;
 
-      // Save to app's backup directory
+      // Create backup directory if it doesn't exist
       const backupDir = `${FileSystem.documentDirectory}backups/`;
       const dirInfo = await FileSystem.getInfoAsync(backupDir);
       
@@ -192,7 +197,11 @@ export default function SettingsScreen() {
       await backup.updateLastBackupDate(new Date().toISOString());
       
       if (!isAuto) {
-        Alert.alert('Success', `Backup saved! Use "Export All Backups" to access it.`);
+        Alert.alert(
+          'Backup Saved',
+          `Your data has been saved!\n\nUse "Export All Backups" to share it to Google Drive or other storage.`,
+          [{ text: 'OK' }]
+        );
       }
       console.log('Backup completed');
     } catch (error) {
