@@ -229,7 +229,7 @@ export default function DashboardScreen() {
         <View style={[
           styles.statCard, 
           { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-          (!settings.enabledAnimals.chickens || !settings.enabledAnimals.rabbits) ? { width: '100%' } : { width: '48%' }
+          { width: '100%' }
         ]}>
           <View style={styles.statHeader}>
             <Bird size={24} color={colors.text} />
