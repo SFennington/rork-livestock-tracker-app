@@ -11,8 +11,8 @@ export default function AppConfigurationScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Enabled Animals
-  const [enabledAnimals, setEnabledAnimals] = useState(settings.enabledAnimals);
+  // Enabled Animals - chicken is always enabled
+  const [enabledAnimals, setEnabledAnimals] = useState({ ...settings.enabledAnimals, chickens: true });
 
   // Expense Categories
   const [expenseCategories, setExpenseCategories] = useState(settings.expenseCategories);
@@ -201,7 +201,7 @@ export default function AppConfigurationScreen() {
                       Alert.alert('Coming Soon', 'Other animals will be available in a future update.');
                       return;
                     }
-                    const updated = { ...enabledAnimals, [animal]: !enabled };
+                    const updated = { ...enabledAnimals, [animal]: !enabled, chickens: true };
                     setEnabledAnimals(updated);
                     updateEnabledAnimals(updated);
                   }}
