@@ -116,15 +116,41 @@ export default function SettingsScreen() {
     }
   };
 
-  const performBackup = async (isAuto = false) => {
+  const exportAllBackups = async () => {
     try {
-      if (!backup.settings.folderUri) {
-        if (!isAuto) {
-          Alert.alert('No Folder Selected', 'Please select a backup folder first.');
-        }
+      const backupDir = `${FileSystem.documentDirectory}backups/`;
+      const dirInfo = await FileSystem.getInfoAsync(backupDir);
+      
+      if (!dirInfo.exists) {
+        Alert.alert('No Backups', 'No automatic backups found. Enable auto-backup to create them.');
         return;
       }
 
+      const files = await FileSystem.readDirectoryAsync(backupDir);
+      const backupFiles = files.filter(f => f.startsWith('backup-') && f.endsWith('.json'));
+      
+      if (backupFiles.length === 0) {
+        Alert.alert('No Backups', 'No backup files found.');
+        return;
+      }
+
+      // Share the most recent backup
+      const sortedFiles = backupFiles.sort().reverse();
+      const latestBackup = `${backupDir}${sortedFiles[0]}`;
+      
+      await Sharing.shareAsync(latestBackup, {
+        mimeType: 'application/json',
+        dialogTitle: `Export Backup (${backupFiles.length} total backups available)`,
+        UTI: 'public.json'
+      });
+    } catch (error) {
+      console.error('Export backups error:', error);
+      Alert.alert('Error', 'Failed to export backups');
+    }
+  };
+
+  const performBackup = async (isAuto = false) => {
+    try {
       setIsBackingUp(true);
       console.log('Performing backup...');
 
@@ -148,35 +174,25 @@ export default function SettingsScreen() {
       };
 
       const jsonString = JSON.stringify(allData, null, 2);
-      const fileName = `livestock-backup-${new Date().toISOString().split('T')[0]}.json`;
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+      const fileName = `backup-${timestamp}.json`;
 
-      if (Platform.OS === 'web') {
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        // Write to selected folder using Storage Access Framework
-        const folderUri = backup.settings.folderUri;
-        const StorageAccessFramework = (FileSystem as any).StorageAccessFramework;
-        const fileUri = await StorageAccessFramework.createFileAsync(
-          folderUri,
-          fileName,
-          'application/json'
-        );
-        await FileSystem.writeAsStringAsync(fileUri, jsonString);
-        console.log('Backup written to:', fileUri);
+      // Save to app's backup directory
+      const backupDir = `${FileSystem.documentDirectory}backups/`;
+      const dirInfo = await FileSystem.getInfoAsync(backupDir);
+      
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(backupDir, { intermediates: true });
       }
+
+      const filePath = `${backupDir}${fileName}`;
+      await FileSystem.writeAsStringAsync(filePath, jsonString);
+      console.log('Backup saved to:', filePath);
 
       await backup.updateLastBackupDate(new Date().toISOString());
       
       if (!isAuto) {
-        Alert.alert('Success', 'Backup completed successfully!');
+        Alert.alert('Success', `Backup saved! Use "Export All Backups" to access it.`);
       }
       console.log('Backup completed');
     } catch (error) {
@@ -1200,7 +1216,7 @@ export default function SettingsScreen() {
             <View style={styles.backupStatusRow}>
               <Text style={[styles.backupStatusLabel, { color: colors.textMuted }]}>Backup Location:</Text>
               <Text style={[styles.backupStatusValue, { color: colors.text }]}>
-                {backup.settings.folderUri ? (Platform.OS === 'web' ? 'Downloads Folder' : 'Selected') : 'Not Set'}
+                App Storage
               </Text>
             </View>
             <View style={styles.backupStatusRow}>
@@ -1216,16 +1232,6 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </View>
-
-          <TouchableOpacity
-            style={[styles.dataButton, { backgroundColor: colors.card, borderWidth: 2, borderColor: colors.primary, marginTop: 12 }]}
-            onPress={pickBackupFolder}
-          >
-            <FolderOpen size={20} color={colors.primary} />
-            <Text style={[styles.dataButtonText, { color: colors.primary }]}>
-              {backup.settings.folderUri ? 'Change Backup Folder' : 'Select Backup Folder'}
-            </Text>
-          </TouchableOpacity>
 
           <Text style={[styles.subsectionTitle, { color: colors.text, marginTop: 20 }]}>Backup Schedule</Text>
           <View style={styles.scheduleButtons}>
@@ -1254,20 +1260,17 @@ export default function SettingsScreen() {
 
           <TouchableOpacity
             style={[styles.dataButton, { backgroundColor: colors.primary, marginTop: 12 }]}
-            onPress={() => performBackup(false)}
-            disabled={isBackingUp || !backup.settings.folderUri}
+            onPress={exportAllBackups}
           >
-            <CloudUpload size={20} color="#fff" />
+            <FolderOpen size={20} color="#fff" />
             <Text style={styles.dataButtonText}>
-              {isBackingUp ? 'Backing Up...' : 'Backup Now'}
+              Export All Backups
             </Text>
           </TouchableOpacity>
 
           <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 12 }]}>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              💡 {Platform.OS === 'web' 
-                ? 'On web, backups download to your Downloads folder. Configure your browser or OS to auto-sync this folder with Google Drive.' 
-                : 'Select a folder in your Google Drive using the file picker. The app will write backups there automatically.'}
+              💡 Auto backups are saved to app storage. Use "Export All Backups" to access and transfer them to Google Drive or other storage.
             </Text>
           </View>
         </View>
