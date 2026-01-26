@@ -215,6 +215,60 @@ export default function AnalyticsScreen() {
       });
     });
 
+    // Calculate daily ROI history (cumulative)
+    let dailyROIHistory: { date: string; roi: number }[] = [];
+    let maxDailyROI = 0;
+    let minDailyROI = 0;
+    if (dailyEggHistory.length > 0) {
+      dailyROIHistory = dailyEggHistory.map(day => {
+        // Calculate cumulative totals up to this date
+        const dayDate = new Date(day.date + 'T00:00:00');
+        
+        // Expenses up to this date
+        const cumulativeExpenses = expenses
+          .filter(e => new Date(e.date) <= dayDate)
+          .reduce((sum, e) => sum + e.amount, 0);
+        
+        // Income up to this date
+        const cumulativeIncome = income
+          .filter(i => new Date(i.date) <= dayDate)
+          .reduce((sum, i) => sum + i.amount, 0);
+        
+        // Eggs laid up to this date
+        const cumulativeLaid = eggProduction
+          .filter(e => new Date(e.date) <= dayDate)
+          .reduce((sum, e) => sum + e.count, 0);
+        
+        // Eggs sold/donated up to this date
+        const cumulativeSold = income
+          .filter(i => new Date(i.date) <= dayDate && i.type === 'eggs' && i.quantity && i.amount > 0)
+          .reduce((sum, i) => sum + (i.quantity || 0), 0);
+        
+        const cumulativeDonated = income
+          .filter(i => new Date(i.date) <= dayDate && i.type === 'eggs' && i.quantity && i.amount === 0)
+          .reduce((sum, i) => sum + (i.quantity || 0), 0);
+        
+        const cumulativeBroken = eggProduction
+          .filter(e => new Date(e.date) <= dayDate)
+          .reduce((sum, e) => sum + (e.broken || 0), 0);
+        
+        // Consumed eggs (using current eggsOnHand as constant)
+        const consumed = Math.max(0, cumulativeLaid - cumulativeSold - settings.eggsOnHand - cumulativeBroken - cumulativeDonated);
+        const consumptionSavingsAtDate = (consumed / 12) * settings.eggValuePerDozen;
+        
+        const totalIncomeAtDate = cumulativeIncome + consumptionSavingsAtDate;
+        const roiAtDate = totalIncomeAtDate - cumulativeExpenses;
+        
+        if (roiAtDate > maxDailyROI) maxDailyROI = roiAtDate;
+        if (roiAtDate < minDailyROI) minDailyROI = roiAtDate;
+        
+        return {
+          date: day.date,
+          roi: roiAtDate,
+        };
+      });
+    }
+
     return {
       totalExpenses,
       totalIncome,
@@ -248,6 +302,9 @@ export default function AnalyticsScreen() {
       maxEggsPerChicken,
       monthlyEggsPerChicken,
       maxMonthlyEggsPerChicken,
+      dailyROIHistory,
+      maxDailyROI,
+      minDailyROI,
     };
   }, [eggProduction, expenses, income, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen]);
 
@@ -479,6 +536,167 @@ export default function AnalyticsScreen() {
               <Text style={styles.roiDetailValue} numberOfLines={1} adjustsFontSizeToFit>${Math.round(analytics.totalExpenses).toLocaleString()}</Text>
             </View>
           </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>ROI Trend</Text>
+        <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.chartHeader}>
+            <Text style={[styles.chartTitle, { color: colors.text }]}>Daily ROI</Text>
+            <TouchableOpacity onPress={() => toggleChart('roi')} style={styles.eyeButton}>
+              {hiddenCharts.has('roi') ? <Eye size={20} color={colors.textMuted} /> : <EyeOff size={20} color={colors.textMuted} />}
+            </TouchableOpacity>
+          </View>
+          {!hiddenCharts.has('roi') && (
+            <>
+              {analytics.dailyROIHistory.length === 0 ? (
+                <View style={styles.chartEmptyState}>
+                  <DollarSign size={24} color={colors.textMuted} />
+                  <Text style={[styles.chartEmptyText, { color: colors.textMuted }]}>Track income and expenses to see ROI trends.</Text>
+                </View>
+              ) : (
+                <View style={styles.lineChartContainer}>
+                  <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Cumulative return over time</Text>
+                  <ScrollView
+                    horizontal
+                    scrollEnabled={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 20 }}
+                  >
+                    <Svg width={Math.max(350, analytics.dailyROIHistory.length * 8)} height={200}>
+                      {/* Grid lines */}
+                      <SvgLine
+                        x1={40}
+                        y1={20}
+                        x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                        y2={20}
+                        stroke={colors.border}
+                        strokeWidth={1}
+                        opacity={0.1}
+                      />
+                      <SvgLine
+                        x1={40}
+                        y1={110}
+                        x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                        y2={110}
+                        stroke={colors.border}
+                        strokeWidth={1}
+                        opacity={0.3}
+                      />
+                      <SvgLine
+                        x1={40}
+                        y1={180}
+                        x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                        y2={180}
+                        stroke={colors.border}
+                        strokeWidth={1}
+                        opacity={0.1}
+                      />
+                      
+                      {/* Draw ROI line */}
+                      {(() => {
+                        const chartHeight = 180;
+                        const chartPadding = 20;
+                        const zeroY = 110; // Middle of chart
+                        const maxAbsValue = Math.max(Math.abs(analytics.maxDailyROI), Math.abs(analytics.minDailyROI), 1);
+                        const dayWidth = 8;
+                        
+                        const points = analytics.dailyROIHistory.map((day, index) => {
+                          const x = 40 + index * dayWidth;
+                          const normalizedValue = day.roi / maxAbsValue;
+                          const y = zeroY - (normalizedValue * 90); // 90px max distance from zero line
+                          return `${x},${y}`;
+                        }).join(' ');
+                        
+                        // Determine line color based on latest ROI
+                        const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
+                        const lineColor = latestROI >= 0 ? '#10b981' : '#ef4444';
+                        
+                        return (
+                          <>
+                            <Polyline
+                              points={points}
+                              fill="none"
+                              stroke={lineColor}
+                              strokeWidth={3}
+                              strokeLinejoin="round"
+                              strokeLinecap="round"
+                            />
+                            {/* Draw dots for last 30 days */}
+                            {analytics.dailyROIHistory.slice(-30).map((day, index) => {
+                              const actualIndex = analytics.dailyROIHistory.length - 30 + index;
+                              const x = 40 + actualIndex * dayWidth;
+                              const normalizedValue = day.roi / maxAbsValue;
+                              const y = zeroY - (normalizedValue * 90);
+                              const dotColor = day.roi >= 0 ? '#10b981' : '#ef4444';
+                              return (
+                                <Circle
+                                  key={`roi-point-${day.date}`}
+                                  cx={x}
+                                  cy={y}
+                                  r={3}
+                                  fill={colors.surface}
+                                  stroke={dotColor}
+                                  strokeWidth={2}
+                                />
+                              );
+                            })}
+                            {/* Latest point highlight */}
+                            {(() => {
+                              const lastDay = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1];
+                              const x = 40 + (analytics.dailyROIHistory.length - 1) * dayWidth;
+                              const normalizedValue = lastDay.roi / maxAbsValue;
+                              const y = zeroY - (normalizedValue * 90);
+                              return (
+                                <Circle
+                                  cx={x}
+                                  cy={y}
+                                  r={5.5}
+                                  fill={lineColor}
+                                  stroke="#ffffff"
+                                  strokeWidth={2}
+                                />
+                              );
+                            })()}
+                          </>
+                        );
+                      })()}
+                      
+                      {/* Y-axis labels */}
+                      <SvgText
+                        x={8}
+                        y={25}
+                        fill={colors.text}
+                        fontSize={11}
+                        fontWeight="600"
+                      >
+                        ${Math.round(analytics.maxDailyROI).toLocaleString()}
+                      </SvgText>
+                      <SvgText
+                        x={8}
+                        y={114}
+                        fill={colors.text}
+                        fontSize={11}
+                        fontWeight="600"
+                      >
+                        $0
+                      </SvgText>
+                      <SvgText
+                        x={8}
+                        y={185}
+                        fill={colors.text}
+                        fontSize={11}
+                        fontWeight="600"
+                      >
+                        ${Math.round(analytics.minDailyROI).toLocaleString()}
+                      </SvgText>
+                    </Svg>
+                  </ScrollView>
+                </View>
+              )}
+            </>
+          )}
         </View>
       </View>
 
