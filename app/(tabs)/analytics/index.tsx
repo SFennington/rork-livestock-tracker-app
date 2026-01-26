@@ -558,13 +558,7 @@ export default function AnalyticsScreen() {
               ) : (
                 <View style={styles.lineChartContainer}>
                   <Text style={[styles.chartSubtitle, { color: colors.textMuted }]}>Cumulative return over time</Text>
-                  <ScrollView
-                    horizontal
-                    scrollEnabled={true}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingRight: 20 }}
-                  >
-                    <Svg width={Math.max(350, analytics.dailyROIHistory.length * 8)} height={200}>
+                  <Svg width="100%" height={200}>
                       {/* Grid lines */}
                       {(() => {
                         const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
@@ -576,7 +570,7 @@ export default function AnalyticsScreen() {
                             <SvgLine
                               x1={40}
                               y1={20}
-                              x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                              x2={chartWidth}
                               y2={20}
                               stroke={colors.border}
                               strokeWidth={1}
@@ -585,7 +579,7 @@ export default function AnalyticsScreen() {
                             <SvgLine
                               x1={40}
                               y1={110}
-                              x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                              x2={chartWidth}
                               y2={110}
                               stroke={colors.border}
                               strokeWidth={1}
@@ -594,7 +588,7 @@ export default function AnalyticsScreen() {
                             <SvgLine
                               x1={40}
                               y1={180}
-                              x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                              x2={chartWidth}
                               y2={180}
                               stroke={colors.border}
                               strokeWidth={1}
@@ -608,7 +602,8 @@ export default function AnalyticsScreen() {
                       {(() => {
                         const chartHeight = 180;
                         const chartPadding = 20;
-                        const dayWidth = 8;
+                        const chartWidth = 350;
+                        const dayWidth = (chartWidth - 60) / Math.max(analytics.dailyROIHistory.length - 1, 1);
                         
                         // Y-axis range: from minDailyROI to most recent ROI (use analytics.roi which is the actual current ROI)
                         const latestROI = analytics.roi;
@@ -709,7 +704,6 @@ export default function AnalyticsScreen() {
                         ${Math.round(analytics.minDailyROI).toLocaleString()}
                       </SvgText>
                     </Svg>
-                  </ScrollView>
                 </View>
               )}
             </>
