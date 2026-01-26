@@ -610,8 +610,8 @@ export default function AnalyticsScreen() {
                         const chartPadding = 20;
                         const dayWidth = 8;
                         
-                        // Y-axis range: from minDailyROI to most recent ROI
-                        const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
+                        // Y-axis range: from minDailyROI to most recent ROI (use analytics.roi which is the actual current ROI)
+                        const latestROI = analytics.roi;
                         const yMax = latestROI;
                         const yMin = analytics.minDailyROI;
                         const yRange = Math.max(Math.abs(yMax - yMin), 1);
@@ -685,7 +685,7 @@ export default function AnalyticsScreen() {
                         fontSize={11}
                         fontWeight="600"
                       >
-                        ${Math.round(analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0).toLocaleString()}
+                        ${Math.round(analytics.roi).toLocaleString()}
                       </SvgText>
                       <SvgText
                         x={8}
@@ -694,7 +694,7 @@ export default function AnalyticsScreen() {
                         fontSize={11}
                         fontWeight="600"
                       >
-                        ${Math.round((analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0) / 2 + analytics.minDailyROI / 2).toLocaleString()}
+                        ${Math.round((analytics.roi + analytics.minDailyROI) / 2).toLocaleString()}
                       </SvgText>
                       <SvgText
                         x={8}
