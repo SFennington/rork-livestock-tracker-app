@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, FileText, TrendingUp, TrendingDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,7 +13,8 @@ type ExpenseCategory = 'feed' | 'bedding' | 'medical' | 'equipment' | 'other';
 type IncomeType = 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other';
 
 export default function AddTransactionScreen() {
-  const { addExpense, addIncome } = useLivestock();
+  const { addExpense, addIncome, income, expenses, eggProduction } = useLivestock();
+  const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
   const [transactionType, setTransactionType] = useState<TransactionType>('expense');
@@ -78,6 +80,25 @@ export default function AddTransactionScreen() {
         description,
       });
     }
+
+    // Calculate and save ROI snapshot
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0) + (transactionType === 'expense' ? transactionAmount : 0);
+    const totalIncome = income.reduce((sum, i) => sum + i.amount, 0) + (transactionType === 'income' ? transactionAmount : 0);
+    let totalSold = 0, totalLaid = 0, totalBroken = 0, totalDonated = 0;
+    income.forEach(r => {
+      if (r.type === 'eggs' && r.quantity) {
+        if (r.amount === 0) totalDonated += r.quantity;
+        else totalSold += r.quantity;
+      }
+    });
+    eggProduction.forEach(r => {
+      totalLaid += r.laid || r.count;
+      totalBroken += r.broken || 0;
+    });
+    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
+    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
+    const roi = (totalIncome + consumptionSavings) - totalExpenses;
+    await saveROISnapshot(roi);
 
     router.back();
   };

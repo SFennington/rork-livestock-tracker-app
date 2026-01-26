@@ -1,18 +1,24 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock, useRabbitBreeding, useRabbitHealth, getLocalDateString } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { Egg, Heart, DollarSign, TrendingUp, Plus, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Mic } from "lucide-react-native";
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
   const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate } = useLivestock();
+  const loadROISnapshots = useFinancialStore(state => state.loadROISnapshots);
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
   const { colors } = useTheme();
   const { settings } = useAppSettings();
+
+  useEffect(() => {
+    loadROISnapshots();
+  }, [loadROISnapshots]);
 
   const stats = useMemo(() => {
     const today = getLocalDateString();

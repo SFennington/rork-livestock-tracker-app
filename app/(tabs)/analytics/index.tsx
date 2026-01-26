@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { TrendingUp, DollarSign, Egg, Eye, EyeOff } from "lucide-react-native";
@@ -9,9 +10,15 @@ import { PinchGestureHandler, State } from "react-native-gesture-handler";
 
 export default function AnalyticsScreen() {
   const { eggProduction, expenses, income, getChickenCountOnDate } = useLivestock();
+  const roiSnapshots = useFinancialStore(state => state.roiSnapshots);
+  const loadROISnapshots = useFinancialStore(state => state.loadROISnapshots);
   const { settings } = useAppSettings();
   const { colors } = useTheme();
   const [hiddenCharts, setHiddenCharts] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    loadROISnapshots();
+  }, [loadROISnapshots]);
 
   const toggleChart = useCallback((chartId: string) => {
     setHiddenCharts(prev => {
@@ -59,6 +66,13 @@ export default function AnalyticsScreen() {
       .filter(e => e.recurring === true)
       .reduce((sum, e) => sum + e.amount, 0);
     const costPerEgg = totalLaid > 0 ? recurringExpenses / totalLaid : 0;
+    const costPerDozen = costPerEgg * 12;
+    
+    // Calculate average value per dozen from egg sales (exclude donated)
+    const eggSales = income.filter(i => i.type === 'eggs' && i.amount > 0 && i.quantity && i.quantity > 0);
+    const avgValuePerDozen = eggSales.length > 0 
+      ? eggSales.reduce((sum, sale) => sum + (sale.amount / (sale.quantity! / 12)), 0) / eggSales.length
+      : 0;
     
     // Data validation: warn if income records show more eggs than laid
     const hasDataIssue = (totalSold + totalDonated) > totalLaid;
@@ -215,59 +229,10 @@ export default function AnalyticsScreen() {
       });
     });
 
-    // Calculate daily ROI history (cumulative)
-    let dailyROIHistory: { date: string; roi: number }[] = [];
-    let maxDailyROI = 0;
-    let minDailyROI = 0;
-    if (dailyEggHistory.length > 0) {
-      dailyROIHistory = dailyEggHistory.map(day => {
-        // Calculate cumulative totals up to this date
-        const dayDate = new Date(day.date + 'T00:00:00');
-        
-        // Expenses up to this date
-        const cumulativeExpenses = expenses
-          .filter(e => new Date(e.date) <= dayDate)
-          .reduce((sum, e) => sum + e.amount, 0);
-        
-        // Income up to this date
-        const cumulativeIncome = income
-          .filter(i => new Date(i.date) <= dayDate)
-          .reduce((sum, i) => sum + i.amount, 0);
-        
-        // Eggs laid up to this date
-        const cumulativeLaid = eggProduction
-          .filter(e => new Date(e.date) <= dayDate)
-          .reduce((sum, e) => sum + e.count, 0);
-        
-        // Eggs sold/donated up to this date (quantity already in eggs)
-        const cumulativeSold = income
-          .filter(i => new Date(i.date) <= dayDate && i.type === 'eggs' && i.quantity && i.amount > 0)
-          .reduce((sum, i) => sum + (i.quantity || 0), 0);
-        
-        const cumulativeDonated = income
-          .filter(i => new Date(i.date) <= dayDate && i.type === 'eggs' && i.quantity && i.amount === 0)
-          .reduce((sum, i) => sum + (i.quantity || 0), 0);
-        
-        const cumulativeBroken = eggProduction
-          .filter(e => new Date(e.date) <= dayDate)
-          .reduce((sum, e) => sum + (e.broken || 0), 0);
-        
-        // Consumed eggs (match main ROI calculation exactly)
-        const consumed = cumulativeLaid - cumulativeSold - settings.eggsOnHand - cumulativeBroken - cumulativeDonated;
-        const consumptionSavingsAtDate = (consumed / 12) * settings.eggValuePerDozen;
-        
-        const totalIncomeAtDate = cumulativeIncome + consumptionSavingsAtDate;
-        const roiAtDate = totalIncomeAtDate - cumulativeExpenses;
-        
-        if (roiAtDate > maxDailyROI) maxDailyROI = roiAtDate;
-        if (roiAtDate < minDailyROI) minDailyROI = roiAtDate;
-        
-        return {
-          date: day.date,
-          roi: roiAtDate,
-        };
-      });
-    }
+    // Use ROI snapshots instead of calculating history
+    const dailyROIHistory = roiSnapshots;
+    const maxDailyROI = dailyROIHistory.length > 0 ? Math.max(...dailyROIHistory.map(s => s.roi)) : 0;
+    const minDailyROI = dailyROIHistory.length > 0 ? Math.min(...dailyROIHistory.map(s => s.roi)) : 0;
 
     return {
       totalExpenses,
@@ -278,6 +243,8 @@ export default function AnalyticsScreen() {
       roi,
       roiPercentage,
       costPerEgg,
+      costPerDozen,
+      avgValuePerDozen,
       hasDataIssue,
       totalSold,
       totalDonated,
@@ -306,7 +273,7 @@ export default function AnalyticsScreen() {
       maxDailyROI,
       minDailyROI,
     };
-  }, [eggProduction, expenses, income, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen]);
+  }, [eggProduction, expenses, income, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen, roiSnapshots]);
 
   const BASE_DAY_WIDTH = 32;
   const MIN_ZOOM = 0.3;
@@ -1021,11 +988,26 @@ export default function AnalyticsScreen() {
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz/Wk</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>4 wk avg</Text>
           </View>
+        </View>
+
+        <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <DollarSign size={20} color="#ef4444" />
             <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.costPerEgg.toFixed(3)}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Cost/Egg</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>recurring</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <DollarSign size={20} color="#ef4444" />
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.costPerDozen.toFixed(2)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Cost/Doz</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>recurring</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <DollarSign size={20} color="#10b981" />
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.avgValuePerDozen.toFixed(2)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg Val/Doz</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>sales</Text>
           </View>
         </View>
 

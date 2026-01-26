@@ -6,4 +6,10 @@ export interface FinancialRecord {
   amount: number;
   description: string;
   relatedEventId?: string; // Link to ChickenHistoryEvent or other event
+  quantity?: number; // Quantity of eggs (stored as individual eggs, not dozens)
+}
+
+export interface ROISnapshot {
+  date: string;
+  roi: number;
 }

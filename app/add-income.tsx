@@ -2,13 +2,15 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, FileText, Hash } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function AddIncomeScreen() {
-  const { addIncome } = useLivestock();
+  const { addIncome, income, expenses, eggProduction } = useLivestock();
+  const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
   const [type, setType] = useState(settings.incomeTypes[0] || 'eggs');
@@ -51,6 +53,29 @@ export default function AddIncomeScreen() {
       quantity: qty,
       description,
     });
+
+    // Calculate and save ROI snapshot
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalIncome = income.reduce((sum, i) => sum + i.amount, 0) + (price * qty);
+    let totalSold = 0, totalLaid = 0, totalBroken = 0, totalDonated = 0;
+    income.forEach(r => {
+      if (r.type === 'eggs' && r.quantity) {
+        if (r.amount === 0) totalDonated += r.quantity;
+        else totalSold += r.quantity;
+      }
+    });
+    if (type === 'eggs' && qty > 0) {
+      if (price * qty === 0) totalDonated += qty;
+      else totalSold += qty;
+    }
+    eggProduction.forEach(r => {
+      totalLaid += r.laid || r.count;
+      totalBroken += r.broken || 0;
+    });
+    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
+    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
+    const roi = (totalIncome + consumptionSavings) - totalExpenses;
+    await saveROISnapshot(roi);
 
     router.back();
   };

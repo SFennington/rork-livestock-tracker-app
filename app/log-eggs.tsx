@@ -2,12 +2,16 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInp
 import { useState, useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
 export default function LogEggsScreen() {
-  const { addEggProduction, eggProduction } = useLivestock();
+  const { addEggProduction, eggProduction, income, expenses } = useLivestock();
+  const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
+  const { settings } = useAppSettings();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string }>();
@@ -71,6 +75,25 @@ export default function LogEggsScreen() {
       broken: newData.broken || undefined,
       donated: newData.donated || undefined,
     });
+
+    // Calculate and save ROI snapshot
+    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalIncome = income.reduce((sum, i) => sum + i.amount, 0);
+    let totalSold = 0, totalLaid = 0, totalBroken = 0, totalDonated = 0;
+    income.forEach(r => {
+      if (r.type === 'eggs' && r.quantity) {
+        if (r.amount === 0) totalDonated += r.quantity;
+        else totalSold += r.quantity;
+      }
+    });
+    eggProduction.forEach(r => {
+      totalLaid += r.laid || r.count;
+      totalBroken += r.broken || 0;
+    });
+    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
+    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
+    const roi = (totalIncome + consumptionSavings) - totalExpenses;
+    await saveROISnapshot(roi);
 
     console.log('Egg production saved');
     router.back();
