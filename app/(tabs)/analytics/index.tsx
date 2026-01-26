@@ -252,8 +252,8 @@ export default function AnalyticsScreen() {
           .filter(e => new Date(e.date) <= dayDate)
           .reduce((sum, e) => sum + (e.broken || 0), 0);
         
-        // Consumed eggs (using current eggsOnHand as constant)
-        const consumed = Math.max(0, cumulativeLaid - cumulativeSold - settings.eggsOnHand - cumulativeBroken - cumulativeDonated);
+        // Consumed eggs (don't include current eggsOnHand for historical snapshots)
+        const consumed = Math.max(0, cumulativeLaid - cumulativeSold - cumulativeBroken - cumulativeDonated);
         const consumptionSavingsAtDate = (consumed / 12) * settings.eggValuePerDozen;
         
         const totalIncomeAtDate = cumulativeIncome + consumptionSavingsAtDate;
