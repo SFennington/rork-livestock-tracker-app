@@ -244,7 +244,7 @@ export default function SettingsScreen() {
         version: '1.2.0',
         exportDate: new Date().toISOString(),
         _UNITS_GUIDE: {
-          income_quantity: 'EGGS (individual eggs, not dozens). Example: 144 eggs = 12 dozen',
+          income_quantity: 'DOZENS. Example: 12 dozen = 12 (not 144)',
           eggProduction_count: 'EGGS (individual eggs)',
           eggProduction_laid: 'EGGS (individual eggs)',
         },
@@ -1292,6 +1292,20 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Import data from spreadsheets or download templates
           </Text>
+
+          <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b', marginTop: 12, marginBottom: 16 }]}>
+            <Text style={[styles.infoText, { color: '#92400e', fontWeight: '600' }]}>
+              📋 IMPORT UNITS GUIDE
+            </Text>
+            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>
+              • Income quantity: DOZENS (not individual eggs){'
+'}
+              • Example: For 12 dozen eggs sold, enter 12{'
+'}
+              • Egg production counts: Individual EGGS{'
+'}
+            </Text>
+          </View>
 
           <View style={styles.csvSection}>
             <Text style={[styles.csvSectionTitle, { color: colors.text }]}>Egg Production</Text>
