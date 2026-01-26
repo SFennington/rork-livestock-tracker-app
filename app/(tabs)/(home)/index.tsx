@@ -38,13 +38,13 @@ export default function DashboardScreen() {
     let totalBroken = 0;
     let totalDonated = 0;
     
-    // Get sold and donated from income records (quantity stored as DOZENS, convert to eggs)
+    // Get sold and donated from income records (quantity already in eggs)
     income.forEach(record => {
       if (record.type === 'eggs' && record.quantity) {
         if (record.amount === 0) {
-          totalDonated += record.quantity * 12;
+          totalDonated += record.quantity;
         } else {
-          totalSold += record.quantity * 12;
+          totalSold += record.quantity;
         }
       }
     });
