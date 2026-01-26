@@ -166,15 +166,14 @@ export default function SettingsScreen() {
 
   const exportAllBackups = async () => {
     try {
-      const backupDir = `${FileSystem.documentDirectory}backups/`;
-      const dirInfo = await FileSystem.getInfoAsync(backupDir);
+      const directory = new FileSystem.Directory(FileSystem.Paths.document!, 'backups');
       
-      if (!dirInfo.exists) {
+      if (!(await directory.exists)) {
         Alert.alert('No Backups', 'No automatic backups found. Enable auto-backup to create them.');
         return;
       }
 
-      const files = await FileSystem.readDirectoryAsync(backupDir);
+      const files = await directory.list();
       const backupFiles = files.filter(f => f.startsWith('Livestock_Backup_') && f.endsWith('.json'));
       
       if (backupFiles.length === 0) {
@@ -184,7 +183,8 @@ export default function SettingsScreen() {
 
       // Share the most recent backup
       const sortedFiles = backupFiles.sort().reverse();
-      const latestBackup = `${backupDir}${sortedFiles[0]}`;
+      const latestFile = new FileSystem.File(directory, sortedFiles[0]);
+      const latestBackup = latestFile.uri;
       
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -231,16 +231,14 @@ export default function SettingsScreen() {
       const fileName = `Livestock_Backup_${timestamp}.json`;
 
       // Create backup directory if it doesn't exist
-      const backupDir = `${FileSystem.documentDirectory}backups/`;
-      const dirInfo = await FileSystem.getInfoAsync(backupDir);
-      
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(backupDir, { intermediates: true });
+      const directory = new FileSystem.Directory(FileSystem.Paths.document!, 'backups');
+      if (!(await directory.exists)) {
+        await directory.create();
       }
 
-      const filePath = `${backupDir}${fileName}`;
-      await FileSystem.writeAsStringAsync(filePath, jsonString);
-      console.log('Backup saved to:', filePath);
+      const file = new FileSystem.File(directory, fileName);
+      await file.write(jsonString);
+      console.log('Backup saved to:', file.uri);
 
       await backup.updateLastBackupDate(new Date().toISOString());
       
