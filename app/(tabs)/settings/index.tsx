@@ -1361,7 +1361,7 @@ export default function SettingsScreen() {
               monitor breeding cycles, and analyze your farm&apos;s performance.
             </Text>
             <Text style={[styles.versionText, { color: colors.textMuted }]}>
-              Version 1.4.0
+              Version 1.4.1
             </Text>
           </View>
         </View>
