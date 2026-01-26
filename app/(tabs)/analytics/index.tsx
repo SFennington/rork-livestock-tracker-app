@@ -566,51 +566,65 @@ export default function AnalyticsScreen() {
                   >
                     <Svg width={Math.max(350, analytics.dailyROIHistory.length * 8)} height={200}>
                       {/* Grid lines */}
-                      <SvgLine
-                        x1={40}
-                        y1={20}
-                        x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
-                        y2={20}
-                        stroke={colors.border}
-                        strokeWidth={1}
-                        opacity={0.1}
-                      />
-                      <SvgLine
-                        x1={40}
-                        y1={110}
-                        x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
-                        y2={110}
-                        stroke={colors.border}
-                        strokeWidth={1}
-                        opacity={0.3}
-                      />
-                      <SvgLine
-                        x1={40}
-                        y1={180}
-                        x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
-                        y2={180}
-                        stroke={colors.border}
-                        strokeWidth={1}
-                        opacity={0.1}
-                      />
+                      {(() => {
+                        const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
+                        const yMin = analytics.minDailyROI;
+                        const midValue = (latestROI + yMin) / 2;
+                        
+                        return (
+                          <>
+                            <SvgLine
+                              x1={40}
+                              y1={20}
+                              x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                              y2={20}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.1}
+                            />
+                            <SvgLine
+                              x1={40}
+                              y1={110}
+                              x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                              y2={110}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.3}
+                            />
+                            <SvgLine
+                              x1={40}
+                              y1={180}
+                              x2={Math.max(350, analytics.dailyROIHistory.length * 8) - 20}
+                              y2={180}
+                              stroke={colors.border}
+                              strokeWidth={1}
+                              opacity={0.1}
+                            />
+                          </>
+                        );
+                      })()}
                       
                       {/* Draw ROI line */}
                       {(() => {
                         const chartHeight = 180;
                         const chartPadding = 20;
-                        const zeroY = 110; // Middle of chart
-                        const maxAbsValue = Math.max(Math.abs(analytics.maxDailyROI), Math.abs(analytics.minDailyROI), 1);
                         const dayWidth = 8;
+                        
+                        // Y-axis range: from minDailyROI to most recent ROI
+                        const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
+                        const yMax = latestROI;
+                        const yMin = analytics.minDailyROI;
+                        const yRange = Math.max(Math.abs(yMax - yMin), 1);
                         
                         const points = analytics.dailyROIHistory.map((day, index) => {
                           const x = 40 + index * dayWidth;
-                          const normalizedValue = day.roi / maxAbsValue;
-                          const y = zeroY - (normalizedValue * 90); // 90px max distance from zero line
+                          // Map roi value to chart Y coordinate (top = yMax, bottom = yMin)
+                          const normalizedValue = (day.roi - yMin) / yRange;
+                          const y = chartPadding + (chartHeight - chartPadding * 2) * (1 - normalizedValue);
                           return `${x},${y}`;
                         }).join(' ');
                         
                         // Determine line color based on latest ROI
-                        const latestROI = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0;
                         const lineColor = latestROI >= 0 ? '#10b981' : '#ef4444';
                         
                         return (
@@ -627,8 +641,8 @@ export default function AnalyticsScreen() {
                             {analytics.dailyROIHistory.slice(-30).map((day, index) => {
                               const actualIndex = analytics.dailyROIHistory.length - 30 + index;
                               const x = 40 + actualIndex * dayWidth;
-                              const normalizedValue = day.roi / maxAbsValue;
-                              const y = zeroY - (normalizedValue * 90);
+                              const normalizedValue = (day.roi - yMin) / yRange;
+                              const y = chartPadding + (chartHeight - chartPadding * 2) * (1 - normalizedValue);
                               const dotColor = day.roi >= 0 ? '#10b981' : '#ef4444';
                               return (
                                 <Circle
@@ -646,8 +660,8 @@ export default function AnalyticsScreen() {
                             {(() => {
                               const lastDay = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1];
                               const x = 40 + (analytics.dailyROIHistory.length - 1) * dayWidth;
-                              const normalizedValue = lastDay.roi / maxAbsValue;
-                              const y = zeroY - (normalizedValue * 90);
+                              const normalizedValue = (lastDay.roi - yMin) / yRange;
+                              const y = chartPadding + (chartHeight - chartPadding * 2) * (1 - normalizedValue);
                               return (
                                 <Circle
                                   cx={x}
@@ -671,7 +685,7 @@ export default function AnalyticsScreen() {
                         fontSize={11}
                         fontWeight="600"
                       >
-                        ${Math.round(analytics.maxDailyROI).toLocaleString()}
+                        ${Math.round(analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0).toLocaleString()}
                       </SvgText>
                       <SvgText
                         x={8}
@@ -680,7 +694,7 @@ export default function AnalyticsScreen() {
                         fontSize={11}
                         fontWeight="600"
                       >
-                        $0
+                        ${Math.round((analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1]?.roi || 0) / 2 + analytics.minDailyROI / 2).toLocaleString()}
                       </SvgText>
                       <SvgText
                         x={8}
