@@ -137,6 +137,22 @@ export default function SettingsScreen() {
             },
           },
           {
+            text: 'Download Folder (Accessible)',
+            onPress: async () => {
+              console.log('✅ Selected downloads folder');
+              // On Android, use the standard Downloads directory
+              const location = `${FileSystem.documentDirectory}../Downloads/`;
+              if (!location) {
+                Alert.alert('Error', 'Download folder not available on this device');
+                return;
+              }
+              
+              setBackupLocation(location);
+              
+              Alert.alert('Success', 'Backup location set to Downloads folder');
+            },
+          },
+          {
             text: 'Cancel',
             style: 'cancel',
           },
