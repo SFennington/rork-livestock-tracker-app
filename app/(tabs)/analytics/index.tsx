@@ -74,6 +74,8 @@ export default function AnalyticsScreen() {
       ? eggSales.reduce((sum, sale) => sum + (sale.amount / (sale.quantity! / 12)), 0) / eggSales.length
       : 0;
     
+    const profitPerDozen = avgValuePerDozen - costPerDozen;
+    
     // Data validation: warn if income records show more eggs than laid
     const hasDataIssue = (totalSold + totalDonated) > totalLaid;
 
@@ -245,6 +247,7 @@ export default function AnalyticsScreen() {
       costPerEgg,
       costPerDozen,
       avgValuePerDozen,
+      profitPerDozen,
       hasDataIssue,
       totalSold,
       totalDonated,
@@ -993,12 +996,6 @@ export default function AnalyticsScreen() {
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <DollarSign size={20} color="#ef4444" />
-            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.costPerEgg.toFixed(3)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Cost/Egg</Text>
-            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>recurring</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <DollarSign size={20} color="#ef4444" />
             <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.costPerDozen.toFixed(2)}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Cost/Doz</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>recurring</Text>
@@ -1006,8 +1003,14 @@ export default function AnalyticsScreen() {
           <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <DollarSign size={20} color="#10b981" />
             <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.avgValuePerDozen.toFixed(2)}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg Val/Doz</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Value/Doz</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>sales</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TrendingUp size={20} color={analytics.profitPerDozen >= 0 ? "#10b981" : "#ef4444"} />
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.profitPerDozen.toFixed(2)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Profit/Doz</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>per sale</Text>
           </View>
         </View>
 
