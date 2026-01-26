@@ -31,13 +31,13 @@ export default function AnalyticsScreen() {
     let totalBroken = 0;
     let totalDonated = 0;
     
-    // Get sold and donated from income records (quantity already in eggs)
+    // Get sold and donated from income records (quantity stored as DOZENS, convert to eggs)
     income.forEach(record => {
       if (record.type === 'eggs' && record.quantity) {
         if (record.amount === 0) {
-          totalDonated += record.quantity;
+          totalDonated += record.quantity * 12;
         } else {
-          totalSold += record.quantity;
+          totalSold += record.quantity * 12;
         }
       }
     });
@@ -239,14 +239,14 @@ export default function AnalyticsScreen() {
           .filter(e => new Date(e.date) <= dayDate)
           .reduce((sum, e) => sum + e.count, 0);
         
-        // Eggs sold/donated up to this date (quantity already in eggs)
+        // Eggs sold/donated up to this date (quantity stored as DOZENS, convert to eggs)
         const cumulativeSold = income
           .filter(i => new Date(i.date) <= dayDate && i.type === 'eggs' && i.quantity && i.amount > 0)
-          .reduce((sum, i) => sum + (i.quantity || 0), 0);
+          .reduce((sum, i) => sum + ((i.quantity || 0) * 12), 0);
         
         const cumulativeDonated = income
           .filter(i => new Date(i.date) <= dayDate && i.type === 'eggs' && i.quantity && i.amount === 0)
-          .reduce((sum, i) => sum + (i.quantity || 0), 0);
+          .reduce((sum, i) => sum + ((i.quantity || 0) * 12), 0);
         
         const cumulativeBroken = eggProduction
           .filter(e => new Date(e.date) <= dayDate)

@@ -806,14 +806,12 @@ export default function SettingsScreen() {
                 } else {
                   console.log('Adding income:', normalizedDate, row.type, parsedAmount);
                   const parsedQuantity = row.quantity ? parseInt(row.quantity) : undefined;
-                  // Convert dozens to eggs for egg-related income
-                  const finalQuantity = (row.type === 'eggs' && parsedQuantity) ? parsedQuantity * 12 : parsedQuantity;
                   await livestock.addIncome({
                     date: normalizedDate,
                     type: row.type as any,
                     amount: parsedAmount,
                     livestockType: row.livestockType as any,
-                    quantity: finalQuantity,
+                    quantity: parsedQuantity,
                     description: row.description || '',
                   });
                   importedCount++;
@@ -1257,7 +1255,7 @@ export default function SettingsScreen() {
             <Text style={[styles.infoText, { color: '#92400e', fontWeight: '600' }]}>
               📋 IMPORT UNITS GUIDE
             </Text>
-            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>              • Income quantity: DOZENS (not individual eggs){"\n"}              • Example: For 12 dozen eggs sold, enter 12{"\n"}              • App converts to eggs internally (12 → 144){"\n"}              • Egg production: Always individual EGGS            </Text>
+            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>              • Income quantity: Enter DOZENS{"\n"}              • Example: For 12 dozen eggs, enter 12{"\n"}              • Stored and displayed as DOZENS{"\n"}              • Egg production: Always EGGS            </Text>
           </View>
 
           <View style={styles.csvSection}>
