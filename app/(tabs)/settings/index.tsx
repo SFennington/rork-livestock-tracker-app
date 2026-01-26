@@ -5,7 +5,7 @@ import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
-import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon } from "lucide-react-native";
+import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon, ChevronRight } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -43,6 +43,7 @@ export default function SettingsScreen() {
   const [isImportingCSV, setIsImportingCSV] = useState(false);
   const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [backupLocation, setBackupLocation] = useState<string | null>(null);
   const [eggsOnHandInput, setEggsOnHandInput] = useState(Math.round(settings.eggsOnHand / 12).toString());
   const [eggValueInput, setEggValueInput] = useState(settings.eggValuePerDozen.toString());
 
@@ -113,6 +114,37 @@ export default function SettingsScreen() {
       console.error('Folder picker error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       Alert.alert('Error', `Failed to select folder: ${errorMessage}\n\nPlease try again.`);
+    }
+  };
+
+  const handleSelectBackupLocation = async () => {
+    try {
+      console.log('📁 Opening location selector...');
+      
+      // Show options for backup location
+      Alert.alert(
+        'Select Backup Location',
+        'Choose where to store automatic backups',
+        [
+          {
+            text: 'App Documents (Private)',
+            onPress: async () => {
+              console.log('✅ Selected app documents location');
+              const location = `${FileSystem.documentDirectory}backups/`;
+              setBackupLocation(location);
+              
+              Alert.alert('Success', 'Backup location set to App Documents');
+            },
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('❌ Error selecting backup location:', error);
+      Alert.alert('Error', 'Failed to select backup location');
     }
   };
 
@@ -1113,103 +1145,6 @@ export default function SettingsScreen() {
               💡 Export your data regularly to keep a backup. You can import it later to restore your information.
             </Text>
           </View>
-
-          <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b', marginTop: 12 }]}>
-            <Text style={[styles.infoText, { color: '#92400e', fontWeight: '600' }]}>
-              📋 IMPORT UNITS GUIDE
-            </Text>
-            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>
-              • Income quantity: Individual EGGS (not dozens){'\n'}
-              • Example: 144 eggs = 12 dozen{'\n'}
-              • Egg production counts: Individual EGGS{'\n'}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.dataButton,
-              { backgroundColor: colors.error, marginTop: 12 }
-            ]}
-            onPress={async () => {
-              if (Platform.OS === 'web') {
-                const confirmed = window.confirm('This will remove duplicate egg production records (keeping only one entry per date). Continue?');
-                if (!confirmed) return;
-                try {
-                  setIsCleaningDuplicates(true);
-                  console.log('Starting duplicate removal (web)...');
-                  console.log('Current records:', livestock.eggProduction.length);
-                  const uniqueRecords = new Map<string, typeof livestock.eggProduction[0]>();
-                  livestock.eggProduction.forEach(record => {
-                    if (!uniqueRecords.has(record.date)) {
-                      uniqueRecords.set(record.date, record);
-                    }
-                  });
-                  const cleaned = Array.from(uniqueRecords.values());
-                  const removed = livestock.eggProduction.length - cleaned.length;
-                  console.log('Cleaned records:', cleaned.length);
-                  console.log('Removed:', removed);
-                  await AsyncStorage.setItem('livestock_egg_production', JSON.stringify(cleaned));
-                  console.log('Saved to storage');
-                  if (livestock.reloadData) {
-                    await livestock.reloadData();
-                  }
-                  alert(`Removed ${removed} duplicate record(s).`);
-                } catch (error) {
-                  console.error('Error cleaning duplicates (web):', error);
-                  alert('Failed to remove duplicates.');
-                } finally {
-                  setIsCleaningDuplicates(false);
-                }
-                return;
-              }
-
-              Alert.alert(
-                'Remove Duplicates',
-                'This will remove duplicate egg production records (keeping only one entry per date). Continue?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Remove',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        setIsCleaningDuplicates(true);
-                        console.log('Starting duplicate removal...');
-                        console.log('Current records:', livestock.eggProduction.length);
-                        const uniqueRecords = new Map<string, typeof livestock.eggProduction[0]>();
-                        livestock.eggProduction.forEach(record => {
-                          if (!uniqueRecords.has(record.date)) {
-                            uniqueRecords.set(record.date, record);
-                          }
-                        });
-                        const cleaned = Array.from(uniqueRecords.values());
-                        const removed = livestock.eggProduction.length - cleaned.length;
-                        console.log('Cleaned records:', cleaned.length);
-                        console.log('Removed:', removed);
-                        await AsyncStorage.setItem('livestock_egg_production', JSON.stringify(cleaned));
-                        console.log('Saved to storage');
-                        if (livestock.reloadData) {
-                          await livestock.reloadData();
-                        }
-                        Alert.alert('Success', `Removed ${removed} duplicate record(s).`);
-                      } catch (error) {
-                        console.error('Error cleaning duplicates:', error);
-                        Alert.alert('Error', 'Failed to remove duplicates.');
-                      } finally {
-                        setIsCleaningDuplicates(false);
-                      }
-                    }
-                  }
-                ]
-              );
-            }}
-            disabled={isCleaningDuplicates}
-            testID="clean-duplicates-button"
-          >
-            <Text style={styles.dataButtonText}>
-              {isCleaningDuplicates ? 'Cleaning...' : 'Remove Duplicate Eggs'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -1222,11 +1157,25 @@ export default function SettingsScreen() {
           </Text>
 
           <View style={[styles.backupStatusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.backupStatusRow}>
-              <Text style={[styles.backupStatusLabel, { color: colors.textMuted }]}>Backup Location:</Text>
-              <Text style={[styles.backupStatusValue, { color: colors.text }]}>
-                App Storage
+            <View style={styles.locationSection}>
+              <Text style={[styles.optionLabel, { color: colors.textSecondary }]}>
+                Backup Location
               </Text>
+              <TouchableOpacity
+                style={[styles.locationButton, { borderColor: colors.border, backgroundColor: colors.background }]}
+                onPress={handleSelectBackupLocation}
+                activeOpacity={0.7}
+              >
+                <View style={styles.locationButtonContent}>
+                  <Text style={[styles.locationButtonText, { color: colors.text }]}>
+                    {backupLocation ? backupLocation.split('/').pop() || 'Documents' : 'App Documents (Private)'}
+                  </Text>
+                  <Text style={[styles.locationPath, { color: colors.textSecondary }]}>
+                    {backupLocation || `${FileSystem.documentDirectory}backups/`}
+                  </Text>
+                </View>
+                <ChevronRight color={colors.textSecondary} size={20} />
+              </TouchableOpacity>
             </View>
             <View style={styles.backupStatusRow}>
               <Text style={[styles.backupStatusLabel, { color: colors.textMuted }]}>Schedule:</Text>
@@ -1266,6 +1215,17 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          <TouchableOpacity
+            style={[styles.dataButton, { backgroundColor: colors.accent, marginTop: 12 }]}
+            onPress={() => performBackup(false)}
+            disabled={isBackingUp}
+          >
+            <CloudUpload size={20} color="#fff" />
+            <Text style={styles.dataButtonText}>
+              {isBackingUp ? 'Backing Up...' : 'Backup Now'}
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.dataButton, { backgroundColor: colors.primary, marginTop: 12 }]}
@@ -1626,6 +1586,38 @@ const styles = StyleSheet.create({
   backupStatusValue: {
     fontSize: 14,
     fontWeight: "600" as const,
+  },
+  locationSection: {
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  optionLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    marginBottom: 8,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  locationButtonContent: {
+    flex: 1,
+  },
+  locationButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    marginBottom: 4,
+  },
+  locationPath: {
+    fontSize: 12,
+    marginBottom: 0,
   },
   scheduleButtons: {
     flexDirection: "row",
