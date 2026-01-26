@@ -166,14 +166,15 @@ export default function SettingsScreen() {
 
   const exportAllBackups = async () => {
     try {
-      const directory = new FileSystem.Directory(FileSystem.Paths.document!, 'backups');
+      const documentDir = new FileSystem.Directory(FileSystem.Paths.document!);
+      const backupsDir = new FileSystem.Directory(documentDir, 'backups');
       
-      if (!(await directory.exists)) {
+      if (!(await backupsDir.exists)) {
         Alert.alert('No Backups', 'No automatic backups found. Enable auto-backup to create them.');
         return;
       }
 
-      const files = await directory.list();
+      const files = await backupsDir.list();
       const backupFiles = files.filter(f => f.startsWith('Livestock_Backup_') && f.endsWith('.json'));
       
       if (backupFiles.length === 0) {
@@ -183,7 +184,7 @@ export default function SettingsScreen() {
 
       // Share the most recent backup
       const sortedFiles = backupFiles.sort().reverse();
-      const latestFile = new FileSystem.File(directory, sortedFiles[0]);
+      const latestFile = new FileSystem.File(backupsDir, sortedFiles[0]);
       const latestBackup = latestFile.uri;
       
       const canShare = await Sharing.isAvailableAsync();
@@ -231,12 +232,13 @@ export default function SettingsScreen() {
       const fileName = `Livestock_Backup_${timestamp}.json`;
 
       // Create backup directory if it doesn't exist
-      const directory = new FileSystem.Directory(FileSystem.Paths.document!, 'backups');
-      if (!(await directory.exists)) {
-        await directory.create();
+      const documentDir = new FileSystem.Directory(FileSystem.Paths.document!);
+      const backupsDir = new FileSystem.Directory(documentDir, 'backups');
+      if (!(await backupsDir.exists)) {
+        await backupsDir.create();
       }
 
-      const file = new FileSystem.File(directory, fileName);
+      const file = new FileSystem.File(backupsDir, fileName);
       await file.write(jsonString);
       console.log('Backup saved to:', file.uri);
 
