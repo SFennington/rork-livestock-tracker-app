@@ -74,11 +74,24 @@ export default function SettingsScreen() {
         return;
       }
 
+      if (Platform.OS !== 'android') {
+        Alert.alert(
+          'Platform Not Supported',
+          'Custom backup folders are currently only supported on Android. On iOS, backups will be saved to your app documents folder.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
       console.log('Requesting directory permissions...');
       // Use Storage Access Framework on Android for directory selection
-      const StorageAccessFramework = (FileSystem as any).StorageAccessFramework;
+      const StorageAccessFramework = FileSystem.StorageAccessFramework;
       if (!StorageAccessFramework) {
-        Alert.alert('Not Supported', 'Storage access framework is not available on this platform.');
+        Alert.alert(
+          'Feature Unavailable',
+          'This feature requires a newer version of the app. Backups will be saved to the default app folder for now.',
+          [{ text: 'OK' }]
+        );
         return;
       }
       const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
