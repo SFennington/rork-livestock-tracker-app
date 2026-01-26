@@ -54,6 +54,12 @@ export default function AnalyticsScreen() {
     const roi = totalIncomeWithSavings - totalExpenses;
     const roiPercentage = totalExpenses > 0 ? ((totalIncomeWithSavings - totalExpenses) / totalExpenses) * 100 : 0;
     
+    // Calculate cost per egg (recurring costs only)
+    const recurringExpenses = expenses
+      .filter(e => e.recurring === true)
+      .reduce((sum, e) => sum + e.amount, 0);
+    const costPerEgg = totalLaid > 0 ? recurringExpenses / totalLaid : 0;
+    
     // Data validation: warn if income records show more eggs than laid
     const hasDataIssue = (totalSold + totalDonated) > totalLaid;
 
@@ -93,8 +99,10 @@ export default function AnalyticsScreen() {
     
     let maxMonthlyEggs = 1;
     months.forEach(month => {
-      const monthTotal = Object.values(monthlyEggsByYear[month] || {}).reduce((sum, count) => sum + count, 0);
-      if (monthTotal > maxMonthlyEggs) maxMonthlyEggs = monthTotal;
+      const yearData = monthlyEggsByYear[month] || {};
+      Object.values(yearData).forEach(count => {
+        if (count > maxMonthlyEggs) maxMonthlyEggs = count;
+      });
     });
 
     let avgEggsPerMonth = 0;
@@ -215,6 +223,7 @@ export default function AnalyticsScreen() {
       eggsConsumed,
       roi,
       roiPercentage,
+      costPerEgg,
       hasDataIssue,
       totalSold,
       totalDonated,
@@ -781,6 +790,12 @@ export default function AnalyticsScreen() {
             <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>{analytics.dozenPerWeek.toFixed(1)}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Doz/Wk</Text>
             <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>4 wk avg</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <DollarSign size={20} color="#ef4444" />
+            <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>${analytics.costPerEgg.toFixed(3)}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Cost/Egg</Text>
+            <Text style={[styles.statSubLabel, { color: colors.textMuted }]}>recurring</Text>
           </View>
         </View>
 

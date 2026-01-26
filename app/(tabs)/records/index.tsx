@@ -930,6 +930,9 @@ export default function RecordsScreen() {
                         <Text style={styles.headText}>Description</Text>
                         <SortIcon dir={moneySort.dir} active={moneySort.key === 'description'} />
                       </TouchableOpacity>
+                      <View style={[styles.cell, styles.cellSm]}>
+                        <Text style={styles.headText}>Recurring</Text>
+                      </View>
                     </View>
 
                     {filteredSortedMoney.map((record, index) => (
@@ -1053,6 +1056,26 @@ export default function RecordsScreen() {
                             }}>
                               <Text style={styles.bodyText}>{record.description ?? ''}</Text>
                             </TouchableOpacity>
+                          )}
+                        </View>
+                        <View style={[styles.cell, styles.cellSm]}>
+                          {!record.isIncome ? (
+                            <TouchableOpacity onPress={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const newRecurring = !('recurring' in record && record.recurring);
+                                await updateExpense(record.id, { recurring: newRecurring });
+                              } catch (err) {
+                                Alert.alert('Error', 'Failed to update recurring status');
+                                console.log('update recurring error', err);
+                              }
+                            }}>
+                              <Text style={styles.bodyText}>
+                                {'recurring' in record && record.recurring ? '✓' : '-'}
+                              </Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <Text style={styles.bodyText}>-</Text>
                           )}
                         </View>
                       </TouchableOpacity>

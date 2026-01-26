@@ -22,6 +22,7 @@ export default function AddTransactionScreen() {
   const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'general'>('general');
   const [description, setDescription] = useState("");
+  const [recurring, setRecurring] = useState(false);
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -66,6 +67,7 @@ export default function AddTransactionScreen() {
         date,
         livestockType,
         description,
+        recurring,
       });
     } else {
       await addIncome({
@@ -187,6 +189,21 @@ export default function AddTransactionScreen() {
             })}
           </View>
         </View>
+
+        {transactionType === 'expense' && (
+          <View style={styles.inputGroup}>
+            <TouchableOpacity 
+              style={styles.checkboxRow}
+              onPress={() => setRecurring(!recurring)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, recurring && styles.checkboxChecked]}>
+                {recurring && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>Recurring Expense (for cost-per-egg calculation)</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
@@ -425,6 +442,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "#374151",
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: "#d1d5db",
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+  },
+  checkboxChecked: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  checkmark: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: "#374151",
+    flex: 1,
   },
   buttons: {
     flexDirection: "row",
