@@ -1005,7 +1005,7 @@ export default function RecordsScreen() {
                         <View style={[styles.cell, styles.cellSm]}>
                           <Text style={styles.bodyText}>
                             {record.isIncome && 'quantity' in record && record.quantity ? 
-                              `${(record.quantity / 12).toFixed(1)}` : 
+                              `${record.quantity.toFixed(1)}` : 
                               '-'
                             }
                           </Text>
