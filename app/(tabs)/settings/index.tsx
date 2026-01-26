@@ -1257,14 +1257,7 @@ export default function SettingsScreen() {
             <Text style={[styles.infoText, { color: '#92400e', fontWeight: '600' }]}>
               📋 IMPORT UNITS GUIDE
             </Text>
-            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>
-              • Income quantity: DOZENS (not individual eggs){'
-'}
-              • Example: For 12 dozen eggs sold, enter 12{'
-'}
-              • Egg production counts: Individual EGGS{'
-'}
-            </Text>
+            <Text style={[styles.infoText, { color: '#92400e', marginTop: 4 }]}>              • Income quantity: DOZENS (not individual eggs){"\n"}              • Example: For 12 dozen eggs sold, enter 12{"\n"}              • Egg production counts: Individual EGGS            </Text>
           </View>
 
           <View style={styles.csvSection}>
