@@ -618,8 +618,10 @@ export default function AnalyticsScreen() {
                         
                         const points = analytics.dailyROIHistory.map((day, index) => {
                           const x = 40 + index * dayWidth;
+                          // Use actual analytics.roi for the last point to ensure it reaches the top
+                          const roiValue = (index === analytics.dailyROIHistory.length - 1) ? analytics.roi : day.roi;
                           // Map roi value to chart Y coordinate (top = yMax, bottom = yMin)
-                          const normalizedValue = (day.roi - yMin) / yRange;
+                          const normalizedValue = (roiValue - yMin) / yRange;
                           const y = chartPadding + (chartHeight - chartPadding * 2) * (1 - normalizedValue);
                           return `${x},${y}`;
                         }).join(' ');
@@ -660,7 +662,8 @@ export default function AnalyticsScreen() {
                             {(() => {
                               const lastDay = analytics.dailyROIHistory[analytics.dailyROIHistory.length - 1];
                               const x = 40 + (analytics.dailyROIHistory.length - 1) * dayWidth;
-                              const normalizedValue = (lastDay.roi - yMin) / yRange;
+                              // Use actual analytics.roi for positioning the last point
+                              const normalizedValue = (analytics.roi - yMin) / yRange;
                               const y = chartPadding + (chartHeight - chartPadding * 2) * (1 - normalizedValue);
                               return (
                                 <Circle
