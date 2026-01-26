@@ -177,27 +177,41 @@ export default function AppConfigurationScreen() {
             Control which animals appear in your dashboard and records
           </Text>
           <View style={styles.animalTogglesContainer}>
-            {Object.entries(enabledAnimals).map(([animal, enabled]) => (
-              <TouchableOpacity
-                key={animal}
-                style={[
-                  styles.animalToggle,
-                  {
-                    backgroundColor: enabled ? colors.primary : colors.card,
-                    borderColor: enabled ? colors.primary : colors.border,
-                  }
-                ]}
-                onPress={() => {
-                  const updated = { ...enabledAnimals, [animal]: !enabled };
-                  setEnabledAnimals(updated);
-                  updateEnabledAnimals(updated);
-                }}
-              >
-                <Text style={[styles.animalToggleText, { color: enabled ? '#fff' : colors.text }]}>
-                  {animal.charAt(0).toUpperCase() + animal.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {Object.entries(enabledAnimals).map(([animal, enabled]) => {
+              const isDisabled = animal !== 'chicken';
+              return (
+                <TouchableOpacity
+                  key={animal}
+                  style={[
+                    styles.animalToggle,
+                    {
+                      backgroundColor: enabled && !isDisabled ? colors.primary : colors.card,
+                      borderColor: enabled && !isDisabled ? colors.primary : colors.border,
+                      opacity: isDisabled ? 0.5 : 1,
+                    }
+                  ]}
+                  onPress={() => {
+                    if (isDisabled) {
+                      Alert.alert('Coming Soon', 'Other animals will be available in a future update.');
+                      return;
+                    }
+                    const updated = { ...enabledAnimals, [animal]: !enabled };
+                    setEnabledAnimals(updated);
+                    updateEnabledAnimals(updated);
+                  }}
+                  disabled={isDisabled}
+                >
+                  <Text style={[styles.animalToggleText, { color: enabled && !isDisabled ? '#fff' : colors.text }]}>
+                    {animal.charAt(0).toUpperCase() + animal.slice(1)}
+                  </Text>
+                  {isDisabled && (
+                    <View style={[styles.comingSoonBadge, { backgroundColor: '#f59e0b' }]}>
+                      <Text style={styles.comingSoonText}>Coming Soon</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -613,6 +627,17 @@ const styles = StyleSheet.create({
   },
   animalToggleText: {
     fontSize: 14,
+    fontWeight: "600" as const,
+  },
+  comingSoonBadge: {
+    marginTop: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  comingSoonText: {
+    color: "#fff",
+    fontSize: 10,
     fontWeight: "600" as const,
   },
   bottomSpacing: {
