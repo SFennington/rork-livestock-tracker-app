@@ -94,12 +94,14 @@ export default function AddIncomeScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.livestockButton, livestockType === 'rabbit' && styles.livestockButtonActive]}
-              onPress={() => setLivestockType('rabbit')}
+              style={[styles.livestockButton, livestockType === 'rabbit' && styles.livestockButtonActive, styles.livestockButtonDisabled]}
+              onPress={() => {}}
+              disabled={true}
             >
-              <Text style={[styles.livestockButtonText, livestockType === 'rabbit' && styles.livestockButtonTextActive]}>
+              <Text style={[styles.livestockButtonText, livestockType === 'rabbit' && styles.livestockButtonTextActive, styles.livestockButtonTextDisabled]}>
                 Rabbits
               </Text>
+              <Text style={styles.comingSoonBadge}>Coming Soon</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -348,6 +350,19 @@ const styles = StyleSheet.create({
   },
   livestockButtonTextActive: {
     color: "#fff",
+  },
+  livestockButtonDisabled: {
+    opacity: 0.5,
+    backgroundColor: "#e5e7eb",
+  },
+  livestockButtonTextDisabled: {
+    color: "#9ca3af",
+  },
+  comingSoonBadge: {
+    fontSize: 10,
+    color: "#9ca3af",
+    marginTop: 2,
+    fontStyle: "italic",
   },
   buttons: {
     flexDirection: "row",

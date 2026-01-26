@@ -175,15 +175,18 @@ export default function AddTransactionScreen() {
           <View style={styles.livestockButtons}>
             {(['general', 'chicken', 'rabbit'] as const).map((type) => {
               const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+              const isDisabled = type === 'rabbit';
               return (
                 <TouchableOpacity
                   key={type}
-                  style={[styles.livestockButton, livestockType === type && styles.livestockButtonActive]}
-                  onPress={() => setLivestockType(type)}
+                  style={[styles.livestockButton, livestockType === type && styles.livestockButtonActive, isDisabled && styles.livestockButtonDisabled]}
+                  onPress={() => !isDisabled && setLivestockType(type)}
+                  disabled={isDisabled}
                 >
-                  <Text style={[styles.livestockButtonText, livestockType === type && styles.livestockButtonTextActive]}>
+                  <Text style={[styles.livestockButtonText, livestockType === type && styles.livestockButtonTextActive, isDisabled && styles.livestockButtonTextDisabled]}>
                     {typeName}
                   </Text>
+                  {isDisabled && <Text style={styles.comingSoonBadge}>Coming Soon</Text>}
                 </TouchableOpacity>
               );
             })}
@@ -424,6 +427,19 @@ const styles = StyleSheet.create({
   },
   livestockButtonTextActive: {
     color: "#fff",
+  },
+  livestockButtonDisabled: {
+    opacity: 0.5,
+    backgroundColor: "#e5e7eb",
+  },
+  livestockButtonTextDisabled: {
+    color: "#9ca3af",
+  },
+  comingSoonBadge: {
+    fontSize: 10,
+    color: "#9ca3af",
+    marginTop: 2,
+    fontStyle: "italic",
   },
   quickSelectGrid: {
     flexDirection: "row",

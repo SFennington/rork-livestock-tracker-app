@@ -9,6 +9,7 @@ export default function LivestockScreen() {
   const { chickenHistory, rabbits, isLoading, getChickenCountOnDate, getRoostersAndHensCount, getAliveAnimals } = useLivestock();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'rabbits'>('chickens');
+  const rabbitsDisabled = true;
   const { activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
 
@@ -306,9 +307,14 @@ export default function LivestockScreen() {
                   </View>
                 )}
               </View>
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-rabbit')} testID="add-rabbit-btn">
+              <TouchableOpacity 
+                style={[styles.addButton, { backgroundColor: rabbitsDisabled ? colors.textMuted : colors.accent, opacity: rabbitsDisabled ? 0.5 : 1 }]} 
+                onPress={() => !rabbitsDisabled && router.push('/add-rabbit')} 
+                disabled={rabbitsDisabled}
+                testID="add-rabbit-btn"
+              >
                 <Plus size={20} color="#fff" />
-                <Text style={styles.addButtonText}>Add Rabbit</Text>
+                <Text style={styles.addButtonText}>Add Rabbit {rabbitsDisabled ? '(Coming Soon)' : ''}</Text>
               </TouchableOpacity>
             </View>
 
