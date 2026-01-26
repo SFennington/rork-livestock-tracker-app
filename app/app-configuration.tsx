@@ -178,8 +178,8 @@ export default function AppConfigurationScreen() {
           </Text>
           <View style={styles.animalTogglesContainer}>
             {Object.entries(enabledAnimals).map(([animal, enabled]) => {
-              const isDisabled = animal !== 'chicken';
-              const isChicken = animal === 'chicken';
+              const isDisabled = animal !== 'chickens';
+              const isChicken = animal === 'chickens';
               
               return (
                 <TouchableOpacity
