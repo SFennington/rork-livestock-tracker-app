@@ -159,7 +159,7 @@ export default function DashboardScreen() {
             <Text style={styles.actionText}>Log Eggs</Text>
           </TouchableOpacity>
         )}
-        {settings.enabledAnimals.rabbits && (
+        {false && settings.enabledAnimals.rabbits && (
           <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.secondary }]} onPress={() => router.push('/add-breeding')}>
             <Heart size={20} color="#fff" />
             <Text style={styles.actionText}>Breeding</Text>
@@ -188,7 +188,7 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {settings.enabledAnimals.rabbits && (
+        {false && settings.enabledAnimals.rabbits && (
           <TouchableOpacity 
             testID="stat-active-breedings" 
             style={[

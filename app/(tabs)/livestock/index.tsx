@@ -127,6 +127,7 @@ export default function LivestockScreen() {
             Chickens ({currentChickenCount})
           </Text>
         </TouchableOpacity>
+        {false && (
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'rabbits' && styles.activeTab]}
           onPress={() => setActiveTab('rabbits')}
@@ -137,6 +138,7 @@ export default function LivestockScreen() {
             Rabbits ({activeRabbitCount})
           </Text>
         </TouchableOpacity>
+        )}
       </View>
 
       {/* Management header per animal */}

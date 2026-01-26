@@ -179,6 +179,7 @@ export default function AppConfigurationScreen() {
           <View style={styles.animalTogglesContainer}>
             {Object.entries(enabledAnimals).map(([animal, enabled]) => {
               const isDisabled = animal !== 'chicken';
+              const isChicken = animal === 'chicken';
               
               return (
                 <TouchableOpacity
@@ -186,12 +187,16 @@ export default function AppConfigurationScreen() {
                   style={[
                     styles.animalToggle,
                     {
-                      backgroundColor: enabled && !isDisabled ? colors.primary : colors.card,
-                      borderColor: enabled && !isDisabled ? colors.primary : colors.border,
+                      backgroundColor: (isChicken || (enabled && !isDisabled)) ? colors.primary : colors.card,
+                      borderColor: (isChicken || (enabled && !isDisabled)) ? colors.primary : colors.border,
                       opacity: isDisabled ? 0.5 : 1,
                     }
                   ]}
                   onPress={() => {
+                    if (isChicken) {
+                      // Chicken is always enabled, cannot be toggled off
+                      return;
+                    }
                     if (isDisabled) {
                       Alert.alert('Coming Soon', 'Other animals will be available in a future update.');
                       return;
@@ -202,7 +207,7 @@ export default function AppConfigurationScreen() {
                   }}
                   disabled={isDisabled}
                 >
-                  <Text style={[styles.animalToggleText, { color: enabled && !isDisabled ? '#fff' : colors.text }]}>
+                  <Text style={[styles.animalToggleText, { color: (isChicken || (enabled && !isDisabled)) ? '#fff' : colors.text }]}>
                     {animal.charAt(0).toUpperCase() + animal.slice(1)}
                   </Text>
                   {isDisabled && (
