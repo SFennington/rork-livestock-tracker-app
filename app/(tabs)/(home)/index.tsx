@@ -109,8 +109,8 @@ export default function DashboardScreen() {
         <Text style={[styles.date, { color: colors.textSecondary }]}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
       </View>
 
-      {/* Alerts Section */}
-      {(upcomingKindlings.length > 0 || dueVaccinations.length > 0) && (
+      {/* Alerts Section - Disabled for rabbits */}
+      {false && (upcomingKindlings.length > 0 || dueVaccinations.length > 0) && (
         <View style={styles.alertsSection}>
           <View style={styles.sectionHeader}>
             <AlertTriangle size={20} color={colors.warning} />

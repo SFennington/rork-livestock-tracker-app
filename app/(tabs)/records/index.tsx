@@ -306,14 +306,6 @@ export default function RecordsScreen() {
             <Text style={[styles.tabText, { color: activeTab === 'eggs' ? colors.primary : colors.textMuted }]}>Eggs</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'breeding' && styles.activeTab]}
-            onPress={() => { setActiveTab('breeding'); clearSelections(); }}
-            testID="tab-breeding"
-          >
-            <Heart size={20} color={activeTab === 'breeding' ? colors.primary : colors.textMuted} />
-            <Text style={[styles.tabText, { color: activeTab === 'breeding' ? colors.primary : colors.textMuted }]}>Breeding</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.tab, activeTab === 'financial' && styles.activeTab]}
             onPress={() => { setActiveTab('financial'); clearSelections(); }}
             testID="tab-financial"
