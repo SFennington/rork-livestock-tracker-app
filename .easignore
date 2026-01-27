@@ -4,6 +4,12 @@ android/build/
 android/.gradle/
 .gradle/
 
+# Lockfiles - force npm, block bun
+bun.lock
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
+
 # IDE
 .idea/
 *.iml
