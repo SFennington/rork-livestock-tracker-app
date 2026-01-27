@@ -105,6 +105,18 @@ DEPENDENCIES
 - If a dependency is added or changed, assume Android release regression until proven otherwise.
 - Prefer Expo-supported libraries.
 
+PACKAGE MANAGER & LOCKFILES (CRITICAL)
+- **This repo uses npm ONLY.** Never use bun, yarn, or pnpm.
+- NEVER create, commit, or allow `bun.lock`, `bun.lockb`, `yarn.lock`, or `pnpm-lock.yaml`.
+- These files are blocked in `.gitignore` and `.easignore`.
+- `package-lock.json` MUST always exist and be committed.
+- If `bun.lock` appears (e.g., from Rork agent), delete it immediately and regenerate `package-lock.json` via `npm install`.
+- EAS Build auto-detects package manager by lockfile presence—bun lockfiles override all env vars and break builds.
+- Config requirements:
+  - `package.json`: `"packageManager": "npm@10.9.0"`
+  - `eas.json`: `"EAS_BUILD_PACKAGE_MANAGER": "npm"`
+  - `.npmrc`: `legacy-peer-deps=true`
+
 WORKFLOW DISCIPLINE
 - Any change that could affect Android must keep these commands viable:
   - `expo start`
