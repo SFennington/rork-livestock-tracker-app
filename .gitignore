@@ -3,6 +3,12 @@
 # dependencies
 node_modules/
 
+# Lockfiles - force npm only, prevent bun/yarn/pnpm
+bun.lock
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
+
 # Expo
 .expo/
 dist/
