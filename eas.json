@@ -6,7 +6,8 @@
     "production": {
       "node": "22.20.0",
       "env": {
-        "EAS_BUILD_PACKAGE_MANAGER": "npm"
+        "EAS_BUILD_PACKAGE_MANAGER": "npm",
+        "EAS_BUILD_NPM_CACHE_URL": "false"
       },
       "android": {
         "buildType": "app-bundle",
@@ -16,7 +17,8 @@
     "preview": {
       "node": "22.20.0",
       "env": {
-        "EAS_BUILD_PACKAGE_MANAGER": "npm"
+        "EAS_BUILD_PACKAGE_MANAGER": "npm",
+        "EAS_BUILD_NPM_CACHE_URL": "false"
       },
       "android": {
         "buildType": "app-bundle",
