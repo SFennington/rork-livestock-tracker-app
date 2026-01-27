@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.2.0",
   "private": true,
+  "packageManager": "npm@10.9.0",
   "scripts": {
     "start": "npx rork start -p 48xkwishdka7nwu5yaav2 --tunnel",
     "start-web": "npx rork start -p 48xkwishdka7nwu5yaav2 --web --tunnel",
