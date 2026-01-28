@@ -32,6 +32,35 @@ export const CHICKEN_BREEDS = [
   'Other',
 ];
 
+export const DUCK_BREEDS = [
+  'Khaki Campbell',
+  'Indian Runner',
+  'Welsh Harlequin',
+  'Golden 300 Hybrid',
+  'White Layer',
+  'Buff Orpington',
+  'Magpie',
+  'Ancona',
+  'Silver Appleyard',
+  'Saxony',
+  'Golden Cascade',
+  'Pekin (White Pekin)',
+  'Buff',
+  'Fawn and White Runner',
+  'Campbell (Original)',
+  'Blue Swedish',
+  'Cayuga',
+  'Rouen',
+  'Crested',
+  'Abacot Ranger',
+  'Bali',
+  'Hook Bill',
+  'Black East Indies',
+  'Australian Spotted',
+  'Shetland',
+  'Other',
+];
+
 export const RABBIT_BREEDS = [
   'American',
   'Californian',

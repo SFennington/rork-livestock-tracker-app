@@ -22,7 +22,9 @@ import type {
   WeightRecord,
   FeedRecord,
   ChickenHistoryEvent,
-  IndividualAnimal
+  DuckHistoryEvent,
+  IndividualAnimal,
+  Duck
 } from '@/types/livestock';
 
 let __idCounter = 0;
@@ -66,6 +68,7 @@ const storage = {
 
 const STORAGE_KEYS = {
   CHICKENS: 'livestock_chickens',
+  DUCKS: 'livestock_ducks',
   RABBITS: 'livestock_rabbits',
   EGG_PRODUCTION: 'livestock_egg_production',
   BREEDING_RECORDS: 'livestock_breeding_records',
@@ -77,12 +80,14 @@ const STORAGE_KEYS = {
   EXPENSES: 'livestock_expenses',
   INCOME: 'livestock_income',
   CHICKEN_HISTORY: 'livestock_chicken_history',
+  DUCK_HISTORY: 'livestock_duck_history',
   ANIMALS: 'livestock_animals',
   MIGRATION_V2: 'livestock_migration_v2',
 };
 
 export const [LivestockProvider, useLivestock] = createContextHook(() => {
   const [chickens, setChickens] = useState<Chicken[]>([]);
+  const [ducks, setDucks] = useState<Duck[]>([]);
   const [rabbits, setRabbits] = useState<Rabbit[]>([]);
   const [eggProduction, setEggProduction] = useState<EggProduction[]>([]);
   const [breedingRecords, setBreedingRecords] = useState<BreedingRecord[]>([]);
@@ -94,6 +99,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [income, setIncome] = useState<Income[]>([]);
   const [chickenHistory, setChickenHistory] = useState<ChickenHistoryEvent[]>([]);
+  const [duckHistory, setDuckHistory] = useState<DuckHistoryEvent[]>([]);
   const [animals, setAnimals] = useState<IndividualAnimal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -101,6 +107,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     try {
       const [
         chickensData, 
+        ducksData,
         rabbitsData, 
         eggsData, 
         breedingData, 
@@ -112,10 +119,12 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         expensesData, 
         incomeData,
         chickenHistoryData,
+        duckHistoryData,
         animalsData,
         migrationV2Data
       ] = await Promise.all([
         storage.getItem(STORAGE_KEYS.CHICKENS),
+        storage.getItem(STORAGE_KEYS.DUCKS),
         storage.getItem(STORAGE_KEYS.RABBITS),
         storage.getItem(STORAGE_KEYS.EGG_PRODUCTION),
         storage.getItem(STORAGE_KEYS.BREEDING_RECORDS),
@@ -127,11 +136,13 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         storage.getItem(STORAGE_KEYS.EXPENSES),
         storage.getItem(STORAGE_KEYS.INCOME),
         storage.getItem(STORAGE_KEYS.CHICKEN_HISTORY),
+        storage.getItem(STORAGE_KEYS.DUCK_HISTORY),
         storage.getItem(STORAGE_KEYS.ANIMALS),
         storage.getItem(STORAGE_KEYS.MIGRATION_V2),
       ]);
 
       if (chickensData) setChickens(JSON.parse(chickensData));
+      if (ducksData) setDucks(JSON.parse(ducksData));
       if (rabbitsData) setRabbits(JSON.parse(rabbitsData));
       if (eggsData) setEggProduction(JSON.parse(eggsData));
       if (breedingData) setBreedingRecords(JSON.parse(breedingData));
@@ -143,6 +154,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       if (expensesData) setExpenses(JSON.parse(expensesData));
       if (incomeData) setIncome(JSON.parse(incomeData));
       if (chickenHistoryData) setChickenHistory(JSON.parse(chickenHistoryData));
+      if (duckHistoryData) setDuckHistory(JSON.parse(duckHistoryData));
       
       // Migration: convert breed counts to individual animals
       const migratedV2 = migrationV2Data === 'true';
@@ -242,6 +254,30 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     setChickens(updated);
     await storage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(updated));
   }, [chickens]);
+
+  // Duck operations
+  const addDuck = useCallback(async (duck: Omit<Duck, 'id'>) => {
+    const newDuck: Duck = { ...duck, id: createId() };
+    let updatedLocal: Duck[] = [];
+    setDucks(prev => {
+      updatedLocal = [...prev, newDuck];
+      void storage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(updatedLocal));
+      return updatedLocal;
+    });
+    return newDuck;
+  }, []);
+
+  const updateDuck = useCallback(async (id: string, updates: Partial<Duck>) => {
+    const updated = ducks.map(d => d.id === id ? { ...d, ...updates } : d);
+    setDucks(updated);
+    await storage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(updated));
+  }, [ducks]);
+
+  const deleteDuck = useCallback(async (id: string) => {
+    const updated = ducks.filter(d => d.id !== id);
+    setDucks(updated);
+    await storage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(updated));
+  }, [ducks]);
 
   // Rabbit operations
   const addRabbit = useCallback(async (rabbit: Omit<Rabbit, 'id'>) => {
@@ -560,6 +596,105 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     }
   }, [chickenHistory, animals]);
 
+  // Duck history operations
+  const addDuckHistoryEvent = useCallback(async (event: Omit<DuckHistoryEvent, 'id'>) => {
+    const newEvent: DuckHistoryEvent = { ...event, id: createId() };
+    let updatedLocal: DuckHistoryEvent[] = [];
+    setDuckHistory(prev => {
+      updatedLocal = [...prev, newEvent];
+      void storage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify(updatedLocal));
+      return updatedLocal;
+    });
+    
+    // Auto-create individual animals for acquired events
+    if (event.type === 'acquired' && event.quantity > 0) {
+      const newAnimals: IndividualAnimal[] = [];
+      const existingNumbers = animals
+        .filter(a => a.type === 'duck' && a.breed === (event.breed || 'Unknown'))
+        .map(a => a.number || 0);
+      const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
+      
+      for (let i = 0; i < event.quantity; i++) {
+        newAnimals.push({
+          id: createId(),
+          type: 'duck',
+          breed: event.breed || 'Unknown',
+          dateAdded: event.date,
+          status: 'alive',
+          sex: event.sex,
+          number: startNumber + i,
+          eventId: newEvent.id,
+        });
+      }
+      
+      if (newAnimals.length > 0) {
+        setAnimals(prev => {
+          const updated = [...prev, ...newAnimals];
+          void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+          return updated;
+        });
+      }
+    }
+    
+    // Auto-create expense/income record if cost is provided
+    if (event.cost && event.cost > 0) {
+      const description = event.notes || `${event.breed || 'Ducks'}`;
+      
+      if (event.type === 'sold') {
+        await addIncome({
+          type: 'livestock',
+          amount: event.cost,
+          date: event.date,
+          livestockType: 'duck',
+          quantity: event.quantity,
+          description,
+        });
+      } else {
+        await addExpense({
+          category: event.type === 'acquired' ? 'Livestock Purchase' : 'Other',
+          amount: event.cost,
+          date: event.date,
+          livestockType: 'duck',
+          description,
+        });
+      }
+    }
+    
+    return newEvent;
+  }, [animals, addExpense, addIncome]);
+
+  const updateDuckHistoryEvent = useCallback(async (id: string, updates: Partial<DuckHistoryEvent>) => {
+    const event = duckHistory.find(e => e.id === id);
+    if (!event) return;
+    
+    const updated = duckHistory.map(e => e.id === id ? { ...e, ...updates } : e);
+    setDuckHistory(updated);
+    await storage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify(updated));
+  }, [duckHistory]);
+
+  const deleteDuckHistoryEvent = useCallback(async (id: string) => {
+    const event = duckHistory.find(e => e.id === id);
+    
+    setDuckHistory(prev => {
+      const updated = prev.filter(e => e.id !== id);
+      void storage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify(updated));
+      return updated;
+    });
+
+    // If deleting an acquired event, remove all ducks linked to this event
+    if (event?.type === 'acquired') {
+      const associatedDucks = animals.filter(a => 
+        a.type === 'duck' && a.eventId === id
+      );
+
+      if (associatedDucks.length > 0) {
+        const updatedAnimals = animals.filter(a => a.eventId !== id);
+        setAnimals(updatedAnimals);
+        await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updatedAnimals));
+      }
+    }
+  }, [duckHistory, animals]);
+
   // Individual animal operations
   const getNextAnimalNumber = useCallback((type: 'chicken' | 'rabbit' | 'goat' | 'duck', breed: string): number => {
     const existingNumbers = animals
@@ -632,8 +767,30 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       }
     }
     
+    // Create a history event for ducks (unless skipEvent is true)
+    if (type === 'duck' && !skipEvent) {
+      const newEvent = await addDuckHistoryEvent({
+        type: 'acquired',
+        quantity: count,
+        date: dateAdded,
+        breed,
+        sex,
+      });
+      
+      // Update the animals with the event ID
+      if (newEvent && !eventId) {
+        setAnimals(prev => {
+          const updated = prev.map(a => 
+            newAnimals.some(na => na.id === a.id) ? { ...a, eventId: newEvent.id } : a
+          );
+          void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+          return updated;
+        });
+      }
+    }
+    
     return newAnimals;
-  }, [getNextAnimalNumber, addChickenHistoryEvent]);
+  }, [getNextAnimalNumber, addChickenHistoryEvent, addDuckHistoryEvent]);
 
   const updateAnimal = useCallback(async (id: string, updates: Partial<IndividualAnimal>) => {
     const animal = animals.find(a => a.id === id);
@@ -802,6 +959,58 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return { roosters, hens };
   }, [chickenHistory]);
 
+  const getDuckCountOnDate = useCallback((date: string): number => {
+    const targetDate = new Date(date).getTime();
+    const sortedEvents = [...duckHistory].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    let count = 0;
+    for (const event of sortedEvents) {
+      const eventDate = new Date(event.date).getTime();
+      if (eventDate > targetDate) break;
+      
+      if (event.type === 'acquired') {
+        count += event.quantity;
+      } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+        count -= event.quantity;
+      }
+    }
+    
+    return Math.max(0, count);
+  }, [duckHistory]);
+
+  const getDrakesAndHensCount = useCallback((date: string): { drakes: number; hens: number } => {
+    const targetDate = new Date(date).getTime();
+    const sortedEvents = [...duckHistory].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    let drakes = 0;
+    let hens = 0;
+    
+    for (const event of sortedEvents) {
+      const eventDate = new Date(event.date).getTime();
+      if (eventDate > targetDate) break;
+      
+      if (event.type === 'acquired') {
+        if (event.sex === 'M') {
+          drakes += event.quantity;
+        } else if (event.sex === 'F') {
+          hens += event.quantity;
+        }
+      } else if (event.type === 'death' || event.type === 'sold' || event.type === 'consumed') {
+        if (event.sex === 'M') {
+          drakes = Math.max(0, drakes - event.quantity);
+        } else if (event.sex === 'F') {
+          hens = Math.max(0, hens - event.quantity);
+        }
+      }
+    }
+    
+    return { drakes, hens };
+  }, [duckHistory]);
+
   // Helper functions for rabbit breeding
   const getAvailableBucks = useCallback(() => {
     return rabbits.filter(r => r.gender === 'buck' && r.status === 'active');
@@ -855,6 +1064,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
   return useMemo(() => ({
     chickens,
+    ducks,
     rabbits,
     eggProduction,
     breedingRecords,
@@ -866,11 +1076,15 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     expenses,
     income,
     chickenHistory,
+    duckHistory,
     animals,
     isLoading,
     addChicken,
     updateChicken,
     deleteChicken,
+    addDuck,
+    updateDuck,
+    deleteDuck,
     addRabbit,
     updateRabbit,
     deleteRabbit,
@@ -904,6 +1118,11 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     deleteChickenHistoryEvent,
     getChickenCountOnDate,
     getRoostersAndHensCount,
+    addDuckHistoryEvent,
+    updateDuckHistoryEvent,
+    deleteDuckHistoryEvent,
+    getDuckCountOnDate,
+    getDrakesAndHensCount,
     addAnimal,
     addAnimalsBatch,
     updateAnimal,
@@ -914,6 +1133,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     reloadData: loadData,
   }), [
     chickens,
+    ducks,
     rabbits,
     eggProduction,
     breedingRecords,
@@ -929,6 +1149,9 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     addChicken,
     updateChicken,
     deleteChicken,
+    addDuck,
+    updateDuck,
+    deleteDuck,
     addRabbit,
     updateRabbit,
     deleteRabbit,
@@ -958,11 +1181,17 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     getUpcomingKindlings,
     getDueVaccinations,
     chickenHistory,
+    duckHistory,
     addChickenHistoryEvent,
     updateChickenHistoryEvent,
     deleteChickenHistoryEvent,
     getChickenCountOnDate,
     getRoostersAndHensCount,
+    addDuckHistoryEvent,
+    updateDuckHistoryEvent,
+    deleteDuckHistoryEvent,
+    getDuckCountOnDate,
+    getDrakesAndHensCount,
     addAnimal,
     addAnimalsBatch,
     updateAnimal,

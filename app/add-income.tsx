@@ -17,7 +17,7 @@ export default function AddIncomeScreen() {
   const [unitPrice, setUnitPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [date, setDate] = useState(getLocalDateString());
-  const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit'>('chicken');
+  const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'duck'>('chicken');
   const [description, setDescription] = useState("");
 
   const totalAmount = (parseFloat(unitPrice) || 0) * (parseInt(quantity) || 0);
@@ -116,6 +116,14 @@ export default function AddIncomeScreen() {
             >
               <Text style={[styles.livestockButtonText, livestockType === 'chicken' && styles.livestockButtonTextActive]}>
                 Chickens
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.livestockButton, livestockType === 'duck' && styles.livestockButtonActive]}
+              onPress={() => setLivestockType('duck')}
+            >
+              <Text style={[styles.livestockButtonText, livestockType === 'duck' && styles.livestockButtonTextActive]}>
+                Ducks
               </Text>
             </TouchableOpacity>
             <TouchableOpacity

@@ -22,7 +22,7 @@ export default function AddTransactionScreen() {
   const [incomeType, setIncomeType] = useState(settings.incomeTypes[0] || 'eggs');
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getLocalDateString());
-  const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'general'>('general');
+  const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'duck' | 'general'>('general');
   const [description, setDescription] = useState("");
   const [recurring, setRecurring] = useState(false);
 
@@ -194,7 +194,7 @@ export default function AddTransactionScreen() {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Applies To *</Text>
           <View style={styles.livestockButtons}>
-            {(['general', 'chicken', 'rabbit'] as const).map((type) => {
+            {(['general', 'chicken', 'duck', 'rabbit'] as const).map((type) => {
               const typeName = type.charAt(0).toUpperCase() + type.slice(1);
               const isDisabled = type === 'rabbit';
               return (

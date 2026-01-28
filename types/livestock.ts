@@ -22,6 +22,30 @@ export interface ChickenHistoryEvent {
   chickenId?: string;
 }
 
+export interface Duck {
+  id: string;
+  name: string;
+  breed: string;
+  dateAcquired: string;
+  cost: number;
+  quantity: number;
+  status: 'active' | 'sold' | 'deceased';
+  color?: string;
+  notes?: string;
+}
+
+export interface DuckHistoryEvent {
+  id: string;
+  date: string;
+  type: 'acquired' | 'death' | 'sold' | 'consumed';
+  quantity: number;
+  breed?: string;
+  cost?: number;
+  sex?: 'M' | 'F';
+  notes?: string;
+  duckId?: string;
+}
+
 export interface Rabbit {
   id: string;
   name: string;
@@ -176,7 +200,7 @@ export interface Expense {
   category: 'feed' | 'bedding' | 'medical' | 'equipment' | 'other';
   amount: number;
   date: string;
-  livestockType: 'chicken' | 'rabbit' | 'general';
+  livestockType: 'chicken' | 'rabbit' | 'duck' | 'general';
   description: string;
   recurring?: boolean;
 }
@@ -186,7 +210,7 @@ export interface Income {
   type: 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other';
   amount: number;
   date: string;
-  livestockType: 'chicken' | 'rabbit';
+  livestockType: 'chicken' | 'rabbit' | 'duck';
   quantity?: number;
   description: string;
 }

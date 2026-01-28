@@ -1,0 +1,348 @@
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform } from "react-native";
+import { useState } from "react";
+import { router } from "expo-router";
+import { useLivestock } from "@/hooks/livestock-store";
+import { useTheme } from "@/hooks/theme-store";
+import { DollarSign, Palette, FileText, Hash, Calendar, ChevronDown } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import DatePicker from "@/components/DatePicker";
+import BreedPicker from "@/components/BreedPicker";
+import { DUCK_BREEDS } from "@/constants/breeds";
+
+export default function AddDuckScreen() {
+  const { addDuck } = useLivestock();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [name, setName] = useState("");
+  const [breed, setBreed] = useState("");
+  const [dateAcquired, setDateAcquired] = useState(new Date().toISOString().split('T')[0]);
+  const [pricePerUnit, setPricePerUnit] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [color, setColor] = useState("");
+  const [notes, setNotes] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const totalCost = (parseFloat(pricePerUnit) || 0) * (parseInt(quantity) || 0);
+
+  const getDateString = (daysAgo: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleSave = async () => {
+    if (!name || !breed || !dateAcquired || !pricePerUnit || !quantity) {
+      if (Platform.OS === 'web') {
+        alert("Please fill in all required fields");
+      }
+      return;
+    }
+
+    await addDuck({
+      name,
+      breed,
+      dateAcquired,
+      cost: totalCost,
+      quantity: parseInt(quantity),
+      status: 'active',
+      color: color || undefined,
+      notes: notes || undefined,
+    });
+
+    router.back();
+  };
+
+  return (
+    <View style={[styles.backgroundContainer, { paddingTop: insets.top, backgroundColor: colors.accent }]}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Name *</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter duck name"
+            placeholderTextColor="#9ca3af"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <BreedPicker
+            label="Breed *"
+            value={breed}
+            onChange={setBreed}
+            breeds={DUCK_BREEDS}
+            placeholder="Select duck breed"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelRow}>
+            <Calendar size={16} color="#6b7280" />
+            <Text style={styles.label}>Date Acquired *</Text>
+          </View>
+          
+          <View style={styles.quickDateButtons}>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateAcquired === getDateString(0) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+              onPress={() => setDateAcquired(getDateString(0))}
+            >
+              <Text style={[styles.quickDateText, dateAcquired === getDateString(0) && styles.quickDateTextActive]}>
+                Today
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateAcquired === getDateString(1) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+              onPress={() => setDateAcquired(getDateString(1))}
+            >
+              <Text style={[styles.quickDateText, dateAcquired === getDateString(1) && styles.quickDateTextActive]}>
+                Yesterday
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickDateButton, dateAcquired === getDateString(2) && [styles.quickDateButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+              onPress={() => setDateAcquired(getDateString(2))}
+            >
+              <Text style={[styles.quickDateText, dateAcquired === getDateString(2) && styles.quickDateTextActive]}>
+                2 Days Ago
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.calendarToggle}
+            onPress={() => setShowCalendar(!showCalendar)}
+          >
+            <Text style={styles.calendarToggleText}>
+              {showCalendar ? 'Hide Calendar' : 'Show Calendar'}
+            </Text>
+            <ChevronDown size={16} color="#6b7280" style={[showCalendar && { transform: [{ rotate: '180deg' }] }]} />
+          </TouchableOpacity>
+
+          {showCalendar && (
+            <DatePicker
+              label=""
+              value={dateAcquired}
+              onChange={setDateAcquired}
+            />
+          )}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelRow}>
+            <DollarSign size={16} color="#6b7280" />
+            <Text style={styles.label}>Price Per Unit *</Text>
+          </View>
+          <TextInput
+            style={styles.input}
+            value={pricePerUnit}
+            onChangeText={setPricePerUnit}
+            placeholder="0.00"
+            placeholderTextColor="#9ca3af"
+            keyboardType="decimal-pad"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelRow}>
+            <Hash size={16} color="#6b7280" />
+            <Text style={styles.label}>Quantity *</Text>
+          </View>
+          <TextInput
+            style={styles.input}
+            value={quantity}
+            onChangeText={setQuantity}
+            placeholder="1"
+            placeholderTextColor="#9ca3af"
+            keyboardType="numeric"
+          />
+        </View>
+
+        {totalCost > 0 && (
+          <View style={[styles.totalDisplay, { borderColor: colors.accent }]}>
+            <Text style={styles.totalLabel}>Total Cost:</Text>
+            <Text style={[styles.totalValue, { color: colors.accent }]}>${totalCost.toFixed(2)}</Text>
+          </View>
+        )}
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelRow}>
+            <Palette size={16} color="#6b7280" />
+            <Text style={styles.label}>Color (optional)</Text>
+          </View>
+          <TextInput
+            style={styles.input}
+            value={color}
+            onChangeText={setColor}
+            placeholder="e.g., White, Mallard"
+            placeholderTextColor="#9ca3af"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <View style={styles.labelRow}>
+            <FileText size={16} color="#6b7280" />
+            <Text style={styles.label}>Notes (optional)</Text>
+          </View>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Any additional information"
+            placeholderTextColor="#9ca3af"
+            multiline
+            numberOfLines={4}
+          />
+        </View>
+
+        <View style={styles.buttons}>
+          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>Add Duck</Text>
+          </TouchableOpacity>
+        </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+    backgroundColor: "#10b981",
+  },
+  container: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+  },
+  form: {
+    padding: 20,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "#111827",
+  },
+  textArea: {
+    minHeight: 100,
+    textAlignVertical: "top",
+  },
+  buttons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: "#10b981",
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  quickDateButtons: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  quickDateButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    alignItems: "center",
+  },
+  quickDateButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  quickDateText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#6b7280",
+  },
+  quickDateTextActive: {
+    color: "#fff",
+  },
+  calendarToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  calendarToggleText: {
+    fontSize: 13,
+    color: "#6b7280",
+  },
+  totalDisplay: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#ecfdf5",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#10b981",
+    marginBottom: 20,
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#065f46",
+  },
+  totalValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#10b981",
+  },
+});

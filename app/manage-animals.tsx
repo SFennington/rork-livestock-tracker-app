@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
-import { CHICKEN_BREEDS, RABBIT_BREEDS } from "@/constants/breeds";
+import { CHICKEN_BREEDS, DUCK_BREEDS, RABBIT_BREEDS } from "@/constants/breeds";
 import type { IndividualAnimal } from "@/types/livestock";
 
 export default function ManageAnimalsScreen() {
@@ -24,9 +24,12 @@ export default function ManageAnimalsScreen() {
     getAliveAnimals,
     getAllAnimals,
     chickenHistory,
+    duckHistory,
     rabbits,
     getChickenCountOnDate,
+    getDuckCountOnDate,
     addChickenHistoryEvent,
+    addDuckHistoryEvent,
   } = useLivestock();
 
   const [filterType, setFilterType] = useState<'chicken' | 'rabbit' | 'goat' | 'duck'>((params.type as any) ?? 'chicken');
@@ -70,6 +73,13 @@ export default function ManageAnimalsScreen() {
 
   const getFullBreedName = (breed: string): string => {
     return breedNameMap[breed] || breed;
+  };
+
+  // Get sex labels based on animal type
+  const getSexLabels = (type: 'chicken' | 'rabbit' | 'goat' | 'duck'): { M: string, F: string } => {
+    if (type === 'chicken') return { M: 'Rooster', F: 'Hen' };
+    if (type === 'duck') return { M: 'Drake', F: 'Hen' };
+    return { M: 'Male', F: 'Female' };
   };
 
   // Auto-populate animals from breed counts on first load
@@ -187,8 +197,14 @@ export default function ManageAnimalsScreen() {
   }, [filterType, filterBreed, showDeadAnimals, getAllAnimals, getAliveAnimals]);
 
   const getBreedList = (): string[] => {
-    // Get unique breeds from chicken history events
-    const breedsFromHistory = chickenHistory
+    // Return predefined list based on animal type
+    if (filterType === 'chicken') return CHICKEN_BREEDS;
+    if (filterType === 'duck') return DUCK_BREEDS;
+    if (filterType === 'rabbit') return RABBIT_BREEDS;
+    
+    // Get unique breeds from history events for the specific type
+    const history = filterType === 'chicken' ? chickenHistory : filterType === 'duck' ? duckHistory : [];
+    const breedsFromHistory = history
       .filter(e => e.breed)
       .map(e => getFullBreedName(e.breed!));
     
@@ -260,14 +276,27 @@ export default function ManageAnimalsScreen() {
       const animalIdentifier = selectedAnimalForDeath.name || `#${selectedAnimalForDeath.number || 'Unknown'}`;
       const notesText = deathNotes.trim() ? `${animalIdentifier} - ${deathNotes}` : animalIdentifier;
       
-      await addChickenHistoryEvent({
-        type: eventType,
-        quantity: 1,
-        date: new Date().toISOString().split('T')[0],
-        breed: selectedAnimalForDeath.breed,
-        sex: selectedAnimalForDeath.sex,
-        notes: notesText,
-      });
+      // Use the appropriate history event function based on animal type
+      if (filterType === 'chicken') {
+        await addChickenHistoryEvent({
+          type: eventType,
+          quantity: 1,
+          date: new Date().toISOString().split('T')[0],
+          breed: selectedAnimalForDeath.breed,
+          sex: selectedAnimalForDeath.sex,
+          notes: notesText,
+        });
+      } else if (filterType === 'duck') {
+        await addDuckHistoryEvent({
+          type: eventType,
+          quantity: 1,
+          date: new Date().toISOString().split('T')[0],
+          breed: selectedAnimalForDeath.breed,
+          sex: selectedAnimalForDeath.sex,
+          notes: notesText,
+        });
+      }
+      
       await updateAnimal(selectedAnimalForDeath.id, { status: 'dead' });
       setShowDeathDialog(false);
       setSelectedAnimalForDeath(null);
@@ -283,7 +312,7 @@ export default function ManageAnimalsScreen() {
       return;
     }
 
-    if (filterType === 'chicken' && !form.sex) {
+    if ((filterType === 'chicken' || filterType === 'duck') && !form.sex) {
       Alert.alert('Error', 'Please select a gender');
       return;
     }
@@ -319,7 +348,7 @@ export default function ManageAnimalsScreen() {
       return;
     }
 
-    if (filterType === 'chicken' && !batchForm.sex) {
+    if ((filterType === 'chicken' || filterType === 'duck') && !batchForm.sex) {
       Alert.alert('Error', 'Please select a gender');
       return;
     }
@@ -466,7 +495,7 @@ export default function ManageAnimalsScreen() {
                       numberOfLines={2}
                     />
                   </View>
-                  {filterType === 'chicken' && (
+                  {(filterType === 'chicken' || filterType === 'duck') && (
                     <View style={styles.editRow}>
                       <Text style={[styles.editLabel, { color: colors.text }]}>Gender:</Text>
                       <View style={styles.genderButtons}>
@@ -478,7 +507,7 @@ export default function ManageAnimalsScreen() {
                           ]}
                           onPress={() => setForm(prev => ({ ...prev, sex: 'M' }))}
                         >
-                          <Text style={[styles.genderButtonText, { color: (form.sex ?? animal.sex) === 'M' ? '#fff' : colors.text }]}>Rooster</Text>
+                          <Text style={[styles.genderButtonText, { color: (form.sex ?? animal.sex) === 'M' ? '#fff' : colors.text }]}>{getSexLabels(filterType).M}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[
@@ -488,7 +517,7 @@ export default function ManageAnimalsScreen() {
                           ]}
                           onPress={() => setForm(prev => ({ ...prev, sex: 'F' }))}
                         >
-                          <Text style={[styles.genderButtonText, { color: (form.sex ?? animal.sex) === 'F' ? '#fff' : colors.text }]}>Hen</Text>
+                          <Text style={[styles.genderButtonText, { color: (form.sex ?? animal.sex) === 'F' ? '#fff' : colors.text }]}>{getSexLabels(filterType).F}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -541,8 +570,8 @@ export default function ManageAnimalsScreen() {
                   </View>
                   <Text style={[styles.animalBreed, { color: colors.text }]}>
                     {getFullBreedName(animal.breed)}
-                    {filterType === 'chicken' && (
-                      <Text style={{ color: colors.textMuted }}> • {animal.sex === 'M' ? 'Rooster' : animal.sex === 'F' ? 'Hen' : 'Unknown'}</Text>
+                    {(filterType === 'chicken' || filterType === 'duck') && (
+                      <Text style={{ color: colors.textMuted }}> • {animal.sex === 'M' ? getSexLabels(filterType).M : animal.sex === 'F' ? getSexLabels(filterType).F : 'Unknown'}</Text>
                     )}
                   </Text>
                   {animal.notes && (
@@ -634,7 +663,7 @@ export default function ManageAnimalsScreen() {
               />
             </View>
 
-            {filterType === 'chicken' && (
+            {(filterType === 'chicken' || filterType === 'duck') && (
               <View style={styles.formGroup}>
                 <Text style={[styles.formLabel, { color: colors.text }]}>Gender: *</Text>
                 <View style={styles.genderButtons}>
@@ -646,7 +675,7 @@ export default function ManageAnimalsScreen() {
                     ]}
                     onPress={() => setForm(prev => ({ ...prev, sex: 'M' }))}
                   >
-                    <Text style={[styles.genderButtonText, { color: form.sex === 'M' ? '#fff' : colors.text }]}>Rooster</Text>
+                    <Text style={[styles.genderButtonText, { color: form.sex === 'M' ? '#fff' : colors.text }]}>{getSexLabels(filterType).M}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
@@ -656,7 +685,7 @@ export default function ManageAnimalsScreen() {
                     ]}
                     onPress={() => setForm(prev => ({ ...prev, sex: 'F' }))}
                   >
-                    <Text style={[styles.genderButtonText, { color: form.sex === 'F' ? '#fff' : colors.text }]}>Hen</Text>
+                    <Text style={[styles.genderButtonText, { color: form.sex === 'F' ? '#fff' : colors.text }]}>{getSexLabels(filterType).F}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -713,7 +742,7 @@ export default function ManageAnimalsScreen() {
               />
             </View>
 
-            {filterType === 'chicken' && (
+            {(filterType === 'chicken' || filterType === 'duck') && (
               <View style={styles.formGroup}>
                 <Text style={[styles.formLabel, { color: colors.text }]}>Gender: *</Text>
                 <View style={styles.genderButtons}>
@@ -725,7 +754,7 @@ export default function ManageAnimalsScreen() {
                     ]}
                     onPress={() => setBatchForm(prev => ({ ...prev, sex: 'M' }))}
                   >
-                    <Text style={[styles.genderButtonText, { color: batchForm.sex === 'M' ? '#fff' : colors.text }]}>Roosters</Text>
+                    <Text style={[styles.genderButtonText, { color: batchForm.sex === 'M' ? '#fff' : colors.text }]}>{getSexLabels(filterType).M}s</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
@@ -735,7 +764,7 @@ export default function ManageAnimalsScreen() {
                     ]}
                     onPress={() => setBatchForm(prev => ({ ...prev, sex: 'F' }))}
                   >
-                    <Text style={[styles.genderButtonText, { color: batchForm.sex === 'F' ? '#fff' : colors.text }]}>Hens</Text>
+                    <Text style={[styles.genderButtonText, { color: batchForm.sex === 'F' ? '#fff' : colors.text }]}>{getSexLabels(filterType).F}s</Text>
                   </TouchableOpacity>
                 </View>
               </View>
