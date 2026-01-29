@@ -501,8 +501,8 @@ export default function ManageAnimalsScreen() {
                     <Text style={[styles.editLabel, { color: colors.text }]}>Breed:</Text>
                     <View style={{ flex: 1 }}>
                       <BreedPicker
-                        selectedBreed={form.breed ?? animal.breed ?? 'Unknown'}
-                        onSelect={(breed) => setForm(prev => ({ ...prev, breed }))}
+                        value={form.breed ?? animal.breed ?? 'Unknown'}
+                        onChange={(breed) => setForm(prev => ({ ...prev, breed }))}
                         breeds={
                           filterType === 'chicken' ? CHICKEN_BREEDS :
                           filterType === 'duck' ? DUCK_BREEDS :
