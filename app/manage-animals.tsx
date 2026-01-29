@@ -48,6 +48,7 @@ export default function ManageAnimalsScreen() {
     number?: string;
     notes?: string;
     sex?: 'M' | 'F';
+    breed?: string;
   }>({});
 
   const [batchForm, setBatchForm] = useState<{
@@ -240,6 +241,7 @@ export default function ManageAnimalsScreen() {
         number: newNumber,
         notes: form.notes,
         sex: form.sex,
+        breed: form.breed,
       });
       setEditingId(null);
       setForm({});
@@ -495,6 +497,22 @@ export default function ManageAnimalsScreen() {
                       numberOfLines={2}
                     />
                   </View>
+                  <View style={styles.editRow}>
+                    <Text style={[styles.editLabel, { color: colors.text }]}>Breed:</Text>
+                    <View style={{ flex: 1 }}>
+                      <BreedPicker
+                        selectedBreed={form.breed ?? animal.breed ?? 'Unknown'}
+                        onSelect={(breed) => setForm(prev => ({ ...prev, breed }))}
+                        breeds={
+                          filterType === 'chicken' ? CHICKEN_BREEDS :
+                          filterType === 'duck' ? DUCK_BREEDS :
+                          filterType === 'rabbit' ? RABBIT_BREEDS :
+                          []
+                        }
+                        label=""
+                      />
+                    </View>
+                  </View>
                   {(filterType === 'chicken' || filterType === 'duck') && (
                     <View style={styles.editRow}>
                       <Text style={[styles.editLabel, { color: colors.text }]}>Gender:</Text>
@@ -552,6 +570,7 @@ export default function ManageAnimalsScreen() {
                       number: String(animal.number),
                       notes: animal.notes,
                       sex: animal.sex,
+                      breed: animal.breed,
                     });
                   }}
                 >
