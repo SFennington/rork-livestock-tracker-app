@@ -39,6 +39,14 @@ export default function DashboardScreen() {
       .filter(e => new Date(e.date) >= last30Days)
       .reduce((sum, e) => sum + e.count, 0);
     
+    // Calculate actual days of data available (max 30)
+    const sortedEggDates = eggProduction
+      .map(e => new Date(e.date))
+      .sort((a, b) => a.getTime() - b.getTime());
+    const earliestDate = sortedEggDates.length > 0 ? sortedEggDates[0] : new Date();
+    const daysSinceEarliest = Math.floor((new Date().getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const actualDaysForAvg = Math.min(daysSinceEarliest, 30);
+    
     let totalLaid = 0;
     let totalSold = 0;
     let totalBroken = 0;
@@ -82,7 +90,8 @@ export default function DashboardScreen() {
       activeChickens,
       activeRabbits,
       recentEggs,
-      avgEggsPerDay: recentEggs / 30,
+      avgEggsPerDay: actualDaysForAvg > 0 ? recentEggs / actualDaysForAvg : 0,
+      avgDaysCount: actualDaysForAvg,
       roosters,
       hens,
       hasDataIssue,
@@ -184,7 +193,7 @@ export default function DashboardScreen() {
               <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stats.todayEggs}</Text>
             </View>
             <Text style={styles.statLabel}>Eggs Today</Text>
-            <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day</Text>
+            <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day (Last {stats.avgDaysCount} days)</Text>
           </View>
         )}
 
