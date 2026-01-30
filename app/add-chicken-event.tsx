@@ -23,7 +23,7 @@ export default function AddChickenEventScreen() {
   const [showHatchCalendar, setShowHatchCalendar] = useState(false);
   
   // Multi-breed support
-  const [breeds, setBreeds] = useState<BreedEntry[]>([{ breed: '', quantity: 1, cost: undefined, notes: '' }]);
+  const [breeds, setBreeds] = useState<BreedEntry[]>([{ breed: '', roosters: 0, hens: 0, cost: undefined, notes: '' }]);
   
   // Legacy single-breed fields (for backward compatibility in UI)
   const [quantity, setQuantity] = useState("1");
@@ -46,27 +46,28 @@ export default function AddChickenEventScreen() {
   const handleSave = async () => {
     // Validate breeds array for acquired events
     if (eventType === 'acquired') {
-      const validBreeds = breeds.filter(b => b.breed && b.quantity > 0);
+      const validBreeds = breeds.filter(b => b.breed && (b.roosters > 0 || b.hens > 0));
       if (validBreeds.length === 0) {
-        Alert.alert("Error", "Please add at least one breed with quantity");
-        return;
-      }
-      
-      // Gender is required for acquired events
-      if (!sex) {
-        Alert.alert("Error", "Please select a gender for acquired chickens");
+        Alert.alert("Error", "Please add at least one breed with roosters or hens");
         return;
       }
 
-      // Calculate total quantity
-      const totalQty = validBreeds.reduce((sum, b) => sum + b.quantity, 0);
+      // Calculate total quantity and determine sex
+      const totalRoosters = validBreeds.reduce((sum, b) => sum + b.roosters, 0);
+      const totalHens = validBreeds.reduce((sum, b) => sum + b.hens, 0);
+      const totalQty = totalRoosters + totalHens;
+      
+      // Determine sex based on composition
+      let determinedSex: 'M' | 'F' | undefined = undefined;
+      if (totalRoosters > 0 && totalHens === 0) determinedSex = 'M';
+      else if (totalHens > 0 && totalRoosters === 0) determinedSex = 'F';
 
       await addChickenHistoryEvent({
         date,
         type: 'acquired',
         quantity: totalQty,
         breeds: validBreeds,
-        sex: sex || undefined,
+        sex: determinedSex,
         stage,
         hatchDate: stage === 'chick' ? hatchDate || undefined : undefined,
         groupId: groupId || undefined,
@@ -121,7 +122,7 @@ export default function AddChickenEventScreen() {
 
   // Multi-breed management functions
   const addBreedEntry = () => {
-    setBreeds([...breeds, { breed: '', quantity: 1, cost: undefined, notes: '' }]);
+    setBreeds([...breeds, { breed: '', roosters: 0, hens: 0, cost: undefined, notes: '' }]);
   };
 
   const removeBreedEntry = (index: number) => {
@@ -322,27 +323,39 @@ export default function AddChickenEventScreen() {
                     
                     <View style={styles.breedEntryRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Quantity</Text>
+                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Roosters</Text>
                         <TextInput
                           style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
-                          value={String(breedEntry.quantity)}
-                          onChangeText={(text) => updateBreedEntry(index, 'quantity', parseInt(text) || 0)}
+                          value={String(breedEntry.roosters)}
+                          onChangeText={(text) => updateBreedEntry(index, 'roosters', parseInt(text) || 0)}
                           placeholder="0"
                           placeholderTextColor="#9ca3af"
                           keyboardType="numeric"
                         />
                       </View>
                       <View style={{ flex: 1, marginLeft: 8 }}>
-                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Cost (opt)</Text>
+                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Hens</Text>
                         <TextInput
                           style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
-                          value={breedEntry.cost ? String(breedEntry.cost) : ''}
-                          onChangeText={(text) => updateBreedEntry(index, 'cost', text ? parseFloat(text) : undefined)}
-                          placeholder="0.00"
+                          value={String(breedEntry.hens)}
+                          onChangeText={(text) => updateBreedEntry(index, 'hens', parseInt(text) || 0)}
+                          placeholder="0"
                           placeholderTextColor="#9ca3af"
-                          keyboardType="decimal-pad"
+                          keyboardType="numeric"
                         />
                       </View>
+                    </View>
+                    
+                    <View style={{ marginTop: 8 }}>
+                      <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Cost (optional)</Text>
+                      <TextInput
+                        style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
+                        value={breedEntry.cost ? String(breedEntry.cost) : ''}
+                        onChangeText={(text) => updateBreedEntry(index, 'cost', text ? parseFloat(text) : undefined)}
+                        placeholder="0.00"
+                        placeholderTextColor="#9ca3af"
+                        keyboardType="decimal-pad"
+                      />
                     </View>
                   </View>
                 ))}
@@ -405,49 +418,7 @@ export default function AddChickenEventScreen() {
             </View>
           )}
 
-          {eventType === 'acquired' && (
-            <View style={styles.inputGroup}>
-              <View style={styles.labelRow}>
-                <User size={16} color="#6b7280" />
-                <Text style={styles.label}>Sex *</Text>
-              </View>
-              <View style={styles.sexButtons}>
-                <TouchableOpacity 
-                  style={[styles.sexButton, sex === 'M' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                  onPress={() => setSex('M')}
-                >
-                  <Text style={[styles.sexButtonText, sex === 'M' && styles.sexButtonTextActive]}>
-                    Rooster
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.sexButton, sex === 'F' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                  onPress={() => setSex('F')}
-                >
-                  <Text style={[styles.sexButtonText, sex === 'F' && styles.sexButtonTextActive]}>
-                    Hen
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
 
-          {eventType === 'acquired' && (
-            <View style={styles.inputGroup}>
-              <View style={styles.labelRow}>
-                <DollarSign size={16} color="#6b7280" />
-                <Text style={styles.label}>Cost (optional)</Text>
-              </View>
-              <TextInput
-                style={styles.input}
-                value={cost}
-                onChangeText={setCost}
-                placeholder="0.00"
-                placeholderTextColor="#9ca3af"
-                keyboardType="decimal-pad"
-              />
-            </View>
-          )}
 
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>

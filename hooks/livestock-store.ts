@@ -120,6 +120,22 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     const migratedChickenHistory = chickenEvents.map(event => {
       // If already has breeds array, skip migration
       if (event.breeds && event.breeds.length > 0) {
+        // Check if breeds have roosters/hens or old quantity field
+        const needsQuantityMigration = event.breeds.some((b: any) => 'quantity' in b && !('roosters' in b));
+        if (needsQuantityMigration) {
+          // Migrate quantity to roosters/hens based on event sex
+          return {
+            ...event,
+            breeds: event.breeds.map((b: any) => ({
+              breed: b.breed,
+              roosters: event.sex === 'M' ? (b.quantity || 0) : 0,
+              hens: event.sex === 'F' ? (b.quantity || 0) : 0,
+              cost: b.cost,
+              notes: b.notes,
+            })),
+            stage: event.stage || 'mature',
+          };
+        }
         return event;
       }
       // Convert single breed to breeds array
@@ -128,7 +144,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           ...event,
           breeds: [{
             breed: event.breed,
-            quantity: event.quantity,
+            roosters: event.sex === 'M' ? event.quantity : 0,
+            hens: event.sex === 'F' ? event.quantity : 0,
             cost: event.cost,
           }],
           stage: event.stage || 'mature', // Default to mature if not specified
@@ -612,7 +629,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       // Support both legacy single-breed and new multi-breed structure
       const breedsToProcess = event.breeds && event.breeds.length > 0 
         ? event.breeds 
-        : [{ breed: event.breed || 'Unknown', quantity: event.quantity, cost: event.cost }];
+        : [{ breed: event.breed || 'Unknown', roosters: event.sex === 'M' ? event.quantity : 0, hens: event.sex === 'F' ? event.quantity : 0, cost: event.cost }];
       
       // Process each breed entry
       for (const breedEntry of breedsToProcess) {
@@ -621,19 +638,40 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           .map(a => a.number || 0);
         const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
         
-        for (let i = 0; i < breedEntry.quantity; i++) {
+        let animalIndex = 0;
+        
+        // Create roosters
+        for (let i = 0; i < breedEntry.roosters; i++) {
           newAnimals.push({
             id: createId(),
             type: 'chicken',
             breed: breedEntry.breed,
             dateAdded: event.date,
             status: 'alive',
-            sex: event.sex,
-            number: startNumber + i,
+            sex: 'M',
+            number: startNumber + animalIndex,
             stage: event.stage || 'mature',
             hatchDate: event.hatchDate,
             eventId: newEvent.id,
           });
+          animalIndex++;
+        }
+        
+        // Create hens
+        for (let i = 0; i < breedEntry.hens; i++) {
+          newAnimals.push({
+            id: createId(),
+            type: 'chicken',
+            breed: breedEntry.breed,
+            dateAdded: event.date,
+            status: 'alive',
+            sex: 'F',
+            number: startNumber + animalIndex,
+            stage: event.stage || 'mature',
+            hatchDate: event.hatchDate,
+            eventId: newEvent.id,
+          });
+          animalIndex++;
         }
       }
       
