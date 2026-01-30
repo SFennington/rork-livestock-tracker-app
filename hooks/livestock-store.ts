@@ -1184,6 +1184,16 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return { roosters, hens };
   }, [chickenHistory]);
 
+  const getChickenStageCount = useCallback((date: string): { roosters: number; hens: number; chicks: number } => {
+    const aliveAnimals = animals.filter(a => a.type === 'chicken' && a.status === 'alive');
+    
+    const matureRoosters = aliveAnimals.filter(a => a.sex === 'M' && (!a.stage || a.stage === 'mature')).length;
+    const matureHens = aliveAnimals.filter(a => a.sex === 'F' && (!a.stage || a.stage === 'mature')).length;
+    const chicks = aliveAnimals.filter(a => a.stage === 'chick').length;
+    
+    return { roosters: matureRoosters, hens: matureHens, chicks };
+  }, [animals]);
+
   const getDuckCountOnDate = useCallback((date: string): number => {
     const targetDate = new Date(date).getTime();
     const sortedEvents = [...duckHistory].sort((a, b) => 
@@ -1419,6 +1429,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     deleteChickenHistoryEvent,
     getChickenCountOnDate,
     getRoostersAndHensCount,
+    getChickenStageCount,
     addDuckHistoryEvent,
     updateDuckHistoryEvent,
     deleteDuckHistoryEvent,

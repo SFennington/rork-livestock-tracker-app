@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock, useRabbitBreeding, useRabbitHealth } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe, MoreVertical } from "lucide-react-native";
+import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe, MoreVertical, ArrowUp } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
 
 export default function LivestockScreen() {
-  const { chickenHistory, duckHistory, rabbits, isLoading, getChickenCountOnDate, getDuckCountOnDate, getRoostersAndHensCount, getDrakesAndHensCount, getAliveAnimals } = useLivestock();
+  const { chickenHistory, duckHistory, rabbits, isLoading, getChickenCountOnDate, getDuckCountOnDate, getRoostersAndHensCount, getChickenStageCount, getDrakesAndHensCount, getAliveAnimals } = useLivestock();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'ducks' | 'rabbits'>('chickens');
   const rabbitsDisabled = true;
@@ -46,9 +46,9 @@ export default function LivestockScreen() {
     return getDuckCountOnDate(today);
   }, [getDuckCountOnDate, today]);
 
-  const { roosters, hens } = useMemo(() => {
-    return getRoostersAndHensCount(today);
-  }, [getRoostersAndHensCount, today]);
+  const { roosters, hens, chicks } = useMemo(() => {
+    return getChickenStageCount(today);
+  }, [getChickenStageCount, today]);
 
   const { drakes, hens: duckHens } = useMemo(() => {
     return getDrakesAndHensCount(today);
@@ -262,6 +262,27 @@ export default function LivestockScreen() {
                   <View style={styles.chickenTypeItem}>
                     <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Hens</Text>
                     <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{hens}</Text>
+                  </View>
+                  <View style={styles.chickenTypeItem}>
+                    <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Chicks</Text>
+                    <View style={styles.chickCountWithButton}>
+                      <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{chicks}</Text>
+                      {chicks > 0 && (
+                        <TouchableOpacity
+                          style={[styles.matureButton, { backgroundColor: colors.accent }]}
+                          onPress={() => {
+                            const aliveChicks = getAliveAnimals('chicken').filter(a => a.stage === 'chick');
+                            const chickIds = aliveChicks.map(a => a.id).join(',');
+                            router.push({
+                              pathname: '/mature-animals',
+                              params: { animalIds: chickIds, type: 'chicken' }
+                            });
+                          }}
+                        >
+                          <ArrowUp size={14} color="#fff" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
                 </View>
                 {chickenBreedBreakdown.length > 0 && (
@@ -756,5 +777,17 @@ const styles = StyleSheet.create({
   chickenTypeValue: {
     fontSize: 20,
     fontWeight: "700" as const,
+  },
+  chickCountWithButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  matureButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
