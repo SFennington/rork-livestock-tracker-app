@@ -1,3 +1,11 @@
+export interface Group {
+  id: string;
+  name: string;
+  type: 'chicken' | 'duck' | 'rabbit';
+  dateCreated: string;
+  notes?: string;
+}
+
 export interface Chicken {
   id: string;
   name: string;
@@ -28,6 +36,7 @@ export interface ChickenHistoryEvent {
   sex?: 'M' | 'F';
   stage?: 'chick' | 'mature'; // Lifecycle stage
   hatchDate?: string; // For chicks
+  groupId?: string; // Links to Group for tracking
   notes?: string;
   chickenId?: string;
 }
@@ -55,6 +64,7 @@ export interface DuckHistoryEvent {
   sex?: 'M' | 'F';
   stage?: 'duckling' | 'mature'; // Lifecycle stage
   hatchDate?: string; // For ducklings
+  groupId?: string; // Links to Group for tracking
   notes?: string;
   duckId?: string;
 }
@@ -122,6 +132,7 @@ export interface EggProduction {
   laid?: number;
   broken?: number;
   donated?: number;
+  groupId?: string; // Links to Group for tracking
   notes?: string;
 }
 
@@ -214,6 +225,7 @@ export interface Expense {
   amount: number;
   date: string;
   livestockType: 'chicken' | 'rabbit' | 'duck' | 'general';
+  groupId?: string; // Links to Group for tracking
   description: string;
   recurring?: boolean;
 }
@@ -224,6 +236,7 @@ export interface Income {
   amount: number;
   date: string;
   livestockType: 'chicken' | 'rabbit' | 'duck';
+  groupId?: string; // Links to Group for tracking
   quantity?: number;
   description: string;
 }
@@ -239,6 +252,7 @@ export interface IndividualAnimal {
   dateAdded: string;
   status: 'alive' | 'dead' | 'consumed' | 'sold';
   sex?: 'M' | 'F';
+  groupId?: string; // Links to Group for tracking
   notes?: string;
   deathDate?: string;
   deathReason?: string;

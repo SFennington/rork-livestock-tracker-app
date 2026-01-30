@@ -24,7 +24,8 @@ import type {
   ChickenHistoryEvent,
   DuckHistoryEvent,
   IndividualAnimal,
-  Duck
+  Duck,
+  Group
 } from '@/types/livestock';
 
 let __idCounter = 0;
@@ -82,6 +83,7 @@ const STORAGE_KEYS = {
   CHICKEN_HISTORY: 'livestock_chicken_history',
   DUCK_HISTORY: 'livestock_duck_history',
   ANIMALS: 'livestock_animals',
+  GROUPS: 'livestock_groups',
   MIGRATION_V2: 'livestock_migration_v2',
   MIGRATION_V3: 'livestock_migration_v3_multibreed_stage',
 };
@@ -102,6 +104,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   const [chickenHistory, setChickenHistory] = useState<ChickenHistoryEvent[]>([]);
   const [duckHistory, setDuckHistory] = useState<DuckHistoryEvent[]>([]);
   const [animals, setAnimals] = useState<IndividualAnimal[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Migration V3: Convert single-breed events to multi-breed structure and add stage support
@@ -189,6 +192,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         chickenHistoryData,
         duckHistoryData,
         animalsData,
+        groupsData,
         migrationV2Data,
         migrationV3Data
       ] = await Promise.all([
@@ -207,6 +211,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         storage.getItem(STORAGE_KEYS.CHICKEN_HISTORY),
         storage.getItem(STORAGE_KEYS.DUCK_HISTORY),
         storage.getItem(STORAGE_KEYS.ANIMALS),
+        storage.getItem(STORAGE_KEYS.GROUPS),
         storage.getItem(STORAGE_KEYS.MIGRATION_V2),
         storage.getItem(STORAGE_KEYS.MIGRATION_V3),
       ]);
@@ -223,6 +228,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       if (feedData) setFeedRecords(JSON.parse(feedData));
       if (expensesData) setExpenses(JSON.parse(expensesData));
       if (incomeData) setIncome(JSON.parse(incomeData));
+      if (groupsData) setGroups(JSON.parse(groupsData));
       
       // Parse history data for potential migration
       let loadedChickenHistory: ChickenHistoryEvent[] = chickenHistoryData ? JSON.parse(chickenHistoryData) : [];
@@ -819,6 +825,41 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     return Math.max(...existingNumbers) + 1;
   }, [animals]);
 
+  // Group management functions
+  const addGroup = useCallback(async (group: Omit<Group, 'id' | 'dateCreated'>) => {
+    const newGroup: Group = {
+      ...group,
+      id: createId(),
+      dateCreated: getLocalDateString(),
+    };
+    setGroups(prev => {
+      const updated = [...prev, newGroup];
+      void storage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updated));
+      return updated;
+    });
+    return newGroup;
+  }, []);
+
+  const updateGroup = useCallback(async (id: string, updates: Partial<Group>) => {
+    setGroups(prev => {
+      const updated = prev.map(g => g.id === id ? { ...g, ...updates } : g);
+      void storage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const deleteGroup = useCallback(async (id: string) => {
+    setGroups(prev => {
+      const updated = prev.filter(g => g.id !== id);
+      void storage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const getGroupsByType = useCallback((type: 'chicken' | 'duck' | 'rabbit') => {
+    return groups.filter(g => g.type === type);
+  }, [groups]);
+
   const addAnimal = useCallback(async (animal: Omit<IndividualAnimal, 'id' | 'number'> & { number?: number }) => {
     const number = animal.number ?? getNextAnimalNumber(animal.type, animal.breed);
     const newAnimal: IndividualAnimal = { 
@@ -1262,6 +1303,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     chickenHistory,
     duckHistory,
     animals,
+    groups,
     isLoading,
     addChicken,
     updateChicken,
@@ -1315,6 +1357,10 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     getAliveAnimals,
     getAllAnimals,
     getNextAnimalNumber,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    getGroupsByType,
     reloadData: loadData,
   }), [
     chickens,
@@ -1330,6 +1376,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     expenses,
     income,
     animals,
+    groups,
     isLoading,
     addChicken,
     updateChicken,
@@ -1385,6 +1432,10 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     getAliveAnimals,
     getAllAnimals,
     getNextAnimalNumber,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    getGroupsByType,
     loadData,
   ]);
 });
