@@ -1311,6 +1311,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     addAnimalsBatch,
     updateAnimal,
     removeAnimal,
+    matureAnimals,
     getAliveAnimals,
     getAllAnimals,
     getNextAnimalNumber,
