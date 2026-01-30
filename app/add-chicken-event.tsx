@@ -4,23 +4,34 @@ import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
-import { Hash, FileText, DollarSign, User, Calendar, ChevronDown, List } from "lucide-react-native";
+import { Hash, FileText, DollarSign, User, Calendar, ChevronDown, List, Plus, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
 import { CHICKEN_BREEDS } from "@/constants/breeds";
+import type { BreedEntry } from "@/types/livestock";
 
 export default function AddChickenEventScreen() {
-  const { addChickenHistoryEvent, getAliveAnimals, updateAnimal } = useLivestock();
+  const { addChickenHistoryEvent, getAliveAnimals, updateAnimal, groups, getGroupsByType } = useLivestock();
   const { settings } = useAppSettings();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [eventType, setEventType] = useState(settings.chickenEventTypes[0] || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [stage, setStage] = useState<'chick' | 'mature'>('mature');
+  const [hatchDate, setHatchDate] = useState('');
+  const [showHatchCalendar, setShowHatchCalendar] = useState(false);
+  
+  // Multi-breed support
+  const [breeds, setBreeds] = useState<BreedEntry[]>([{ breed: '', quantity: 1, cost: undefined, notes: '' }]);
+  
+  // Legacy single-breed fields (for backward compatibility in UI)
   const [quantity, setQuantity] = useState("1");
   const [breed, setBreed] = useState("");
   const [cost, setCost] = useState("");
+  
   const [sex, setSex] = useState<'M' | 'F' | ''>('');
+  const [groupId, setGroupId] = useState<string>('');
   const [notes, setNotes] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([]);
@@ -33,62 +44,99 @@ export default function AddChickenEventScreen() {
   };
 
   const handleSave = async () => {
-    if (!date || !quantity) {
-      if (Platform.OS === 'web') {
-        alert("Please fill in all required fields");
-      } else {
-        Alert.alert("Error", "Please fill in all required fields");
-      }
-      return;
-    }
-
-    const qty = parseInt(quantity);
-    if (isNaN(qty) || qty <= 0) {
-      if (Platform.OS === 'web') {
-        alert("Quantity must be a positive number");
-      } else {
-        Alert.alert("Error", "Quantity must be a positive number");
-      }
-      return;
-    }
-
-    // Gender is required for acquired events
-    if (eventType === 'acquired' && !sex) {
-      Alert.alert("Error", "Please select a gender for acquired chickens");
-      return;
-    }
-
-    // For death/consumed events, validate selected animals match quantity
-    if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
-      if (selectedAnimalIds.length !== qty) {
-        Alert.alert("Error", `Please select exactly ${qty} animal(s)`);
+    // Validate breeds array for acquired events
+    if (eventType === 'acquired') {
+      const validBreeds = breeds.filter(b => b.breed && b.quantity > 0);
+      if (validBreeds.length === 0) {
+        Alert.alert("Error", "Please add at least one breed with quantity");
         return;
       }
-    }
+      
+      // Gender is required for acquired events
+      if (!sex) {
+        Alert.alert("Error", "Please select a gender for acquired chickens");
+        return;
+      }
 
-    await addChickenHistoryEvent({
-      date,
-      type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
-      quantity: qty,
-      breed: breed || undefined,
-      cost: cost ? parseFloat(cost) : undefined,
-      sex: sex || undefined,
-      notes: notes || undefined,
-    });
+      // Calculate total quantity
+      const totalQty = validBreeds.reduce((sum, b) => sum + b.quantity, 0);
 
-    // Mark selected animals as dead/consumed
-    if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
-      for (const animalId of selectedAnimalIds) {
-        await updateAnimal(animalId, {
-          status: eventType === 'consumed' ? 'consumed' : 'dead',
-          deathDate: date,
-          deathReason: notes || undefined,
-        });
+      await addChickenHistoryEvent({
+        date,
+        type: 'acquired',
+        quantity: totalQty,
+        breeds: validBreeds,
+        sex: sex || undefined,
+        stage,
+        hatchDate: stage === 'chick' ? hatchDate || undefined : undefined,
+        groupId: groupId || undefined,
+        notes: notes || undefined,
+      });
+    } else {
+      // For other event types, use legacy single-breed approach
+      if (!date || !quantity) {
+        Alert.alert("Error", "Please fill in all required fields");
+        return;
+      }
+
+      const qty = parseInt(quantity);
+      if (isNaN(qty) || qty <= 0) {
+        Alert.alert("Error", "Quantity must be a positive number");
+        return;
+      }
+
+      // For death/consumed events, validate selected animals match quantity
+      if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
+        if (selectedAnimalIds.length !== qty) {
+          Alert.alert("Error", `Please select exactly ${qty} animal(s)`);
+          return;
+        }
+      }
+
+      await addChickenHistoryEvent({
+        date,
+        type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
+        quantity: qty,
+        breed: breed || undefined,
+        cost: cost ? parseFloat(cost) : undefined,
+        sex: sex || undefined,
+        groupId: groupId || undefined,
+        notes: notes || undefined,
+      });
+
+      // Mark selected animals as dead/consumed
+      if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
+        for (const animalId of selectedAnimalIds) {
+          await updateAnimal(animalId, {
+            status: eventType === 'consumed' ? 'consumed' : 'dead',
+            deathDate: date,
+            deathReason: notes || undefined,
+          });
+        }
       }
     }
 
     router.back();
   };
+
+  // Multi-breed management functions
+  const addBreedEntry = () => {
+    setBreeds([...breeds, { breed: '', quantity: 1, cost: undefined, notes: '' }]);
+  };
+
+  const removeBreedEntry = (index: number) => {
+    if (breeds.length > 1) {
+      setBreeds(breeds.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBreedEntry = (index: number, field: keyof BreedEntry, value: any) => {
+    const updated = [...breeds];
+    updated[index] = { ...updated[index], [field]: value };
+    setBreeds(updated);
+  };
+
+  const chickenGroups = getGroupsByType('chicken');
 
   return (
     <ScrollView 
@@ -169,29 +217,174 @@ export default function AddChickenEventScreen() {
             )}
           </View>
 
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <Hash size={16} color="#6b7280" />
-              <Text style={styles.label}>Quantity *</Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={quantity}
-              onChangeText={setQuantity}
-              placeholder="1"
-              placeholderTextColor="#9ca3af"
-              keyboardType="numeric"
-            />
-          </View>
+          {eventType === 'acquired' && (
+            <>
+              {/* Stage Selector */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Stage *</Text>
+                <View style={styles.sexButtons}>
+                  <TouchableOpacity 
+                    style={[styles.sexButton, stage === 'mature' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                    onPress={() => setStage('mature')}
+                  >
+                    <Text style={[styles.sexButtonText, stage === 'mature' && styles.sexButtonTextActive]}>
+                      Mature
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.sexButton, stage === 'chick' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                    onPress={() => setStage('chick')}
+                  >
+                    <Text style={[styles.sexButtonText, stage === 'chick' && styles.sexButtonTextActive]}>
+                      Chicks
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-          <View style={styles.inputGroup}>
-            <BreedPicker
-              label="Breed (optional)"
-              value={breed}
-              onChange={setBreed}
-              breeds={CHICKEN_BREEDS}
-            />
-          </View>
+              {/* Hatch Date for Chicks */}
+              {stage === 'chick' && (
+                <View style={styles.inputGroup}>
+                  <View style={styles.labelRow}>
+                    <Calendar size={16} color="#6b7280" />
+                    <Text style={styles.label}>Hatch Date (optional)</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.input}
+                    onPress={() => setShowHatchCalendar(true)}
+                  >
+                    <Text style={{ color: hatchDate ? colors.text : '#9ca3af' }}>
+                      {hatchDate || 'Select hatch date'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showHatchCalendar && (
+                    <DatePicker
+                      label=""
+                      value={hatchDate}
+                      onChange={(date) => {
+                        setHatchDate(date);
+                        setShowHatchCalendar(false);
+                      }}
+                    />
+                  )}
+                </View>
+              )}
+
+              {/* Group Selector */}
+              {chickenGroups.length > 0 && (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Group (optional)</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    <TouchableOpacity 
+                      style={[styles.sexButton, !groupId && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                      onPress={() => setGroupId('')}
+                    >
+                      <Text style={[styles.sexButtonText, !groupId && styles.sexButtonTextActive]}>
+                        No Group
+                      </Text>
+                    </TouchableOpacity>
+                    {chickenGroups.map((group) => (
+                      <TouchableOpacity 
+                        key={group.id}
+                        style={[styles.sexButton, groupId === group.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                        onPress={() => setGroupId(group.id)}
+                      >
+                        <Text style={[styles.sexButtonText, groupId === group.id && styles.sexButtonTextActive]}>
+                          {group.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Multi-Breed Entries */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Breeds *</Text>
+                {breeds.map((breedEntry, index) => (
+                  <View key={index} style={[styles.breedEntryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={styles.breedEntryHeader}>
+                      <Text style={[styles.breedEntryTitle, { color: colors.text }]}>Breed {index + 1}</Text>
+                      {breeds.length > 1 && (
+                        <TouchableOpacity onPress={() => removeBreedEntry(index)}>
+                          <X size={20} color={colors.error} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    <BreedPicker
+                      label=""
+                      value={breedEntry.breed}
+                      onChange={(breed) => updateBreedEntry(index, 'breed', breed)}
+                      breeds={CHICKEN_BREEDS}
+                      placeholder="Select breed"
+                    />
+                    
+                    <View style={styles.breedEntryRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Quantity</Text>
+                        <TextInput
+                          style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
+                          value={String(breedEntry.quantity)}
+                          onChangeText={(text) => updateBreedEntry(index, 'quantity', parseInt(text) || 0)}
+                          placeholder="0"
+                          placeholderTextColor="#9ca3af"
+                          keyboardType="numeric"
+                        />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 8 }}>
+                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Cost (opt)</Text>
+                        <TextInput
+                          style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
+                          value={breedEntry.cost ? String(breedEntry.cost) : ''}
+                          onChangeText={(text) => updateBreedEntry(index, 'cost', text ? parseFloat(text) : undefined)}
+                          placeholder="0.00"
+                          placeholderTextColor="#9ca3af"
+                          keyboardType="decimal-pad"
+                        />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+                
+                <TouchableOpacity 
+                  style={[styles.addBreedButton, { borderColor: colors.accent }]}
+                  onPress={addBreedEntry}
+                >
+                  <Plus size={20} color={colors.accent} />
+                  <Text style={[styles.addBreedButtonText, { color: colors.accent }]}>Add Another Breed</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+          {eventType !== 'acquired' && (
+            <>
+              <View style={styles.inputGroup}>
+                <View style={styles.labelRow}>
+                  <Hash size={16} color="#6b7280" />
+                  <Text style={styles.label}>Quantity *</Text>
+                </View>
+                <TextInput
+                  style={styles.input}
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  placeholder="1"
+                  placeholderTextColor="#9ca3af"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <BreedPicker
+                  label="Breed (optional)"
+                  value={breed}
+                  onChange={setBreed}
+                  breeds={CHICKEN_BREEDS}
+                />
+              </View>
+            </>
+          )}
 
           {(eventType === 'death' || eventType === 'consumed') && (
             <View style={styles.inputGroup}>
@@ -212,30 +405,32 @@ export default function AddChickenEventScreen() {
             </View>
           )}
 
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <User size={16} color="#6b7280" />
-              <Text style={styles.label}>Sex *</Text>
+          {eventType === 'acquired' && (
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <User size={16} color="#6b7280" />
+                <Text style={styles.label}>Sex *</Text>
+              </View>
+              <View style={styles.sexButtons}>
+                <TouchableOpacity 
+                  style={[styles.sexButton, sex === 'M' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                  onPress={() => setSex('M')}
+                >
+                  <Text style={[styles.sexButtonText, sex === 'M' && styles.sexButtonTextActive]}>
+                    Rooster
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.sexButton, sex === 'F' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                  onPress={() => setSex('F')}
+                >
+                  <Text style={[styles.sexButtonText, sex === 'F' && styles.sexButtonTextActive]}>
+                    Hen
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.sexButtons}>
-              <TouchableOpacity 
-                style={[styles.sexButton, sex === 'M' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                onPress={() => setSex('M')}
-              >
-                <Text style={[styles.sexButtonText, sex === 'M' && styles.sexButtonTextActive]}>
-                  Rooster
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.sexButton, sex === 'F' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                onPress={() => setSex('F')}
-              >
-                <Text style={[styles.sexButtonText, sex === 'F' && styles.sexButtonTextActive]}>
-                  Hen
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
 
           {eventType === 'acquired' && (
             <View style={styles.inputGroup}>
@@ -595,5 +790,51 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     fontSize: 14,
     paddingVertical: 32,
+  },
+  breedEntryCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  breedEntryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  breedEntryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  breedEntryRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  breedEntryLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  breedEntryInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+  },
+  addBreedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    borderWidth: 2,
+    borderRadius: 12,
+    borderStyle: 'dashed',
+    marginTop: 8,
+  },
+  addBreedButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
