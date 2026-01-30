@@ -601,24 +601,34 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     
     // Auto-create individual animals for acquired events
     if (event.type === 'acquired' && event.quantity > 0) {
-      // Create individual animals directly with proper numbering
       const newAnimals: IndividualAnimal[] = [];
-      const existingNumbers = animals
-        .filter(a => a.type === 'chicken' && a.breed === (event.breed || 'Unknown'))
-        .map(a => a.number || 0);
-      const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
       
-      for (let i = 0; i < event.quantity; i++) {
-        newAnimals.push({
-          id: createId(),
-          type: 'chicken',
-          breed: event.breed || 'Unknown',
-          dateAdded: event.date,
-          status: 'alive',
-          sex: event.sex,
-          number: startNumber + i,
-          eventId: newEvent.id, // Link to this event
-        });
+      // Support both legacy single-breed and new multi-breed structure
+      const breedsToProcess = event.breeds && event.breeds.length > 0 
+        ? event.breeds 
+        : [{ breed: event.breed || 'Unknown', quantity: event.quantity, cost: event.cost }];
+      
+      // Process each breed entry
+      for (const breedEntry of breedsToProcess) {
+        const existingNumbers = animals
+          .filter(a => a.type === 'chicken' && a.breed === breedEntry.breed)
+          .map(a => a.number || 0);
+        const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
+        
+        for (let i = 0; i < breedEntry.quantity; i++) {
+          newAnimals.push({
+            id: createId(),
+            type: 'chicken',
+            breed: breedEntry.breed,
+            dateAdded: event.date,
+            status: 'alive',
+            sex: event.sex,
+            number: startNumber + i,
+            stage: event.stage || 'mature',
+            hatchDate: event.hatchDate,
+            eventId: newEvent.id,
+          });
+        }
       }
       
       if (newAnimals.length > 0) {
@@ -702,22 +712,33 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     // Auto-create individual animals for acquired events
     if (event.type === 'acquired' && event.quantity > 0) {
       const newAnimals: IndividualAnimal[] = [];
-      const existingNumbers = animals
-        .filter(a => a.type === 'duck' && a.breed === (event.breed || 'Unknown'))
-        .map(a => a.number || 0);
-      const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
       
-      for (let i = 0; i < event.quantity; i++) {
-        newAnimals.push({
-          id: createId(),
-          type: 'duck',
-          breed: event.breed || 'Unknown',
-          dateAdded: event.date,
-          status: 'alive',
-          sex: event.sex,
-          number: startNumber + i,
-          eventId: newEvent.id,
-        });
+      // Support both legacy single-breed and new multi-breed structure
+      const breedsToProcess = event.breeds && event.breeds.length > 0 
+        ? event.breeds 
+        : [{ breed: event.breed || 'Unknown', quantity: event.quantity, cost: event.cost }];
+      
+      // Process each breed entry
+      for (const breedEntry of breedsToProcess) {
+        const existingNumbers = animals
+          .filter(a => a.type === 'duck' && a.breed === breedEntry.breed)
+          .map(a => a.number || 0);
+        const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
+        
+        for (let i = 0; i < breedEntry.quantity; i++) {
+          newAnimals.push({
+            id: createId(),
+            type: 'duck',
+            breed: breedEntry.breed,
+            dateAdded: event.date,
+            status: 'alive',
+            sex: event.sex,
+            number: startNumber + i,
+            stage: event.stage || 'mature',
+            hatchDate: event.hatchDate,
+            eventId: newEvent.id,
+          });
+        }
       }
       
       if (newAnimals.length > 0) {
@@ -984,6 +1005,76 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       }
     }
   }, [animals, chickenHistory, updateChickenHistoryEvent, deleteChickenHistoryEvent]);
+
+  // Convert immature animals (chicks/ducklings/kits) to mature stage
+  const matureAnimals = useCallback(async (params: {
+    animalIds: string[];
+    maleCount: number;
+    femaleCount: number;
+    targetBreed?: string;
+  }) => {
+    const { animalIds, maleCount, femaleCount, targetBreed } = params;
+    
+    if (animalIds.length !== (maleCount + femaleCount)) {
+      throw new Error('Male + Female count must equal total animals selected');
+    }
+
+    const animalsToMature = animals.filter(a => animalIds.includes(a.id));
+    if (animalsToMature.length === 0) return;
+
+    const animalType = animalsToMature[0].type;
+    const maturedAnimals: IndividualAnimal[] = [];
+    const today = getLocalDateString();
+
+    // Create mature animals with sex assignments
+    let maleAssigned = 0;
+    let femaleAssigned = 0;
+
+    for (const animal of animalsToMature) {
+      const sex = maleAssigned < maleCount ? 'M' : 'F';
+      if (sex === 'M') maleAssigned++;
+      else femaleAssigned++;
+
+      maturedAnimals.push({
+        ...animal,
+        stage: (animalType === 'chicken' || animalType === 'duck') ? 'mature' : 'adult',
+        sex,
+        breed: targetBreed || animal.breed,
+      });
+    }
+
+    // Update animals in state
+    const updatedAnimals = animals.map(a => {
+      const matured = maturedAnimals.find(m => m.id === a.id);
+      return matured || a;
+    });
+    
+    setAnimals(updatedAnimals);
+    await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updatedAnimals));
+
+    // Create history event for the maturation
+    if (animalType === 'chicken') {
+      await addChickenHistoryEvent({
+        type: 'acquired',
+        date: today,
+        quantity: animalsToMature.length,
+        breed: targetBreed || animalsToMature[0].breed,
+        stage: 'mature',
+        notes: `Matured from chicks: ${maleCount} roosters, ${femaleCount} hens`,
+      });
+    } else if (animalType === 'duck') {
+      await addDuckHistoryEvent({
+        type: 'acquired',
+        date: today,
+        quantity: animalsToMature.length,
+        breed: targetBreed || animalsToMature[0].breed,
+        stage: 'mature',
+        notes: `Matured from ducklings: ${maleCount} drakes, ${femaleCount} hens`,
+      });
+    }
+
+    return maturedAnimals;
+  }, [animals, addChickenHistoryEvent, addDuckHistoryEvent]);
 
   const getAliveAnimals = useCallback((type?: 'chicken' | 'rabbit' | 'goat' | 'duck', breed?: string) => {
     return animals.filter(a => 
@@ -1289,6 +1380,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     addAnimalsBatch,
     updateAnimal,
     removeAnimal,
+    matureAnimals,
     getAliveAnimals,
     getAllAnimals,
     getNextAnimalNumber,
