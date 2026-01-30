@@ -634,7 +634,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       // Process each breed entry
       for (const breedEntry of breedsToProcess) {
         const existingNumbers = animals
-          .filter(a => a.type === 'chicken' && a.breed === breedEntry.breed)
+          .filter(a => a.type === 'chicken')
           .map(a => a.number || 0);
         const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
         

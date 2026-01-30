@@ -10,7 +10,7 @@ import BreedPicker from "@/components/BreedPicker";
 import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function EditChickenScreen() {
-  const { updateChicken, chickens } = useLivestock();
+  const { updateChicken, chickens, chickenHistory } = useLivestock();
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -21,6 +21,15 @@ export default function EditChickenScreen() {
   const [quantity, setQuantity] = useState("1");
   const [color, setColor] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Get unique breeds from history
+  const availableBreeds = Array.from(
+    new Set(
+      chickenHistory.flatMap(event => 
+        event.breeds?.map(b => b.breed).filter(Boolean) || (event.breed ? [event.breed] : [])
+      )
+    )
+  ).sort();
 
   useEffect(() => {
     const chicken = chickens.find(c => c.id === id);
@@ -76,7 +85,7 @@ export default function EditChickenScreen() {
             label="Breed *"
             value={breed}
             onChange={setBreed}
-            breeds={CHICKEN_BREEDS}
+            breeds={availableBreeds}
             placeholder="Select chicken breed"
           />
         </View>
