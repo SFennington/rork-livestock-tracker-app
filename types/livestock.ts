@@ -10,14 +10,24 @@ export interface Chicken {
   notes?: string;
 }
 
+export interface BreedEntry {
+  breed: string;
+  quantity: number;
+  cost?: number;
+  notes?: string;
+}
+
 export interface ChickenHistoryEvent {
   id: string;
   date: string;
   type: 'acquired' | 'death' | 'sold' | 'consumed';
   quantity: number;
-  breed?: string;
+  breed?: string; // Legacy field - kept for backward compatibility
+  breeds?: BreedEntry[]; // New multi-breed support
   cost?: number;
   sex?: 'M' | 'F';
+  stage?: 'chick' | 'mature'; // Lifecycle stage
+  hatchDate?: string; // For chicks
   notes?: string;
   chickenId?: string;
 }
@@ -39,9 +49,12 @@ export interface DuckHistoryEvent {
   date: string;
   type: 'acquired' | 'death' | 'sold' | 'consumed';
   quantity: number;
-  breed?: string;
+  breed?: string; // Legacy field - kept for backward compatibility
+  breeds?: BreedEntry[]; // New multi-breed support
   cost?: number;
   sex?: 'M' | 'F';
+  stage?: 'duckling' | 'mature'; // Lifecycle stage
+  hatchDate?: string; // For ducklings
   notes?: string;
   duckId?: string;
 }
@@ -221,6 +234,8 @@ export interface IndividualAnimal {
   breed: string;
   name?: string;
   number: number;
+  stage?: 'chick' | 'duckling' | 'kit' | 'mature' | 'adult'; // Lifecycle stage
+  hatchDate?: string; // Birth/hatch date for immature animals
   dateAdded: string;
   status: 'alive' | 'dead' | 'consumed' | 'sold';
   sex?: 'M' | 'F';

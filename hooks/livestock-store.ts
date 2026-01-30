@@ -83,6 +83,7 @@ const STORAGE_KEYS = {
   DUCK_HISTORY: 'livestock_duck_history',
   ANIMALS: 'livestock_animals',
   MIGRATION_V2: 'livestock_migration_v2',
+  MIGRATION_V3: 'livestock_migration_v3_multibreed_stage',
 };
 
 export const [LivestockProvider, useLivestock] = createContextHook(() => {
@@ -103,6 +104,73 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   const [animals, setAnimals] = useState<IndividualAnimal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Migration V3: Convert single-breed events to multi-breed structure and add stage support
+  const migrateToMultiBreedAndStage = useCallback((
+    chickenEvents: ChickenHistoryEvent[],
+    duckEvents: DuckHistoryEvent[],
+    individualAnimals: IndividualAnimal[]
+  ): { 
+    chickenHistory: ChickenHistoryEvent[], 
+    duckHistory: DuckHistoryEvent[], 
+    animals: IndividualAnimal[] 
+  } => {
+    const migratedChickenHistory = chickenEvents.map(event => {
+      // If already has breeds array, skip migration
+      if (event.breeds && event.breeds.length > 0) {
+        return event;
+      }
+      // Convert single breed to breeds array
+      if (event.breed) {
+        return {
+          ...event,
+          breeds: [{
+            breed: event.breed,
+            quantity: event.quantity,
+            cost: event.cost,
+          }],
+          stage: event.stage || 'mature', // Default to mature if not specified
+        };
+      }
+      // If no breed, keep as is but add default stage
+      return { ...event, stage: event.stage || 'mature' };
+    });
+
+    const migratedDuckHistory = duckEvents.map(event => {
+      if (event.breeds && event.breeds.length > 0) {
+        return event;
+      }
+      if (event.breed) {
+        return {
+          ...event,
+          breeds: [{
+            breed: event.breed,
+            quantity: event.quantity,
+            cost: event.cost,
+          }],
+          stage: event.stage || 'mature',
+        };
+      }
+      return { ...event, stage: event.stage || 'mature' };
+    });
+
+    const migratedAnimals = individualAnimals.map(animal => {
+      // Add default stage if not present
+      if (!animal.stage) {
+        return {
+          ...animal,
+          stage: (animal.type === 'chicken' || animal.type === 'duck') ? 'mature' : 'adult',
+        };
+      }
+      return animal;
+    });
+
+    return {
+      chickenHistory: migratedChickenHistory,
+      duckHistory: migratedDuckHistory,
+      animals: migratedAnimals,
+    };
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       const [
@@ -121,7 +189,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         chickenHistoryData,
         duckHistoryData,
         animalsData,
-        migrationV2Data
+        migrationV2Data,
+        migrationV3Data
       ] = await Promise.all([
         storage.getItem(STORAGE_KEYS.CHICKENS),
         storage.getItem(STORAGE_KEYS.DUCKS),
@@ -139,6 +208,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         storage.getItem(STORAGE_KEYS.DUCK_HISTORY),
         storage.getItem(STORAGE_KEYS.ANIMALS),
         storage.getItem(STORAGE_KEYS.MIGRATION_V2),
+        storage.getItem(STORAGE_KEYS.MIGRATION_V3),
       ]);
 
       if (chickensData) setChickens(JSON.parse(chickensData));
@@ -153,8 +223,11 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       if (feedData) setFeedRecords(JSON.parse(feedData));
       if (expensesData) setExpenses(JSON.parse(expensesData));
       if (incomeData) setIncome(JSON.parse(incomeData));
-      if (chickenHistoryData) setChickenHistory(JSON.parse(chickenHistoryData));
-      if (duckHistoryData) setDuckHistory(JSON.parse(duckHistoryData));
+      
+      // Parse history data for potential migration
+      let loadedChickenHistory: ChickenHistoryEvent[] = chickenHistoryData ? JSON.parse(chickenHistoryData) : [];
+      let loadedDuckHistory: DuckHistoryEvent[] = duckHistoryData ? JSON.parse(duckHistoryData) : [];
+      let loadedAnimals: IndividualAnimal[] = animalsData ? JSON.parse(animalsData) : [];
       
       // Migration: convert breed counts to individual animals
       const migratedV2 = migrationV2Data === 'true';
@@ -195,12 +268,32 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           }
         }
         
-        setAnimals(generatedAnimals);
+        loadedAnimals = generatedAnimals;
         await storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(generatedAnimals));
         await storage.setItem(STORAGE_KEYS.MIGRATION_V2, 'true');
-      } else if (animalsData) {
-        setAnimals(JSON.parse(animalsData));
       }
+
+      // Migration V3: Multi-breed and stage support
+      const migratedV3 = migrationV3Data === 'true';
+      if (!migratedV3 && (loadedChickenHistory.length > 0 || loadedDuckHistory.length > 0 || loadedAnimals.length > 0)) {
+        const migrated = migrateToMultiBreedAndStage(loadedChickenHistory, loadedDuckHistory, loadedAnimals);
+        loadedChickenHistory = migrated.chickenHistory;
+        loadedDuckHistory = migrated.duckHistory;
+        loadedAnimals = migrated.animals;
+        
+        await Promise.all([
+          storage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(loadedChickenHistory)),
+          storage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify(loadedDuckHistory)),
+          storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(loadedAnimals)),
+          storage.setItem(STORAGE_KEYS.MIGRATION_V3, 'true'),
+        ]);
+      }
+
+      // Set migrated data
+      setChickenHistory(loadedChickenHistory);
+      setDuckHistory(loadedDuckHistory);
+      setAnimals(loadedAnimals);
+
       // After loading, persist any fixed ids
       try {
         await Promise.all([
