@@ -419,8 +419,6 @@ export default function AddChickenEventScreen() {
             </View>
           )}
 
-
-
           <View style={styles.inputGroup}>
             <View style={styles.labelRow}>
               <FileText size={16} color="#6b7280" />
