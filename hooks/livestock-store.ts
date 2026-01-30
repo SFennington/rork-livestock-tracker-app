@@ -1392,6 +1392,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     deleteChickenHistoryEvent,
     getChickenCountOnDate,
     getRoostersAndHensCount,
+    getChickenStageCount,
     addDuckHistoryEvent,
     updateDuckHistoryEvent,
     deleteDuckHistoryEvent,
