@@ -44,14 +44,14 @@ export default function GroupDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={[styles.topHeader, { backgroundColor: colors.accent }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color={colors.text} />
+          <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{group.name}</Text>
+        <View style={styles.topHeaderContent}>
+          <Text style={styles.topHeaderTitle}>{group.name}</Text>
         </View>
-        <Text style={[styles.headerBirdCount, { color: colors.textSecondary }]}>
+        <Text style={styles.topHeaderBirdCount}>
           {groupAnimals.length} birds
         </Text>
       </View>
@@ -189,6 +189,25 @@ export default function GroupDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  topHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    gap: 12,
+  },
+  topHeaderContent: {
+    flex: 1,
+  },
+  topHeaderTitle: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    color: "#fff",
+  },
+  topHeaderBirdCount: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#fff",
   },
   header: {
     flexDirection: "row",

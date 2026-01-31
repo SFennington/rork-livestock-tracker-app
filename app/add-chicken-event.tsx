@@ -106,7 +106,6 @@ export default function AddChickenEventScreen() {
         hatchDate: stage === 'chick' ? hatchDate || undefined : undefined,
         groupId: groupId || undefined,
         notes: notes || undefined,
-        breed: undefined, // Explicitly exclude legacy breed field for multi-breed events
       });
     } else {
       // For other event types, use legacy single-breed approach
