@@ -249,8 +249,6 @@ export default function AddChickenEventScreen() {
     setBreeds(updated);
   };
 
-  const chickenGroups = getGroupsByType('chicken');
-
   return (
     <KeyboardAvoidingView 
       style={{ flex: 1 }}
