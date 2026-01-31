@@ -393,14 +393,25 @@ export default function AddChickenEventScreen() {
                     <Calendar size={16} color="#6b7280" />
                     <Text style={styles.label}>Hatch Date (optional)</Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.input}
-                    onPress={() => setShowHatchCalendar(true)}
-                  >
-                    <Text style={{ color: hatchDate ? colors.text : '#9ca3af' }}>
-                      {hatchDate || 'Select hatch date'}
-                    </Text>
-                  </TouchableOpacity>
+                  {hatchDate ? (
+                    <View style={styles.selectedDateContainer}>
+                      <View style={[styles.selectedDateDisplay, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <Text style={[styles.selectedDateText, { color: colors.text }]}>{hatchDate}</Text>
+                        <TouchableOpacity onPress={() => setHatchDate('')}>
+                          <X size={18} color={colors.textMuted} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.input}
+                      onPress={() => setShowHatchCalendar(true)}
+                    >
+                      <Text style={{ color: '#9ca3af' }}>
+                        Select hatch date
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                   {showHatchCalendar && (
                     <DatePicker
                       label=""
@@ -464,30 +475,48 @@ export default function AddChickenEventScreen() {
                       placeholder="Select breed"
                     />
                     
-                    <View style={styles.breedEntryRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Roosters</Text>
+                    {stage === 'chick' ? (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Quantity</Text>
                         <TextInput
                           style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
-                          value={String(breedEntry.roosters)}
-                          onChangeText={(text) => updateBreedEntry(index, 'roosters', parseInt(text) || 0)}
+                          value={String(breedEntry.roosters + breedEntry.hens)}
+                          onChangeText={(text) => {
+                            const qty = parseInt(text) || 0;
+                            updateBreedEntry(index, 'roosters', qty);
+                            updateBreedEntry(index, 'hens', 0);
+                          }}
                           placeholder="0"
                           placeholderTextColor="#9ca3af"
                           keyboardType="numeric"
                         />
                       </View>
-                      <View style={{ flex: 1, marginLeft: 8 }}>
-                        <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Hens</Text>
-                        <TextInput
-                          style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
-                          value={String(breedEntry.hens)}
-                          onChangeText={(text) => updateBreedEntry(index, 'hens', parseInt(text) || 0)}
-                          placeholder="0"
-                          placeholderTextColor="#9ca3af"
-                          keyboardType="numeric"
-                        />
+                    ) : (
+                      <View style={styles.breedEntryRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Roosters</Text>
+                          <TextInput
+                            style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
+                            value={String(breedEntry.roosters)}
+                            onChangeText={(text) => updateBreedEntry(index, 'roosters', parseInt(text) || 0)}
+                            placeholder="0"
+                            placeholderTextColor="#9ca3af"
+                            keyboardType="numeric"
+                          />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 8 }}>
+                          <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Hens</Text>
+                          <TextInput
+                            style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
+                            value={String(breedEntry.hens)}
+                            onChangeText={(text) => updateBreedEntry(index, 'hens', parseInt(text) || 0)}
+                            placeholder="0"
+                            placeholderTextColor="#9ca3af"
+                            keyboardType="numeric"
+                          />
+                        </View>
                       </View>
-                    </View>
+                    )}
                     
                     <View style={{ marginTop: 8 }}>
                       <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Cost (optional)</Text>
@@ -985,5 +1014,21 @@ const styles = StyleSheet.create({
   addBreedButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  selectedDateContainer: {
+    marginTop: 4,
+  },
+  selectedDateDisplay: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  selectedDateText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
