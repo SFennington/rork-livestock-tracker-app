@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { useFinancialStore } from "@/hooks/financial-store";
@@ -7,9 +7,10 @@ import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, FileText, Hash } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
+import BreedPicker from "@/components/BreedPicker";
 
 export default function AddIncomeScreen() {
-  const { addIncome, income, expenses, eggProduction } = useLivestock();
+  const { addIncome, income, expenses, eggProduction, getGroupsByType } = useLivestock();
   const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
@@ -19,6 +20,36 @@ export default function AddIncomeScreen() {
   const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'duck'>('chicken');
   const [description, setDescription] = useState("");
+  const [groupId, setGroupId] = useState<string>("");
+
+  // Get groups for current livestock type
+  const currentGroups = useMemo(() => {
+    return getGroupsByType(livestockType);
+  }, [livestockType, getGroupsByType]);
+
+  // Auto-select group if only one exists
+  useEffect(() => {
+    if (currentGroups.length === 1) {
+      setGroupId(currentGroups[0].id);
+    } else if (currentGroups.length === 0) {
+      setGroupId("");
+    }
+  }, [currentGroups]);
+
+  // Group options for picker
+  const groupOptions = ['None', ...currentGroups.map(g => g.name)];
+  
+  const getGroupIdFromName = (name: string) => {
+    if (name === 'None') return '';
+    const group = currentGroups.find(g => g.name === name);
+    return group?.id || '';
+  };
+  
+  const getGroupNameFromId = (id: string) => {
+    if (!id) return 'None';
+    const group = currentGroups.find(g => g.id === id);
+    return group?.name || 'None';
+  };
 
   const totalAmount = (parseFloat(unitPrice) || 0) * (parseInt(quantity) || 0);
 
@@ -52,6 +83,7 @@ export default function AddIncomeScreen() {
       livestockType,
       quantity: qty,
       description,
+      groupId: groupId || undefined,
     });
 
     // Calculate and save ROI snapshot
@@ -148,6 +180,21 @@ export default function AddIncomeScreen() {
             )}
           </View>
         </View>
+
+        {currentGroups.length > 0 && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Group (optional)</Text>
+            <BreedPicker
+              label=""
+              value={getGroupNameFromId(groupId)}
+              onChange={(name) => setGroupId(getGroupIdFromName(name))}
+              breeds={groupOptions}
+              placeholder="Select Group"
+              maxVisibleItems={6}
+              modalTitle="Select Group"
+            />
+          </View>
+        )}
 
         {settings.incomeQuickSelects.length > 0 && (
           <View style={styles.inputGroup}>
