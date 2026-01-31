@@ -6,7 +6,7 @@ import { router } from "expo-router";
 import { useState, useMemo } from "react";
 
 export default function LivestockScreen() {
-  const { chickenHistory, duckHistory, rabbits, isLoading, getChickenCountOnDate, getDuckCountOnDate, getRoostersAndHensCount, getChickenStageCount, getDrakesAndHensCount, getAliveAnimals } = useLivestock();
+  const { chickenHistory, duckHistory, rabbits, isLoading, getChickenCountOnDate, getDuckCountOnDate, getRoostersAndHensCount, getChickenStageCount, getDrakesAndHensCount, getAliveAnimals, groups, getGroupsByType } = useLivestock();
   const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<'chickens' | 'ducks' | 'rabbits'>('chickens');
   const rabbitsDisabled = true;
@@ -35,6 +35,9 @@ export default function LivestockScreen() {
   const sortedDuckHistory = useMemo(() => {
     return [...duckHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [duckHistory]);
+
+  const chickenGroups = useMemo(() => getGroupsByType('chicken'), [getGroupsByType]);
+  const duckGroups = useMemo(() => getGroupsByType('duck'), [getGroupsByType]);
 
   const today = new Date().toISOString().split('T')[0];
   
@@ -251,116 +254,55 @@ export default function LivestockScreen() {
         {activeTab === 'chickens' ? (
           <>
             <View style={styles.historyHeader}>
-              <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="chicken-count-card">
-                <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Current Chicken Count</Text>
-                <Text style={[styles.currentCountValue, { color: colors.primary }]}>{currentChickenCount}</Text>
-                <View style={styles.chickenTypeCounts}>
-                  <View style={styles.chickenTypeItem}>
-                    <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Roosters</Text>
-                    <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{roosters}</Text>
-                  </View>
-                  <View style={styles.chickenTypeItem}>
-                    <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Hens</Text>
-                    <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{hens}</Text>
-                  </View>
-                  <View style={styles.chickenTypeItem}>
-                    <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Chicks</Text>
-                    <View style={styles.chickCountWithButton}>
-                      <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{chicks}</Text>
-                      {chicks > 0 && (
-                        <TouchableOpacity
-                          style={[styles.matureButton, { backgroundColor: colors.accent }]}
-                          onPress={() => {
-                            const aliveChicks = getAliveAnimals('chicken').filter(a => a.stage === 'chick');
-                            const chickIds = aliveChicks.map(a => a.id).join(',');
-                            router.push({
-                              pathname: '/mature-animals',
-                              params: { animalIds: chickIds, type: 'chicken' }
-                            });
-                          }}
-                        >
-                          <ArrowUp size={14} color="#fff" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
-                </View>
-                {chickenBreedBreakdown.length > 0 && (
-                  <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
-                    {chickenBreedBreakdown.map(([breed, count]) => (
-                      <View key={breed} style={styles.breedItem}>
-                        <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{getFullBreedName(breed)}</Text>
-                        <View style={styles.breedItemRight}>
-                          <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
-                          <TouchableOpacity 
-                            style={styles.breedMenuButton}
-                            onPress={() => router.push({
-                              pathname: '/manage-animals',
-                              params: { type: 'chicken', breed }
-                            })}
-                          >
-                            <MoreVertical size={16} color={colors.textMuted} />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Chicken Groups</Text>
               <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
                 <Plus size={20} color="#fff" />
-                <Text style={styles.addButtonText}>Add Event</Text>
+                <Text style={styles.addButtonText}>Create Group</Text>
               </TouchableOpacity>
             </View>
 
-            {sortedChickenHistory.length === 0 ? (
+            {chickenGroups.length === 0 ? (
               <View style={styles.emptyState}>
-                <Calendar size={48} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.text }]}>No chicken events</Text>
-                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Log acquisitions, deaths, or sales</Text>
+                <Bird size={48} color={colors.textMuted} />
+                <Text style={[styles.emptyText, { color: colors.text }]}>No chicken groups</Text>
+                <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Create a group to start tracking chickens</Text>
               </View>
             ) : (
               <View style={styles.list}>
-                {sortedChickenHistory.map((event) => {
-                  const Icon = event.type === 'acquired' ? TrendingUp : event.type === 'sold' ? ShoppingCart : TrendingDown;
-                  const iconColor = event.type === 'acquired' ? '#10b981' : event.type === 'sold' ? '#3b82f6' : event.type === 'consumed' ? '#f59e0b' : '#ef4444';
-                  const typeLabel = event.type === 'acquired' ? 'Acquired' : event.type === 'sold' ? 'Sold' : event.type === 'consumed' ? 'Consumed' : 'Death/Loss';
+                {chickenGroups.map((group) => {
+                  const groupAnimals = getAliveAnimals('chicken').filter(a => a.groupId === group.id);
+                  const groupCount = groupAnimals.length;
                   
                   return (
-                    <View key={event.id} style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID={`chicken-event-${event.id}`}>
-                      <View style={styles.historyCardHeader}>
-                        <View style={[styles.historyIconContainer, { backgroundColor: colors.surface }]}>
-                          <Icon size={20} color={iconColor} />
+                    <TouchableOpacity
+                      key={group.id}
+                      style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => router.push({
+                        pathname: '/group-detail',
+                        params: { groupId: group.id, type: 'chicken' }
+                      })}
+                    >
+                      <View style={styles.groupCardHeader}>
+                        <View style={[styles.groupIconContainer, { backgroundColor: colors.surface }]}>
+                          <Bird size={24} color={colors.accent} />
                         </View>
-                        <View style={styles.historyCardContent}>
-                          <Text style={[styles.historyCardTitle, { color: colors.text }]}>{typeLabel}</Text>
-                          <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
-                          {event.breed ? (
-                            <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>
-                              {getFullBreedName(event.breed)}
-                              {event.sex && (
-                                <Text> • {event.sex === 'M' ? 'Roosters' : 'Hens'}</Text>
-                              )}
-                            </Text>
-                          ) : null}
-                        </View>
-                        <View style={styles.historyCardRight}>
-                          <Text style={[styles.historyCardQuantityText, { color: iconColor }]}>
-                            {event.type === 'acquired' ? '+' : '-'}{event.quantity}
+                        <View style={styles.groupCardContent}>
+                          <Text style={[styles.groupCardTitle, { color: colors.text }]}>{group.name}</Text>
+                          <Text style={[styles.groupCardDate, { color: colors.textSecondary }]}>
+                            Created {group.dateCreated}
                           </Text>
-                          <TouchableOpacity 
-                            style={styles.editButton}
-                            onPress={() => router.push(`/edit-chicken-event/${event.id}`)}
-                            testID={`edit-chicken-event-${event.id}`}
-                          >
-                            <Edit2 size={16} color={colors.textMuted} />
-                          </TouchableOpacity>
+                        </View>
+                        <View style={styles.groupCardRight}>
+                          <Text style={[styles.groupCardCount, { color: colors.primary }]}>{groupCount}</Text>
+                          <Text style={[styles.groupCardCountLabel, { color: colors.textMuted }]}>birds</Text>
                         </View>
                       </View>
-                      {event.notes && (
-                        <Text style={[styles.historyCardNotes, { color: colors.textSecondary, borderTopColor: colors.border }]}>{event.notes}</Text>
+                      {group.notes && (
+                        <Text style={[styles.groupCardNotes, { color: colors.textSecondary }]} numberOfLines={2}>
+                          {group.notes}
+                        </Text>
                       )}
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -789,5 +731,55 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    marginBottom: 4,
+  },
+  groupCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  groupCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  groupIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  groupCardContent: {
+    flex: 1,
+  },
+  groupCardTitle: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    marginBottom: 4,
+  },
+  groupCardDate: {
+    fontSize: 12,
+  },
+  groupCardRight: {
+    alignItems: "flex-end",
+  },
+  groupCardCount: {
+    fontSize: 24,
+    fontWeight: "700" as const,
+  },
+  groupCardCountLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  groupCardNotes: {
+    marginTop: 12,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, Modal } from "react-native";
 import { useState } from "react";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
@@ -12,10 +12,18 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 import type { BreedEntry } from "@/types/livestock";
 
 export default function AddChickenEventScreen() {
-  const { addChickenHistoryEvent, getAliveAnimals, updateAnimal, groups, getGroupsByType } = useLivestock();
+  const { addChickenHistoryEvent, getAliveAnimals, updateAnimal, groups, getGroupsByType, addGroup } = useLivestock();
   const { settings } = useAppSettings();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams();
+  const preselectedGroupId = params.groupId as string | undefined;
+  
+  const [step, setStep] = useState<'group' | 'event'>(preselectedGroupId ? 'event' : 'group');
+  const [groupName, setGroupName] = useState('');
+  const [groupNotes, setGroupNotes] = useState('');
+  const [useExistingGroup, setUseExistingGroup] = useState(false);
+  
   const [eventType, setEventType] = useState(settings.chickenEventTypes[0] || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [stage, setStage] = useState<'chick' | 'mature'>('mature');
@@ -31,7 +39,7 @@ export default function AddChickenEventScreen() {
   const [cost, setCost] = useState("");
   
   const [sex, setSex] = useState<'M' | 'F' | ''>('');
-  const [groupId, setGroupId] = useState<string>('');
+  const [groupId, setGroupId] = useState<string>(preselectedGroupId || '');
   const [notes, setNotes] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedAnimalIds, setSelectedAnimalIds] = useState<string[]>([]);
@@ -44,6 +52,32 @@ export default function AddChickenEventScreen() {
   };
 
   const handleSave = async () => {
+    // Step 1: Create or select group
+    if (step === 'group') {
+      if (useExistingGroup) {
+        if (!groupId) {
+          Alert.alert("Error", "Please select a group");
+          return;
+        }
+      } else {
+        if (!groupName.trim()) {
+          Alert.alert("Error", "Please enter a group name");
+          return;
+        }
+        // Create new group
+        const newGroup = await addGroup({
+          name: groupName,
+          type: 'chicken',
+          dateCreated: new Date().toISOString().split('T')[0],
+          notes: groupNotes || undefined,
+        });
+        setGroupId(newGroup.id);
+      }
+      setStep('event');
+      return;
+    }
+    
+    // Step 2: Create event
     // Validate breeds array for acquired events
     if (eventType === 'acquired') {
       const validBreeds = breeds.filter(b => b.breed && (b.roosters > 0 || b.hens > 0));
@@ -147,6 +181,80 @@ export default function AddChickenEventScreen() {
       showsVerticalScrollIndicator={false}
     >
         <View style={styles.form}>
+          {step === 'group' ? (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={[styles.header, { color: colors.text }]}>Create or Select Group</Text>
+                <Text style={[styles.subheader, { color: colors.textSecondary }]}>Events are organized within groups</Text>
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <View style={styles.groupTypeButtons}>
+                  <TouchableOpacity 
+                    style={[styles.groupTypeButton, !useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                    onPress={() => setUseExistingGroup(false)}
+                  >
+                    <Text style={[styles.groupTypeButtonText, !useExistingGroup && styles.groupTypeButtonTextActive]}>
+                      Create New
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.groupTypeButton, useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                    onPress={() => setUseExistingGroup(true)}
+                  >
+                    <Text style={[styles.groupTypeButtonText, useExistingGroup && styles.groupTypeButtonTextActive]}>
+                      Use Existing
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {!useExistingGroup ? (
+                <>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Group Name *</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={groupName}
+                      onChangeText={setGroupName}
+                      placeholder="e.g., Spring 2026 Batch"
+                      placeholderTextColor="#9ca3af"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Notes (optional)</Text>
+                    <TextInput
+                      style={[styles.input, styles.textArea]}
+                      value={groupNotes}
+                      onChangeText={setGroupNotes}
+                      placeholder="Group description or notes"
+                      placeholderTextColor="#9ca3af"
+                      multiline
+                      numberOfLines={3}
+                    />
+                  </View>
+                </>
+              ) : (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Select Group *</Text>
+                  <View style={{ gap: 8 }}>
+                    {chickenGroups.map((group) => (
+                      <TouchableOpacity 
+                        key={group.id}
+                        style={[styles.sexButton, groupId === group.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                        onPress={() => setGroupId(group.id)}
+                      >
+                        <Text style={[styles.sexButtonText, groupId === group.id && styles.sexButtonTextActive]}>
+                          {group.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
             <View style={styles.eventTypeButtons}>
@@ -434,13 +542,20 @@ export default function AddChickenEventScreen() {
               numberOfLines={4}
             />
           </View>
+          </>
+          )}
 
           <View style={styles.buttons}>
+            {step === 'event' && (
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setStep('group')}>
+                <Text style={styles.cancelButtonText}>Back</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Add Event</Text>
+              <Text style={styles.saveButtonText}>{step === 'group' ? 'Continue' : 'Add Event'}</Text>
             </TouchableOpacity>
           </View>
       </View>
@@ -593,6 +708,35 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: "600",
+    color: "#fff",
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: "700" as const,
+    marginBottom: 4,
+  },
+  subheader: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  groupTypeButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  groupTypeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    alignItems: "center",
+  },
+  groupTypeButtonText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#6b7280",
+  },
+  groupTypeButtonTextActive: {
     color: "#fff",
   },
   sexButtons: {
