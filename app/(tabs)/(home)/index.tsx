@@ -35,10 +35,11 @@ export default function DashboardScreen() {
     const activeDucks = getAliveAnimals('duck').length;
     const activeRabbits = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
     
-    // Count roosters and hens from individual animals
+    // Count roosters, hens, and chicks from individual animals
     const aliveChickens = getAliveAnimals('chicken');
     const roosters = aliveChickens.filter(a => a.sex === 'M' && (!a.stage || a.stage === 'mature')).length;
     const hens = aliveChickens.filter(a => a.sex === 'F' && (!a.stage || a.stage === 'mature')).length;
+    const chicks = aliveChickens.filter(a => a.stage === 'chick').length;
     
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
@@ -96,6 +97,7 @@ export default function DashboardScreen() {
       avgDaysCount: actualDaysForAvg,
       roosters,
       hens,
+      chicks,
       hasDataIssue,
       totalLaid,
       totalSold,
@@ -261,9 +263,13 @@ export default function DashboardScreen() {
               return parts.length > 0 ? parts.join(', ') : '0 animals';
             })()}
           </Text>
-          {settings.enabledAnimals.chickens && (stats.roosters > 0 || stats.hens > 0) ? (
+          {settings.enabledAnimals.chickens && (stats.roosters > 0 || stats.hens > 0 || stats.chicks > 0) ? (
             <Text style={[styles.statSubtext, { color: colors.textMuted, marginTop: 4 }]}>
-              {stats.roosters} roosters, {stats.hens} hens
+              {stats.roosters > 0 && `${stats.roosters} rooster${stats.roosters !== 1 ? 's' : ''}`}
+              {stats.roosters > 0 && stats.hens > 0 && ', '}
+              {stats.hens > 0 && `${stats.hens} hen${stats.hens !== 1 ? 's' : ''}`}
+              {(stats.roosters > 0 || stats.hens > 0) && stats.chicks > 0 && ', '}
+              {stats.chicks > 0 && `${stats.chicks} chick${stats.chicks !== 1 ? 's' : ''}`}
             </Text>
           ) : null}
         </View>
