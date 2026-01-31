@@ -49,14 +49,18 @@ function RootLayoutNav() {
       >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="add-chicken" options={{ presentation: "modal", title: "Add Chicken", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="edit-chicken/[id]" options={{ presentation: "modal", title: "Edit Chicken", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-duck" options={{ presentation: "modal", title: "Add Duck", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="edit-duck/[id]" options={{ presentation: "modal", title: "Edit Duck", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-rabbit" options={{ presentation: "modal", title: "Add Rabbit", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="edit-rabbit/[id]" options={{ presentation: "modal", title: "Edit Rabbit", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-chicken-event" options={{ presentation: "modal", title: "Log Chicken Event", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-duck-event" options={{ presentation: "modal", title: "Log Duck Event", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="edit-chicken-event/[id]" options={{ presentation: "modal", title: "Edit Event", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="edit-duck-event/[id]" options={{ presentation: "modal", title: "Edit Event", headerStyle: { backgroundColor: colors.accent } }} />
-      <Stack.Screen name="add-expense" options={{ presentation: "modal", title: "Add Transaction" }} />
+      <Stack.Screen name="add-expense" options={{ presentation: "modal", title: "Add Expense" }} />
       <Stack.Screen name="add-income" options={{ presentation: "modal", title: "Add Income" }} />
+      <Stack.Screen name="add-transaction" options={{ presentation: "modal", title: "Add Transaction" }} />
       <Stack.Screen name="log-eggs" options={{ presentation: "modal", title: "Log Egg Production", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-breeding" options={{ presentation: "modal", title: "Record Breeding", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="breeding-calendar" options={{ title: "Breeding Calendar", headerStyle: { backgroundColor: colors.accent } }} />
@@ -73,6 +77,10 @@ function RootLayoutNav() {
         }} 
       />
       <Stack.Screen name="mature-animals" options={{ presentation: "modal", title: "Mature Animals", headerShown: false }} />
+      <Stack.Screen name="manage-animals" options={{ title: "Manage Animals", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="chicken-history" options={{ title: "Chicken History", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="duck-history" options={{ title: "Duck History", headerStyle: { backgroundColor: colors.accent } }} />
+      <Stack.Screen name="voice-log" options={{ presentation: "modal", title: "Voice Log", headerStyle: { backgroundColor: colors.accent } }} />
       </Stack>
     </>
   );
