@@ -9,7 +9,7 @@ import { useMemo, useEffect } from "react";
 import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
-  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate } = useLivestock();
+  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate, getDuckCountOnDate } = useLivestock();
   const loadROISnapshots = useFinancialStore(state => state.loadROISnapshots);
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
@@ -30,22 +30,17 @@ export default function DashboardScreen() {
     const totalIncome = income.reduce((sum, i) => sum + i.amount, 0);
     const activeBreedings = breedingRecords.filter(b => b.status === 'bred').length;
     const activeChickens = getChickenCountOnDate(today);
+    const activeDucks = getDuckCountOnDate(today);
     const activeRabbits = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
     const { roosters, hens } = getRoostersAndHensCount(today);
     
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
-    const recentEggs = eggProduction
-      .filter(e => new Date(e.date) >= last30Days)
-      .reduce((sum, e) => sum + e.count, 0);
+    const recentEggsRecords = eggProduction.filter(e => new Date(e.date) >= last30Days);
+    const recentEggs = recentEggsRecords.reduce((sum, e) => sum + e.count, 0);
     
-    // Calculate actual days of data available (max 30)
-    const sortedEggDates = eggProduction
-      .map(e => new Date(e.date))
-      .sort((a, b) => a.getTime() - b.getTime());
-    const earliestDate = sortedEggDates.length > 0 ? sortedEggDates[0] : new Date();
-    const daysSinceEarliest = Math.floor((new Date().getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const actualDaysForAvg = Math.min(daysSinceEarliest, 30);
+    // Calculate actual number of unique days with egg data in the last 30 days
+    const actualDaysForAvg = recentEggsRecords.length;
     
     let totalLaid = 0;
     let totalSold = 0;
@@ -88,6 +83,7 @@ export default function DashboardScreen() {
       profit: roi,
       activeBreedings,
       activeChickens,
+      activeDucks,
       activeRabbits,
       recentEggs,
       avgEggsPerDay: actualDaysForAvg > 0 ? recentEggs / actualDaysForAvg : 0,
@@ -193,7 +189,11 @@ export default function DashboardScreen() {
               <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>{stats.todayEggs}</Text>
             </View>
             <Text style={styles.statLabel}>Eggs Today</Text>
-            <Text style={styles.statSubtext}>Avg: {stats.avgEggsPerDay.toFixed(1)}/day (Last {stats.avgDaysCount} days)</Text>
+            {stats.avgDaysCount > 0 && (
+              <Text style={styles.statSubtext}>
+                Avg: {stats.avgEggsPerDay.toFixed(1)}/day (Last {stats.avgDaysCount} {stats.avgDaysCount === 1 ? 'day' : 'days'})
+              </Text>
+            )}
           </View>
         )}
 
@@ -243,18 +243,17 @@ export default function DashboardScreen() {
           <View style={styles.statHeader}>
             <Bird size={24} color={colors.text} />
             <Text style={[styles.statValue, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
-              {(settings.enabledAnimals.chickens ? stats.activeChickens : 0) + (settings.enabledAnimals.rabbits ? stats.activeRabbits : 0)}
+              {(settings.enabledAnimals.chickens ? stats.activeChickens : 0) + (settings.enabledAnimals.ducks ? (stats.activeDucks || 0) : 0)}
             </Text>
           </View>
           <Text style={[styles.statLabel, { color: colors.text }]}>Total Livestock</Text>
           <Text style={[styles.statSubtext, { color: colors.textMuted }]}>
-            {settings.enabledAnimals.chickens && settings.enabledAnimals.rabbits 
-              ? `${stats.activeChickens} chickens, ${stats.activeRabbits} rabbits`
-              : settings.enabledAnimals.chickens
-              ? `${stats.activeChickens} chickens`
-              : settings.enabledAnimals.rabbits
-              ? `${stats.activeRabbits} rabbits`
-              : '0 animals'}
+            {(() => {
+              const parts = [];
+              if (settings.enabledAnimals.chickens) parts.push(`${stats.activeChickens} chicken${stats.activeChickens !== 1 ? 's' : ''}`);
+              if (settings.enabledAnimals.ducks) parts.push(`${stats.activeDucks || 0} duck${(stats.activeDucks || 0) !== 1 ? 's' : ''}`);
+              return parts.length > 0 ? parts.join(', ') : '0 animals';
+            })()}
           </Text>
           {settings.enabledAnimals.chickens && (stats.roosters > 0 || stats.hens > 0) ? (
             <Text style={[styles.statSubtext, { color: colors.textMuted, marginTop: 4 }]}>

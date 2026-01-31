@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLivestock, useRabbitBreeding, useRabbitHealth } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { Bird, Rabbit, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, User2, Hash, Syringe, MoreVertical, ArrowUp } from "lucide-react-native";
 import { router } from "expo-router";
 import { useState, useMemo } from "react";
@@ -8,6 +9,7 @@ import { useState, useMemo } from "react";
 export default function LivestockScreen() {
   const { chickenHistory, duckHistory, rabbits, isLoading, getChickenCountOnDate, getDuckCountOnDate, getRoostersAndHensCount, getChickenStageCount, getDrakesAndHensCount, getAliveAnimals, groups, getGroupsByType } = useLivestock();
   const { colors } = useTheme();
+  const { settings } = useAppSettings();
   const [activeTab, setActiveTab] = useState<'chickens' | 'ducks' | 'rabbits'>('chickens');
   const rabbitsDisabled = true;
   const { activeBreedings } = useRabbitBreeding();
@@ -68,12 +70,14 @@ export default function LivestockScreen() {
     
     // Get counts from individual animals (primary source)
     const aliveChickens = getAliveAnimals('chicken');
+    const eventIdsWithAnimals = new Set(aliveChickens.filter(a => a.eventId).map(a => a.eventId));
+    
     for (const animal of aliveChickens) {
       const breed = animal.breed || 'Unknown';
       breakdown[breed] = (breakdown[breed] || 0) + 1;
     }
     
-    // Also compute from history events for breeds without individual animals
+    // Also compute from history events ONLY for events without individual animals
     const today = new Date().toISOString().split('T')[0];
     const sortedEvents = [...chickenHistory].sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -83,6 +87,9 @@ export default function LivestockScreen() {
     for (const event of sortedEvents) {
       if (new Date(event.date).getTime() > new Date(today).getTime()) break;
       
+      // Skip events that already have individual animals created
+      if (eventIdsWithAnimals.has(event.id)) continue;
+      
       const breed = event.breed || 'Unknown';
       if (!historyBreakdown[breed]) historyBreakdown[breed] = 0;
       
@@ -100,9 +107,13 @@ export default function LivestockScreen() {
       }
     }
     
-    return Object.entries(breakdown)
-      .filter(([_, count]) => count > 0)
-      .sort((a, b) => b[1] - a[1]);
+    const entries = Object.entries(breakdown).filter(([_, count]) => count > 0);
+    
+    // Filter out 'Unknown' if we have other real breeds
+    const hasRealBreeds = entries.some(([breed]) => breed !== 'Unknown' && breed.trim() !== '');
+    const filtered = hasRealBreeds ? entries.filter(([breed]) => breed !== 'Unknown') : entries;
+    
+    return filtered.sort((a, b) => b[1] - a[1]);
   }, [chickenHistory, getAliveAnimals]);
 
   const duckBreedBreakdown = useMemo(() => {
@@ -110,12 +121,14 @@ export default function LivestockScreen() {
     
     // Get counts from individual animals (primary source)
     const aliveDucks = getAliveAnimals('duck');
+    const eventIdsWithAnimals = new Set(aliveDucks.filter(a => a.eventId).map(a => a.eventId));
+    
     for (const animal of aliveDucks) {
       const breed = animal.breed || 'Unknown';
       breakdown[breed] = (breakdown[breed] || 0) + 1;
     }
     
-    // Also compute from history events for breeds without individual animals
+    // Also compute from history events ONLY for events without individual animals
     const today = new Date().toISOString().split('T')[0];
     const sortedEvents = [...duckHistory].sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
@@ -125,6 +138,9 @@ export default function LivestockScreen() {
     for (const event of sortedEvents) {
       if (new Date(event.date).getTime() > new Date(today).getTime()) break;
       
+      // Skip events that already have individual animals created
+      if (eventIdsWithAnimals.has(event.id)) continue;
+      
       const breed = event.breed || 'Unknown';
       if (!historyBreakdown[breed]) historyBreakdown[breed] = 0;
       
@@ -142,9 +158,13 @@ export default function LivestockScreen() {
       }
     }
     
-    return Object.entries(breakdown)
-      .filter(([_, count]) => count > 0)
-      .sort((a, b) => b[1] - a[1]);
+    const entries = Object.entries(breakdown).filter(([_, count]) => count > 0);
+    
+    // Filter out 'Unknown' if we have other real breeds
+    const hasRealBreeds = entries.some(([breed]) => breed !== 'Unknown' && breed.trim() !== '');
+    const filtered = hasRealBreeds ? entries.filter(([breed]) => breed !== 'Unknown') : entries;
+    
+    return filtered.sort((a, b) => b[1] - a[1]);
   }, [duckHistory, getAliveAnimals]);
 
   const rabbitBreedBreakdown = useMemo(() => {
@@ -184,16 +204,18 @@ export default function LivestockScreen() {
             Chickens ({currentChickenCount})
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'ducks' && styles.activeTab]}
-          onPress={() => setActiveTab('ducks')}
-          testID="tab-ducks"
-        >
-          <Bird size={20} color={activeTab === 'ducks' ? colors.primary : colors.textMuted} />
-          <Text style={[styles.tabText, { color: activeTab === 'ducks' ? colors.primary : colors.textMuted }]}>
-            Ducks ({currentDuckCount})
-          </Text>
-        </TouchableOpacity>
+        {settings.enabledAnimals.ducks && (
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'ducks' && styles.activeTab]}
+            onPress={() => setActiveTab('ducks')}
+            testID="tab-ducks"
+          >
+            <Bird size={20} color={activeTab === 'ducks' ? colors.primary : colors.textMuted} />
+            <Text style={[styles.tabText, { color: activeTab === 'ducks' ? colors.primary : colors.textMuted }]}>
+              Ducks ({currentDuckCount})
+            </Text>
+          </TouchableOpacity>
+        )}
         {false && (
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'rabbits' && styles.activeTab]}
