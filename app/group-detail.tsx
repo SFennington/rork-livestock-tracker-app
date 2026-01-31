@@ -55,7 +55,7 @@ export default function GroupDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Current Count</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Group Count</Text>
           <Text style={[styles.summaryValue, { color: colors.primary }]}>{groupAnimals.length}</Text>
           
           <View style={styles.typeCounts}>
@@ -138,7 +138,9 @@ export default function GroupDetailScreen() {
               {groupEvents.map((event) => {
                 const Icon = event.type === 'acquired' ? TrendingUp : event.type === 'sold' ? ShoppingCart : TrendingDown;
                 const iconColor = event.type === 'acquired' ? '#10b981' : event.type === 'sold' ? '#3b82f6' : event.type === 'consumed' ? '#f59e0b' : '#ef4444';
-                const typeLabel = event.type === 'acquired' ? 'Acquired' : event.type === 'sold' ? 'Sold' : event.type === 'consumed' ? 'Consumed' : 'Death/Loss';
+                const typeLabel = event.type === 'acquired' 
+                  ? (event.stage === 'chick' ? 'Acquired Chicks' : 'Acquired Mature')
+                  : event.type === 'sold' ? 'Sold' : event.type === 'consumed' ? 'Consumed' : 'Death/Loss';
                 
                 return (
                   <View key={event.id} style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -243,11 +245,13 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
+    textAlign: 'center',
   },
   summaryValue: {
     fontSize: 32,
     fontWeight: "700" as const,
     marginTop: 4,
+    textAlign: 'center',
   },
   typeCounts: {
     flexDirection: "row",

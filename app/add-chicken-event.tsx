@@ -278,6 +278,17 @@ export default function AddChickenEventScreen() {
             </>
           ) : (
             <>
+          {/* Group Header */}
+          {preselectedGroupId && (() => {
+            const selectedGroup = groups.find(g => g.id === preselectedGroupId);
+            return selectedGroup ? (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>GROUP</Text>
+                <Text style={[styles.header, { color: colors.text, marginBottom: 0 }]}>{selectedGroup.name}</Text>
+              </View>
+            ) : null;
+          })()}
+          
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
             <View style={styles.eventTypeButtons}>
@@ -404,7 +415,7 @@ export default function AddChickenEventScreen() {
               )}
 
               {/* Group Selector */}
-              {chickenGroups.length > 0 && (
+              {chickenGroups.length > 0 && !preselectedGroupId && (
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Group (optional)</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
