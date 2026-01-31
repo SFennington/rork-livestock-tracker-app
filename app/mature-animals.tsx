@@ -106,20 +106,30 @@ export default function MatureAnimalsScreen() {
 
     setIsSubmitting(true);
     try {
-      // Process each breed separately
+      // Collect all animal IDs across all breeds
+      const allAnimalIds: string[] = [];
+      let totalMales = 0;
+      let totalFemales = 0;
+      
       for (const bc of breedCounts) {
         const male = parseInt(bc.maleCount, 10) || 0;
         const female = parseInt(bc.femaleCount, 10) || 0;
         
-        if (male + female === 0) continue; // Skip if no animals selected for this breed
+        if (male + female === 0) continue;
         
-        // Get animal IDs for this breed
-        const breedAnimalIds = breedGroups[bc.breed].slice(0, male + female).map(a => a.id);
+        const breedAnimals = breedGroups[bc.breed].slice(0, male + female);
+        allAnimalIds.push(...breedAnimals.map(a => a.id));
         
+        totalMales += male;
+        totalFemales += female;
+      }
+      
+      // Process all animals in a single call
+      if (allAnimalIds.length > 0) {
         await matureAnimals({
-          animalIds: breedAnimalIds,
-          maleCount: male,
-          femaleCount: female,
+          animalIds: allAnimalIds,
+          maleCount: totalMales,
+          femaleCount: totalFemales,
         });
       }
 
