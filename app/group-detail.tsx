@@ -1,20 +1,31 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Modal, TextInput, Platform } from "react-native";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
-import { ArrowLeft, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, ArrowUp, MoreVertical } from "lucide-react-native";
+import { ArrowLeft, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, ArrowUp, MoreVertical, Trash2, Edit3 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 
 export default function GroupDetailScreen() {
   const { groupId, type } = useLocalSearchParams();
-  const { groups, chickenHistory, getAliveAnimals, getChickenStageCount } = useLivestock();
+  const { groups, chickenHistory, getAliveAnimals, getChickenStageCount, updateGroup, deleteGroup, getGroupsByType, updateAnimal, duckHistory } = useLivestock();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteOption, setDeleteOption] = useState<'delete' | 'merge' | null>(null);
+  const [selectedMergeGroupId, setSelectedMergeGroupId] = useState<string>('');
+
   const group = groups.find(g => g.id === groupId);
   const isUngrouped = groupId === 'ungrouped';
+  
+  // Get available groups for merging (exclude current group)
+  const availableMergeGroups = useMemo(() => {
+    return getGroupsByType(type as 'chicken').filter(g => g.id !== groupId);
+  }, [getGroupsByType, type, groupId]);
   
   useEffect(() => {
     if (isUngrouped) {
@@ -31,7 +42,9 @@ export default function GroupDetailScreen() {
   const groupAnimals = getAliveAnimals(type as 'chicken').filter(a => 
     isUngrouped ? !a.groupId : a.groupId === groupId
   );
-  const groupEvents = chickenHistory.filter(e => 
+  
+  const historyList = type === 'chicken' ? chickenHistory : type === 'duck' ? duckHistory : [];
+  const groupEvents = historyList.filter(e => 
     isUngrouped ? !e.groupId : e.groupId === groupId
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
@@ -53,6 +66,54 @@ export default function GroupDetailScreen() {
     return Object.entries(breakdown).sort(([, a], [, b]) => b - a);
   }, [groupAnimals]);
 
+  const handleRename = async () => {
+    if (!group || !newGroupName.trim()) return;
+    
+    await updateGroup(group.id, { name: newGroupName.trim() });
+    setShowRenameModal(false);
+    setNewGroupName('');
+    
+    if (Platform.OS === 'web') {
+      alert('Group renamed successfully');
+    } else {
+      Alert.alert('Success', 'Group renamed successfully');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!group) return;
+    
+    if (deleteOption === 'delete') {
+      // Delete all animals in the group
+      for (const animal of groupAnimals) {
+        await updateAnimal(animal.id, { status: 'dead', deathDate: new Date().toISOString().split('T')[0] });
+      }
+      // Delete the group
+      await deleteGroup(group.id);
+      
+      if (Platform.OS === 'web') {
+        alert('Group and animals deleted');
+      } else {
+        Alert.alert('Success', 'Group and animals deleted');
+      }
+      router.back();
+    } else if (deleteOption === 'merge' && selectedMergeGroupId) {
+      // Move all animals to selected group
+      for (const animal of groupAnimals) {
+        await updateAnimal(animal.id, { groupId: selectedMergeGroupId });
+      }
+      // Delete the group
+      await deleteGroup(group.id);
+      
+      if (Platform.OS === 'web') {
+        alert('Animals moved and group deleted');
+      } else {
+        Alert.alert('Success', 'Animals moved and group deleted');
+      }
+      router.back();
+    }
+  };
+
   if (!isUngrouped && !group) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -64,6 +125,32 @@ export default function GroupDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {!isUngrouped && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => {
+                setNewGroupName(group?.name || '');
+                setShowRenameModal(true);
+              }}
+            >
+              <Edit3 size={18} color={colors.primary} />
+              <Text style={[styles.actionButtonText, { color: colors.primary }]}>Rename</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.card, borderColor: colors.error }]}
+              onPress={() => {
+                setDeleteOption(null);
+                setSelectedMergeGroupId('');
+                setShowDeleteModal(true);
+              }}
+            >
+              <Trash2 size={18} color={colors.error} />
+              <Text style={[styles.actionButtonText, { color: colors.error }]}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Group Count</Text>
           <Text style={[styles.summaryValue, { color: colors.primary }]}>{groupAnimals.length}</Text>
@@ -206,6 +293,131 @@ export default function GroupDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Rename Modal */}
+      <Modal visible={showRenameModal} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowRenameModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Rename Group</Text>
+              <TextInput
+                style={[styles.modalInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+                placeholder="Enter new group name"
+                placeholderTextColor={colors.textMuted}
+                autoFocus
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton, { borderColor: colors.border }]}
+                  onPress={() => setShowRenameModal(false)}
+                >
+                  <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalConfirmButton, { backgroundColor: colors.primary }]}
+                  onPress={handleRename}
+                  disabled={!newGroupName.trim()}
+                >
+                  <Text style={[styles.modalButtonText, { color: '#fff' }]}>Rename</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDeleteModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Delete Group</Text>
+              <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
+                This group has {groupAnimals.length} animal{groupAnimals.length !== 1 ? 's' : ''}. What would you like to do?
+              </Text>
+              
+              <View style={styles.deleteOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.deleteOption,
+                    { borderColor: colors.border },
+                    deleteOption === 'merge' && { borderColor: colors.primary, backgroundColor: colors.surface }
+                  ]}
+                  onPress={() => setDeleteOption('merge')}
+                >
+                  <Text style={[styles.deleteOptionText, { color: colors.text }]}>Move to another group</Text>
+                </TouchableOpacity>
+                
+                {deleteOption === 'merge' && (
+                  <View style={styles.mergeGroupList}>
+                    {availableMergeGroups.length === 0 ? (
+                      <Text style={[styles.noGroupsText, { color: colors.textMuted }]}>No other groups available</Text>
+                    ) : (
+                      availableMergeGroups.map((g) => (
+                        <TouchableOpacity
+                          key={g.id}
+                          style={[
+                            styles.mergeGroupItem,
+                            { borderColor: colors.border },
+                            selectedMergeGroupId === g.id && { borderColor: colors.primary, backgroundColor: colors.surface }
+                          ]}
+                          onPress={() => setSelectedMergeGroupId(g.id)}
+                        >
+                          <Text style={[styles.mergeGroupText, { color: colors.text }]}>{g.name}</Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </View>
+                )}
+                
+                <TouchableOpacity
+                  style={[
+                    styles.deleteOption,
+                    { borderColor: colors.border },
+                    deleteOption === 'delete' && { borderColor: colors.error, backgroundColor: '#fee' }
+                  ]}
+                  onPress={() => setDeleteOption('delete')}
+                >
+                  <Text style={[styles.deleteOptionText, { color: deleteOption === 'delete' ? colors.error : colors.text }]}>
+                    Delete animals with group
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton, { borderColor: colors.border }]}
+                  onPress={() => setShowDeleteModal(false)}
+                >
+                  <Text style={[styles.modalButtonText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton,
+                    styles.modalConfirmButton,
+                    { backgroundColor: colors.error },
+                    (!deleteOption || (deleteOption === 'merge' && !selectedMergeGroupId)) && { opacity: 0.5 }
+                  ]}
+                  onPress={handleDelete}
+                  disabled={!deleteOption || (deleteOption === 'merge' && !selectedMergeGroupId)}
+                >
+                  <Text style={[styles.modalButtonText, { color: '#fff' }]}>Delete Group</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -433,5 +645,108 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 13,
     lineHeight: 18,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 12,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  modalDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    borderWidth: 1,
+  },
+  modalConfirmButton: {
+  },
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteOptions: {
+    marginBottom: 20,
+    gap: 12,
+  },
+  deleteOption: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  deleteOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  mergeGroupList: {
+    paddingLeft: 16,
+    gap: 8,
+  },
+  mergeGroupItem: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  mergeGroupText: {
+    fontSize: 14,
+  },
+  noGroupsText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    paddingVertical: 8,
   },
 });
