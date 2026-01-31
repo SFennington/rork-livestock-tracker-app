@@ -449,6 +449,7 @@ export default function AddRabbitScreen() {
         </View>
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 
