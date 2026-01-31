@@ -100,8 +100,11 @@ export default function DashboardScreen() {
       hens,
       chicks,
       hasDataIssue,
+      totalLaid,
+      totalSold,
+      totalDonated,
     };
-  }, [rabbits, eggProduction, breedingRecords, expenses, income, getAliveAnimals, settings]);
+  }, [rabbits, eggProduction, breedingRecords, expenses, income, getAliveAnimals, settings.eggsOnHand, settings.eggValuePerDozen, settings.chickenEventTypes]);
 
   // Combined activity feed with timestamps
   const recentActivity = useMemo(() => {
@@ -243,13 +246,6 @@ export default function DashboardScreen() {
     
     return date.toLocaleDateString();
   };
-      chicks,
-      hasDataIssue,
-      totalLaid,
-      totalSold,
-      totalDonated,
-    };
-  }, [rabbits, eggProduction, breedingRecords, expenses, income, getAliveAnimals, settings.eggsOnHand, settings.eggValuePerDozen]);
 
   if (isLoading) {
     return (
