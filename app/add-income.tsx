@@ -116,32 +116,36 @@ export default function AddIncomeScreen() {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>From *</Text>
           <View style={styles.livestockButtons}>
-            <TouchableOpacity
-              style={[styles.livestockButton, livestockType === 'chicken' && styles.livestockButtonActive]}
-              onPress={() => setLivestockType('chicken')}
-            >
-              <Text style={[styles.livestockButtonText, livestockType === 'chicken' && styles.livestockButtonTextActive]}>
-                Chickens
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.livestockButton, livestockType === 'duck' && styles.livestockButtonActive]}
-              onPress={() => setLivestockType('duck')}
-            >
-              <Text style={[styles.livestockButtonText, livestockType === 'duck' && styles.livestockButtonTextActive]}>
-                Ducks
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.livestockButton, livestockType === 'rabbit' && styles.livestockButtonActive, styles.livestockButtonDisabled]}
-              onPress={() => {}}
-              disabled={true}
-            >
-              <Text style={[styles.livestockButtonText, livestockType === 'rabbit' && styles.livestockButtonTextActive, styles.livestockButtonTextDisabled]}>
-                Rabbits
-              </Text>
-              <Text style={styles.comingSoonBadge}>Coming Soon</Text>
-            </TouchableOpacity>
+            {settings.enabledAnimals.chickens && (
+              <TouchableOpacity
+                style={[styles.livestockButton, livestockType === 'chicken' && styles.livestockButtonActive]}
+                onPress={() => setLivestockType('chicken')}
+              >
+                <Text style={[styles.livestockButtonText, livestockType === 'chicken' && styles.livestockButtonTextActive]}>
+                  Chickens
+                </Text>
+              </TouchableOpacity>
+            )}
+            {settings.enabledAnimals.ducks && (
+              <TouchableOpacity
+                style={[styles.livestockButton, livestockType === 'duck' && styles.livestockButtonActive]}
+                onPress={() => setLivestockType('duck')}
+              >
+                <Text style={[styles.livestockButtonText, livestockType === 'duck' && styles.livestockButtonTextActive]}>
+                  Ducks
+                </Text>
+              </TouchableOpacity>
+            )}
+            {settings.enabledAnimals.rabbits && (
+              <TouchableOpacity
+                style={[styles.livestockButton, livestockType === 'rabbit' && styles.livestockButtonActive]}
+                onPress={() => setLivestockType('rabbit')}
+              >
+                <Text style={[styles.livestockButtonText, livestockType === 'rabbit' && styles.livestockButtonTextActive]}>
+                  Rabbits
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -372,7 +376,7 @@ const styles = StyleSheet.create({
   },
   livestockButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e5e7eb",
