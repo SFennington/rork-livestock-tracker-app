@@ -1132,11 +1132,10 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   }) => {
     const { animalIds, maleCount, femaleCount, targetBreed } = params;
     
-    if (animalIds.length !== (maleCount + femaleCount)) {
-      throw new Error('Male + Female count must equal total animals selected');
-    }
+    const totalToMature = maleCount + femaleCount;
+    if (totalToMature === 0) return;
 
-    const animalsToMature = animals.filter(a => animalIds.includes(a.id));
+    const animalsToMature = animals.filter(a => animalIds.includes(a.id)).slice(0, totalToMature);
     if (animalsToMature.length === 0) return;
 
     const animalType = animalsToMature[0].type;
@@ -1171,13 +1170,26 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
     // Create history event for the maturation
     if (animalType === 'chicken') {
+      const breedGroups: { [breed: string]: { roosters: number; hens: number } } = {};
+      maturedAnimals.forEach(a => {
+        const breed = a.breed || 'Unknown';
+        if (!breedGroups[breed]) breedGroups[breed] = { roosters: 0, hens: 0 };
+        if (a.sex === 'M') breedGroups[breed].roosters++;
+        else breedGroups[breed].hens++;
+      });
+      
       await addChickenHistoryEvent({
         type: 'acquired',
         date: today,
-        quantity: animalsToMature.length,
-        breed: targetBreed || animalsToMature[0].breed,
+        quantity: maturedAnimals.length,
+        breeds: Object.entries(breedGroups).map(([breed, counts]) => ({
+          breed,
+          roosters: counts.roosters,
+          hens: counts.hens,
+          chicks: 0,
+        })),
         stage: 'mature',
-        notes: `Matured from chicks: ${maleCount} roosters, ${femaleCount} hens`,
+        notes: `Matured from chicks`,
       });
     } else if (animalType === 'duck') {
       await addDuckHistoryEvent({

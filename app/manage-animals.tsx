@@ -30,10 +30,12 @@ export default function ManageAnimalsScreen() {
     getDuckCountOnDate,
     addChickenHistoryEvent,
     addDuckHistoryEvent,
+    groups,
   } = useLivestock();
 
   const [filterType, setFilterType] = useState<'chicken' | 'rabbit' | 'goat' | 'duck'>((params.type as any) ?? 'chicken');
   const [filterBreed, setFilterBreed] = useState<string>((params.breed as string) ?? '');
+  const [filterGroupId, setFilterGroupId] = useState<string>((params.groupId as string) ?? '');
   const [showAll, setShowAll] = useState(false);
   const [showDeadAnimals, setShowDeadAnimals] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -162,8 +164,15 @@ export default function ManageAnimalsScreen() {
     // Get all animals of this type first, then filter by normalized breed
     const allOfType = showDeadAnimals ? getAllAnimals(filterType) : getAliveAnimals(filterType);
     
+    let filtered = allOfType;
+    
+    // Filter by groupId if specified
+    if (filterGroupId) {
+      filtered = filtered.filter(a => a.groupId === filterGroupId);
+    }
+    
     if (!filterBreed) {
-      return allOfType.sort((a, b) => {
+      return filtered.sort((a, b) => {
         if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
         return a.number - b.number;
       });
@@ -171,15 +180,14 @@ export default function ManageAnimalsScreen() {
     
     // Filter by normalized breed name
     const normalizedFilterBreed = getFullBreedName(filterBreed);
-    const list = allOfType.filter(a => 
+    const list = filtered.filter(a => 
       getFullBreedName(a.breed) === normalizedFilterBreed || a.breed === filterBreed
     );
     
     // If no animals found and a breed filter is active, try to find close matches (case-insensitive, partial match)
     if (list.length === 0 && filterBreed) {
-      const allAnimals = showDeadAnimals ? getAllAnimals(filterType) : getAliveAnimals(filterType);
       const lowerFilterBreed = filterBreed.toLowerCase();
-      const closeMatches = allAnimals.filter(a => 
+      const closeMatches = filtered.filter(a => 
         a.breed.toLowerCase().includes(lowerFilterBreed) || 
         lowerFilterBreed.includes(a.breed.toLowerCase())
       );
@@ -195,7 +203,7 @@ export default function ManageAnimalsScreen() {
       if (a.breed !== b.breed) return a.breed.localeCompare(b.breed);
       return a.number - b.number;
     });
-  }, [filterType, filterBreed, showDeadAnimals, getAllAnimals, getAliveAnimals]);
+  }, [filterType, filterBreed, filterGroupId, showDeadAnimals, getAllAnimals, getAliveAnimals]);
 
   const getBreedList = (): string[] => {
     // Return predefined list based on animal type
@@ -401,8 +409,16 @@ export default function ManageAnimalsScreen() {
     }
   };
 
+  const selectedGroup = filterGroupId ? groups.find(g => g.id === filterGroupId) : null;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      {selectedGroup && (
+        <View style={[styles.groupHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+          <Text style={[styles.groupHeaderLabel, { color: colors.textSecondary }]}>Group:</Text>
+          <Text style={[styles.groupHeaderName, { color: colors.text }]}>{selectedGroup.name}</Text>
+        </View>
+      )}
       <View style={[styles.filters, { borderBottomColor: colors.border }]}>
         <View style={styles.filterRow}>
           <Text style={[styles.filterLabel, { color: colors.text }]}>Breed:</Text>
@@ -1147,5 +1163,21 @@ const styles = StyleSheet.create({
   genderButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  groupHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  groupHeaderLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  groupHeaderName: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 2,
   },
 });
