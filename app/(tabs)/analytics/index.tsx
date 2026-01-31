@@ -155,8 +155,9 @@ export default function AnalyticsScreen() {
 
     const totalsByDate = new Map<string, number>();
     eggProduction.forEach(record => {
-      const key = record.date;
-      totalsByDate.set(key, (totalsByDate.get(key) ?? 0) + record.count);
+      // Extract date only (ignore timestamp if present)
+      const dateOnly = record.date.split('T')[0];
+      totalsByDate.set(dateOnly, (totalsByDate.get(dateOnly) ?? 0) + record.count);
     });
 
     let dailyEggHistory: { date: string; total: number }[] = [];

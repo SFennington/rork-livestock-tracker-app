@@ -10,9 +10,10 @@ interface BreedPickerProps {
   onAddCustomBreed?: (breed: string) => void;
   label?: string;
   placeholder?: string;
+  maxVisibleItems?: number;
 }
 
-export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], onAddCustomBreed, label, placeholder = "Select breed" }: BreedPickerProps) {
+export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], onAddCustomBreed, label, placeholder = "Select breed", maxVisibleItems = 6 }: BreedPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [customBreed, setCustomBreed] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -134,7 +135,13 @@ export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], 
                   </View>
                 </View>
               ) : (
-                <ScrollView style={styles.breedList} showsVerticalScrollIndicator={true}>
+                <ScrollView 
+                  style={[
+                    styles.breedList, 
+                    { maxHeight: maxVisibleItems * 50 }
+                  ]} 
+                  showsVerticalScrollIndicator={true}
+                >
                   {sortedBreeds.map((breed) => (
                     <TouchableOpacity
                       key={breed}

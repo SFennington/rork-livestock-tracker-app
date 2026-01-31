@@ -120,7 +120,20 @@ export default function DashboardScreen() {
 
     // Add egg logs
     eggProduction.forEach(egg => {
-      const timestamp = egg.timestamp || `${egg.date}T12:00:00`;
+      // Use actual timestamp if available, otherwise use date with current time for today's date, or noon for past dates
+      let timestamp: string;
+      if (egg.timestamp) {
+        timestamp = egg.timestamp;
+      } else {
+        const today = getLocalDateString();
+        if (egg.date === today) {
+          // For today, use current time
+          timestamp = new Date().toISOString();
+        } else {
+          // For past dates, use noon
+          timestamp = `${egg.date}T12:00:00`;
+        }
+      }
       activities.push({
         id: egg.id,
         type: 'egg',
