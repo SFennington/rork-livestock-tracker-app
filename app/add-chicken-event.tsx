@@ -204,7 +204,6 @@ export default function AddChickenEventScreen() {
                   <TouchableOpacity 
                     style={[
                       styles.groupTypeButton,
-                      chickenGroups.length === 0 && { flex: 1 },
                       !useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }
                     ]}
                     onPress={() => setUseExistingGroup(false)}
@@ -213,16 +212,19 @@ export default function AddChickenEventScreen() {
                       Create New
                     </Text>
                   </TouchableOpacity>
-                  {chickenGroups.length > 0 && (
-                    <TouchableOpacity 
-                      style={[styles.groupTypeButton, useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                      onPress={() => setUseExistingGroup(true)}
-                    >
-                      <Text style={[styles.groupTypeButtonText, useExistingGroup && styles.groupTypeButtonTextActive]}>
-                        Use Existing
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  <TouchableOpacity 
+                    style={[
+                      styles.groupTypeButton, 
+                      useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent },
+                      chickenGroups.length === 0 && { opacity: 0.4 }
+                    ]}
+                    onPress={() => chickenGroups.length > 0 && setUseExistingGroup(true)}
+                    disabled={chickenGroups.length === 0}
+                  >
+                    <Text style={[styles.groupTypeButtonText, useExistingGroup && styles.groupTypeButtonTextActive]}>
+                      Use Existing
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
