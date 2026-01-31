@@ -12,7 +12,7 @@ import * as DocumentPicker from "expo-document-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Check if Storage Access Framework is available
-const StorageAccessFramework = FileSystem.StorageAccessFramework;
+const StorageAccessFramework = (FileSystem as any).StorageAccessFramework;
 import { router } from "expo-router";
 
 const PALETTE_NAMES: Record<ThemePalette, string> = {
@@ -85,10 +85,10 @@ export default function SettingsScreen() {
       }
 
       console.log('Requesting directory permissions...');
-      console.log('FileSystem.StorageAccessFramework available:', !!FileSystem.StorageAccessFramework);
+      console.log('FileSystem.StorageAccessFramework available:', !!(FileSystem as any).StorageAccessFramework);
       
       // Use Storage Access Framework on Android for directory selection
-      if (!FileSystem.StorageAccessFramework) {
+      if (!(FileSystem as any).StorageAccessFramework) {
         console.error('StorageAccessFramework is undefined');
         Alert.alert(
           'Feature Unavailable',
@@ -98,7 +98,7 @@ export default function SettingsScreen() {
         return;
       }
       
-      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      const permissions = await (FileSystem as any).StorageAccessFramework.requestDirectoryPermissionsAsync();
       console.log('Permissions result:', permissions);
       
       if (permissions.granted) {
@@ -130,7 +130,7 @@ export default function SettingsScreen() {
             text: 'App Documents (Private)',
             onPress: async () => {
               console.log('✅ Selected app documents location');
-              const location = `${FileSystem.documentDirectory}backups/`;
+              const location = `${(FileSystem as any).documentDirectory}backups/`;
               setBackupLocation(location);
               
               Alert.alert('Success', 'Backup location set to App Documents');
@@ -141,7 +141,7 @@ export default function SettingsScreen() {
             onPress: async () => {
               console.log('✅ Selected downloads folder');
               // On Android, use the standard Downloads directory
-              const location = `${FileSystem.documentDirectory}../Downloads/`;
+              const location = `${(FileSystem as any).documentDirectory}../Downloads/`;
               if (!location) {
                 Alert.alert('Error', 'Download folder not available on this device');
                 return;
@@ -175,7 +175,7 @@ export default function SettingsScreen() {
       }
 
       const files = await backupsDir.list();
-      const backupFiles = files.filter(f => f.startsWith('Livestock_Backup_') && f.endsWith('.json'));
+      const backupFiles = files.filter((f: any) => f.startsWith('Livestock_Backup_') && f.endsWith('.json'));
       
       if (backupFiles.length === 0) {
         Alert.alert('No Backups', 'No backup files found.');
@@ -1185,7 +1185,7 @@ export default function SettingsScreen() {
                     {backupLocation ? backupLocation.split('/').pop() || 'Documents' : 'App Documents (Private)'}
                   </Text>
                   <Text style={[styles.locationPath, { color: colors.textSecondary }]}>
-                    {backupLocation || `${FileSystem.documentDirectory}backups/`}
+                    {backupLocation || `${(FileSystem as any).documentDirectory}backups/`}
                   </Text>
                 </View>
                 <ChevronRight color={colors.textSecondary} size={20} />

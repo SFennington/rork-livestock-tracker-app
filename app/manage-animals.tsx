@@ -204,7 +204,10 @@ export default function ManageAnimalsScreen() {
     if (filterType === 'rabbit') return RABBIT_BREEDS;
     
     // Get unique breeds from history events for the specific type
-    const history = filterType === 'chicken' ? chickenHistory : filterType === 'duck' ? duckHistory : [];
+    const history = filterType === 'chicken' ? chickenHistory 
+      : filterType === 'duck' ? duckHistory 
+      : filterType === 'rabbit' ? rabbitHistory 
+      : [];
     const breedsFromHistory = history
       .filter(e => e.breed)
       .map(e => getFullBreedName(e.breed!));
@@ -245,7 +248,7 @@ export default function ManageAnimalsScreen() {
       });
       setEditingId(null);
       setForm({});
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update animal');
     }
   };

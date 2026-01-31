@@ -68,7 +68,6 @@ export default function AddChickenEventScreen() {
         const newGroup = await addGroup({
           name: groupName,
           type: 'chicken',
-          dateCreated: new Date().toISOString().split('T')[0],
           notes: groupNotes || undefined,
         });
         setGroupId(newGroup.id);

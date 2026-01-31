@@ -164,7 +164,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           ...event,
           breeds: [{
             breed: event.breed,
-            quantity: event.quantity,
+            roosters: event.sex === 'M' ? event.quantity : 0,
+            hens: event.sex === 'F' ? event.quantity : Math.floor(event.quantity / 2),
             cost: event.cost,
           }],
           stage: event.stage || 'mature',
@@ -179,7 +180,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         return {
           ...animal,
           stage: (animal.type === 'chicken' || animal.type === 'duck') ? 'mature' : 'adult',
-        };
+        } as IndividualAnimal;
       }
       return animal;
     });
@@ -710,7 +711,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         });
       } else {
         await addExpense({
-          category: event.type === 'acquired' ? 'Livestock Purchase' : 'Other',
+          category: event.type === 'acquired' ? 'other' : 'other',
           amount: event.cost,
           date: event.date,
           livestockType: 'chicken',
@@ -780,7 +781,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           .map(a => a.number || 0);
         const startNumber = existingNumbers.length === 0 ? 1 : Math.max(...existingNumbers) + 1;
         
-        for (let i = 0; i < breedEntry.quantity; i++) {
+        const totalQuantity = breedEntry.roosters + breedEntry.hens;
+        for (let i = 0; i < totalQuantity; i++) {
           newAnimals.push({
             id: createId(),
             type: 'duck',
@@ -820,7 +822,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         });
       } else {
         await addExpense({
-          category: event.type === 'acquired' ? 'Livestock Purchase' : 'Other',
+          category: event.type === 'acquired' ? 'other' : 'other',
           amount: event.cost,
           date: event.date,
           livestockType: 'duck',

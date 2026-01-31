@@ -3,13 +3,13 @@ import { useLivestock, useRabbitBreeding, useRabbitHealth, getLocalDateString } 
 import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
-import { Egg, Heart, DollarSign, TrendingUp, Plus, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Mic } from "lucide-react-native";
+import { Egg, Heart, DollarSign, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit } from "lucide-react-native";
 import { router } from "expo-router";
 import { useMemo, useEffect } from "react";
 import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
-  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate, getDuckCountOnDate, getAliveAnimals } = useLivestock();
+  const { rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getAliveAnimals } = useLivestock();
   const loadROISnapshots = useFinancialStore(state => state.loadROISnapshots);
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
