@@ -480,9 +480,9 @@ export default function AddChickenEventScreen() {
                         <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Quantity</Text>
                         <TextInput
                           style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
-                          value={String(breedEntry.roosters + breedEntry.hens)}
+                          value={breedEntry.roosters > 0 ? String(breedEntry.roosters) : ''}
                           onChangeText={(text) => {
-                            const qty = parseInt(text) || 0;
+                            const qty = text.trim() === '' ? 0 : parseInt(text) || 0;
                             updateBreedEntry(index, 'roosters', qty);
                             updateBreedEntry(index, 'hens', 0);
                           }}
