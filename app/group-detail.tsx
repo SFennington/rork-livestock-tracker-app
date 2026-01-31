@@ -103,7 +103,7 @@ export default function GroupDetailScreen() {
                       style={styles.breedMenuButton}
                       onPress={() => router.push({
                         pathname: '/manage-animals',
-                        params: { type, breed, groupId }
+                        params: { type, breed: breed, groupId }
                       })}
                     >
                       <MoreVertical size={16} color={colors.textMuted} />

@@ -253,6 +253,35 @@ export default function LivestockScreen() {
       <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         {activeTab === 'chickens' ? (
           <>
+            <View style={[styles.currentCountCard, { backgroundColor: colors.card, borderColor: colors.border }]} testID="chicken-count-card">
+              <Text style={[styles.currentCountLabel, { color: colors.textSecondary }]}>Total Chicken Count</Text>
+              <Text style={[styles.currentCountValue, { color: colors.primary }]}>{currentChickenCount}</Text>
+              <View style={styles.chickenTypeCounts}>
+                <View style={styles.chickenTypeItem}>
+                  <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Roosters</Text>
+                  <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{roosters}</Text>
+                </View>
+                <View style={styles.chickenTypeItem}>
+                  <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Hens</Text>
+                  <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{hens}</Text>
+                </View>
+                <View style={styles.chickenTypeItem}>
+                  <Text style={[styles.chickenTypeLabel, { color: colors.textMuted }]}>Chicks</Text>
+                  <Text style={[styles.chickenTypeValue, { color: colors.primary }]}>{chicks}</Text>
+                </View>
+              </View>
+              {chickenBreedBreakdown.length > 0 && (
+                <View style={[styles.breedBreakdown, { borderTopColor: colors.border }]}> 
+                  {chickenBreedBreakdown.map(([breed, count]) => (
+                    <View key={breed} style={styles.breedItem}>
+                      <Text style={[styles.breedName, { color: colors.text }]} numberOfLines={1}>{getFullBreedName(breed)}</Text>
+                      <Text style={[styles.breedCount, { color: colors.primary }]}>{count}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
             <View style={styles.historyHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Chicken Groups</Text>
               <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
