@@ -697,14 +697,14 @@ export default function RecordsScreen() {
                   <TrendingUp size={20} color="#10b981" />
                   <Text style={styles.summaryLabel}>Total Income</Text>
                   <Text style={styles.summaryValue}>
-                    ${income.reduce((sum, i) => sum + i.amount, 0).toFixed(2)}
+                    ${financialRecords.filter(r => r.type === 'income').reduce((sum, i) => sum + i.amount, 0).toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.summaryCard}>
                   <DollarSign size={20} color="#ef4444" />
                   <Text style={styles.summaryLabel}>Total Expenses</Text>
                   <Text style={styles.summaryValue}>
-                    ${expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
+                    ${financialRecords.filter(r => r.type === 'expense').reduce((sum, e) => sum + e.amount, 0).toFixed(2)}
                   </Text>
                 </View>
               </View>
