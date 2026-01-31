@@ -22,6 +22,7 @@ export interface BreedEntry {
   breed: string;
   roosters: number;
   hens: number;
+  chicks?: number;
   cost?: number;
   notes?: string;
 }

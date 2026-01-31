@@ -31,7 +31,7 @@ export default function AddChickenEventScreen() {
   const [showHatchCalendar, setShowHatchCalendar] = useState(false);
   
   // Multi-breed support
-  const [breeds, setBreeds] = useState<BreedEntry[]>([{ breed: '', roosters: 0, hens: 0, cost: undefined, notes: '' }]);
+  const [breeds, setBreeds] = useState<BreedEntry[]>([{ breed: '', roosters: 0, hens: 0, chicks: 0, cost: undefined, notes: '' }]);
   
   // Legacy single-breed fields (for backward compatibility in UI)
   const [quantity, setQuantity] = useState("1");
@@ -79,24 +79,27 @@ export default function AddChickenEventScreen() {
     // Step 2: Create event
     // Validate breeds array for acquired events
     if (eventType === 'acquired') {
-      const validBreeds = breeds.filter(b => b.breed && (b.roosters > 0 || b.hens > 0));
+      const validBreeds = breeds.filter(b => b.breed && (b.roosters > 0 || b.hens > 0 || (b.chicks && b.chicks > 0)));
       console.log('[AddChickenEvent] Breeds before filtering:', breeds);
       console.log('[AddChickenEvent] Valid breeds after filter:', validBreeds);
       
       if (validBreeds.length === 0) {
-        Alert.alert("Error", "Please add at least one breed with roosters or hens");
+        Alert.alert("Error", stage === 'chick' ? "Please add at least one breed with chicks" : "Please add at least one breed with roosters or hens");
         return;
       }
 
       // Calculate total quantity and determine sex
       const totalRoosters = validBreeds.reduce((sum, b) => sum + b.roosters, 0);
       const totalHens = validBreeds.reduce((sum, b) => sum + b.hens, 0);
-      const totalQty = totalRoosters + totalHens;
+      const totalChicks = validBreeds.reduce((sum, b) => sum + (b.chicks || 0), 0);
+      const totalQty = stage === 'chick' ? totalChicks : totalRoosters + totalHens;
       
       // Determine sex based on composition
       let determinedSex: 'M' | 'F' | undefined = undefined;
-      if (totalRoosters > 0 && totalHens === 0) determinedSex = 'M';
-      else if (totalHens > 0 && totalRoosters === 0) determinedSex = 'F';
+      if (stage !== 'chick') {
+        if (totalRoosters > 0 && totalHens === 0) determinedSex = 'M';
+        else if (totalHens > 0 && totalRoosters === 0) determinedSex = 'F';
+      }
 
       const eventData = {
         date,
@@ -161,7 +164,7 @@ export default function AddChickenEventScreen() {
 
   // Multi-breed management functions
   const addBreedEntry = () => {
-    setBreeds([...breeds, { breed: '', roosters: 0, hens: 0, cost: undefined, notes: '' }]);
+    setBreeds([...breeds, { breed: '', roosters: 0, hens: 0, chicks: 0, cost: undefined, notes: '' }]);
   };
 
   const removeBreedEntry = (index: number) => {
@@ -194,8 +197,8 @@ export default function AddChickenEventScreen() {
           {step === 'group' ? (
             <>
               <View style={styles.inputGroup}>
-                <Text style={[styles.header, { color: colors.text }]}>Create or Select Group</Text>
-                <Text style={[styles.subheader, { color: colors.textSecondary }]}>Events are organized within groups</Text>
+                <Text style={styles.header}>Create or Select Group</Text>
+                <Text style={styles.subheader}>Events are organized within groups</Text>
               </View>
               
               <View style={styles.inputGroup}>
@@ -484,11 +487,10 @@ export default function AddChickenEventScreen() {
                         <TextInput
                           key={`chick-qty-${index}`}
                           style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
-                          value={breedEntry.roosters > 0 ? String(breedEntry.roosters) : ''}
+                          value={String(breedEntry.chicks || '')}
                           onChangeText={(text) => {
                             const qty = text.trim() === '' ? 0 : parseInt(text) || 0;
-                            updateBreedEntry(index, 'roosters', qty);
-                            updateBreedEntry(index, 'hens', 0);
+                            updateBreedEntry(index, 'chicks', qty);
                           }}
                           placeholder="0"
                           placeholderTextColor="#9ca3af"
@@ -797,10 +799,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700" as const,
     marginBottom: 4,
+    color: "#000",
   },
   subheader: {
     fontSize: 14,
     lineHeight: 20,
+    color: "#000",
   },
   groupTypeButtons: {
     flexDirection: "row",
