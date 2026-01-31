@@ -118,7 +118,7 @@ export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], 
                   />
                   <View style={styles.customInputButtons}>
                     <TouchableOpacity
-                      style={styles.customInputCancelButton}
+                      style={[styles.customInputCancelButton, { marginRight: 6 }]}
                       onPress={() => {
                         setShowCustomInput(false);
                         setCustomBreed("");
@@ -127,7 +127,11 @@ export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], 
                       <Text style={styles.customInputCancelText}>Back</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.customInputSubmitButton, !customBreed.trim() && styles.customInputSubmitButtonDisabled]}
+                      style={[
+                        styles.customInputSubmitButton,
+                        { marginLeft: 6 },
+                        !customBreed.trim() && styles.customInputSubmitButtonDisabled
+                      ]}
                       onPress={handleCustomSubmit}
                       disabled={!customBreed.trim()}
                     >
@@ -268,7 +272,7 @@ const styles = StyleSheet.create({
   },
   customInputButtons: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "space-between",
   },
   customInputCancelButton: {
     flex: 1,

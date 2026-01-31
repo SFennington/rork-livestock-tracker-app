@@ -71,7 +71,7 @@ export default function AnalyticsScreen() {
     // Calculate average value per dozen from egg sales (exclude donated)
     const eggSales = income.filter(i => i.type === 'eggs' && i.amount > 0 && i.quantity && i.quantity > 0);
     const avgValuePerDozen = eggSales.length > 0 
-      ? eggSales.reduce((sum, sale) => sum + (sale.amount / (sale.quantity! / 12)), 0) / eggSales.length
+      ? eggSales.reduce((sum, sale) => sum + (sale.amount / sale.quantity!), 0) / eggSales.length
       : 0;
     
     const profitPerDozen = avgValuePerDozen - costPerDozen;

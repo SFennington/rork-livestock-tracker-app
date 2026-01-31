@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform, Modal } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { Egg, Heart, DollarSign, TrendingUp, ChevronUp, ChevronDown, Filter, Plus, X } from "lucide-react-native";
 import { router } from "expo-router";
@@ -28,19 +29,16 @@ export default function RecordsScreen() {
   const {
     eggProduction,
     breedingRecords,
-    expenses,
-    income,
     rabbits,
     isLoading,
     updateEggProduction,
     deleteEggProduction,
     updateBreedingRecord,
     deleteBreedingRecord,
-    updateExpense,
-    deleteExpense,
-    updateIncome,
-    deleteIncome,
+    groups,
+    animals,
   } = useLivestock();
+  const { records: financialRecords, updateRecord, deleteRecord } = useFinancialStore();
   const { colors } = useTheme();
 
   const [activeTab, setActiveTab] = useState<'eggs' | 'breeding' | 'financial'>('eggs');
@@ -62,7 +60,7 @@ export default function RecordsScreen() {
 
   const [eggFilters, setEggFilters] = useState<{ startDate?: string; endDate?: string; minCount?: string; maxCount?: string; notes?: string }>({});
   const [breedFilters, setBreedFilters] = useState<{ startDate?: string; endDate?: string; status?: string } >({});
-  const [moneyFilters, setMoneyFilters] = useState<{ startDate?: string; endDate?: string; minAmount?: string; maxAmount?: string; type?: "income" | "expense" | "all"; text?: string }>({ type: "all" });
+  const [moneyFilters, setMoneyFilters] = useState<{ startDate?: string; endDate?: string; groupId?: string; breed?: string; animalId?: string; type?: "income" | "expense" | "all"; text?: string }>({ type: "all" });
 
   const insets = useSafeAreaInsets();
 
@@ -176,29 +174,33 @@ export default function RecordsScreen() {
   }, [breedingRecords, breedFilters.startDate, breedFilters.endDate, breedFilters.status, breedSort.key, breedSort.dir]);
 
   const unifiedMoney = useMemo(() => {
-    return [
-      ...income.map(i => ({ ...i, isIncome: true as const, type: 'income' as const })),
-      ...expenses.map(e => ({ ...e, isIncome: false as const, type: 'expense' as const })),
-    ];
-  }, [income, expenses]);
+    return financialRecords.map(r => ({
+      ...r,
+      isIncome: r.type === 'income',
+      type: r.type,
+    }));
+  }, [financialRecords]);
+
+  // Get unique groups that have financial records
+  const availableGroups = useMemo(() => {
+    const groupIds = new Set(financialRecords.filter(r => r.groupId).map(r => r.groupId!));
+    return groups.filter(g => groupIds.has(g.id));
+  }, [financialRecords, groups]);
 
   const filteredSortedMoney = useMemo(() => {
     const start = moneyFilters.startDate ? new Date(moneyFilters.startDate).getTime() : undefined;
     const end = moneyFilters.endDate ? new Date(moneyFilters.endDate).getTime() : undefined;
-    const min = moneyFilters.minAmount ? Number(moneyFilters.minAmount) : undefined;
-    const max = moneyFilters.maxAmount ? Number(moneyFilters.maxAmount) : undefined;
     const q = moneyFilters.text?.toLowerCase() ?? '';
 
     const filtered = unifiedMoney.filter(r => {
       const t = new Date(r.date).getTime();
       if (start !== undefined && t < start) return false;
       if (end !== undefined && t > end) return false;
-      if (min !== undefined && r.amount < min) return false;
-      if (max !== undefined && r.amount > max) return false;
       if (moneyFilters.type && moneyFilters.type !== 'all') {
         if (moneyFilters.type === 'income' && !r.isIncome) return false;
         if (moneyFilters.type === 'expense' && r.isIncome) return false;
       }
+      if (moneyFilters.groupId && r.groupId !== moneyFilters.groupId) return false;
       if (q && !(r.description ?? '').toLowerCase().includes(q)) return false;
       return true;
     });
@@ -218,7 +220,7 @@ export default function RecordsScreen() {
     });
 
     return sorted;
-  }, [unifiedMoney, moneyFilters.startDate, moneyFilters.endDate, moneyFilters.minAmount, moneyFilters.maxAmount, moneyFilters.type, moneyFilters.text, moneySort.key, moneySort.dir]);
+  }, [unifiedMoney, moneyFilters.startDate, moneyFilters.endDate, moneyFilters.groupId, moneyFilters.breed, moneyFilters.animalId, moneyFilters.type, moneyFilters.text, moneySort.key, moneySort.dir]);
 
   const SortIcon = ({ dir, active }: { dir: SortDirection; active: boolean }) => (
     <View style={styles.sortIconRow}>
@@ -282,9 +284,8 @@ export default function RecordsScreen() {
     const run = async () => {
       const keys = Array.from(selectedMoneyKeys);
       await Promise.all(keys.map(key => {
-        const isIncomeKey = key.startsWith('i-');
         const id = key.slice(2);
-        return isIncomeKey ? deleteIncome(id) : deleteExpense(id);
+        return deleteRecord(id);
       }));
       setSelectedMoneyKeys(new Set());
     };
@@ -296,7 +297,7 @@ export default function RecordsScreen() {
     } else {
       await run();
     }
-  }, [selectedMoneyKeys, deleteIncome, deleteExpense]);
+  }, [selectedMoneyKeys, deleteRecord]);
 
   if (isLoading) {
     return (
@@ -745,13 +746,35 @@ export default function RecordsScreen() {
                           <DatePicker value={moneyFilters.endDate ?? ''} onChange={(d) => { setMoneyFilters(prev => ({ ...prev, endDate: d })); setShowMoneyDatePicker(null); }} label="To" />
                         </View>
                       )}
-                      <View style={styles.filterItemTiny}> 
-                        <Text style={styles.filterLabelCompact}>Min $</Text>
-                        <TextInput style={styles.filterInputCompact} keyboardType="decimal-pad" value={moneyFilters.minAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, minAmount: t }))} placeholder="0" />
-                      </View>
-                      <View style={styles.filterItemTiny}> 
-                        <Text style={styles.filterLabelCompact}>Max $</Text>
-                        <TextInput style={styles.filterInputCompact} keyboardType="decimal-pad" value={moneyFilters.maxAmount ?? ''} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, maxAmount: t }))} placeholder="9999" />
+                      <View style={styles.filterItemMedium}>
+                        <Text style={styles.filterLabelCompact}>Group</Text>
+                        <View style={styles.filterSelectWrapper}>
+                          <TextInput 
+                            style={styles.filterInputCompact} 
+                            value={moneyFilters.groupId ? (availableGroups.find(g => g.id === moneyFilters.groupId)?.name ?? 'All') : 'All'} 
+                            editable={false}
+                          />
+                          <TouchableOpacity 
+                            style={styles.filterSelectButton}
+                            onPress={() => {
+                              Alert.alert(
+                                'Select Group',
+                                '',
+                                [
+                                  { text: 'All', onPress: () => setMoneyFilters(prev => ({ ...prev, groupId: undefined })) },
+                                  ...availableGroups.map(g => ({
+                                    text: g.name,
+                                    onPress: () => setMoneyFilters(prev => ({ ...prev, groupId: g.id }))
+                                  })),
+                                  { text: 'Cancel', style: 'cancel' }
+                                ],
+                                { cancelable: true }
+                              );
+                            }}
+                          >
+                            <ChevronDown size={16} color="#6b7280" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                       <View style={styles.filterItemTiny}>
                         <Text style={styles.filterLabelCompact}>Type</Text>
@@ -839,7 +862,7 @@ export default function RecordsScreen() {
                               e.stopPropagation();
                               try {
                                 const newRecurring = !('recurring' in record && record.recurring);
-                                await updateExpense(record.id, { recurring: newRecurring });
+                                await updateRecord(record.id, { recurring: newRecurring });
                               } catch (err) {
                                 Alert.alert('Error', 'Failed to update recurring status');
                                 console.log('update recurring error', err);
@@ -1003,7 +1026,7 @@ export default function RecordsScreen() {
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Amount</Text>
                   <TextInput
-                    style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                    style={[styles.modalInput, { borderColor: colors.border }]}
                     value={String(editingMoneyRecord.amount)}
                     onChangeText={(t) => setEditingMoneyRecord({ ...editingMoneyRecord, amount: parseFloat(t) || 0 })}
                     keyboardType="decimal-pad"
@@ -1016,7 +1039,7 @@ export default function RecordsScreen() {
                   <View style={styles.modalField}>
                     <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Quantity (dozens)</Text>
                     <TextInput
-                      style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                      style={[styles.modalInput, { borderColor: colors.border }]}
                       value={editingMoneyRecord.quantity !== undefined ? String(editingMoneyRecord.quantity) : ''}
                       onChangeText={(t) => setEditingMoneyRecord({ ...editingMoneyRecord, quantity: t ? parseFloat(t) : undefined })}
                       keyboardType="decimal-pad"
@@ -1029,7 +1052,7 @@ export default function RecordsScreen() {
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Description</Text>
                   <TextInput
-                    style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                    style={[styles.modalInput, { borderColor: colors.border }]}
                     value={editingMoneyRecord.description}
                     onChangeText={(t) => setEditingMoneyRecord({ ...editingMoneyRecord, description: t })}
                     placeholder="Optional description"
@@ -1068,21 +1091,12 @@ export default function RecordsScreen() {
                     style={[styles.modalButton, styles.modalButtonSave]}
                     onPress={async () => {
                       try {
-                        if (editingMoneyRecord.isIncome) {
-                          await updateIncome(editingMoneyRecord.id, {
-                            date: editingMoneyRecord.date,
-                            amount: editingMoneyRecord.amount,
-                            quantity: editingMoneyRecord.quantity,
-                            description: editingMoneyRecord.description.trim() || undefined,
-                          });
-                        } else {
-                          await updateExpense(editingMoneyRecord.id, {
-                            date: editingMoneyRecord.date,
-                            amount: editingMoneyRecord.amount,
-                            description: editingMoneyRecord.description.trim() || undefined,
-                            recurring: editingMoneyRecord.recurring,
-                          });
-                        }
+                        await updateRecord(editingMoneyRecord.id, {
+                          date: editingMoneyRecord.date,
+                          amount: editingMoneyRecord.amount,
+                          description: editingMoneyRecord.description.trim() || undefined,
+                          recurring: editingMoneyRecord.recurring,
+                        });
                         setShowMoneyEditModal(false);
                         setEditingMoneyRecord(null);
                       } catch (e) {
@@ -1626,6 +1640,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     backgroundColor: '#fff',
+    color: '#111827',
   },
   modalInputReadonly: {
     backgroundColor: '#f3f4f6',
@@ -1665,5 +1680,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  filterSelectWrapper: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  filterSelectButton: {
+    position: 'absolute',
+    right: 4,
+    padding: 4,
   },
 });

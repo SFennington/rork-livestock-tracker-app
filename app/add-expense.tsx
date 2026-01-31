@@ -1,30 +1,80 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
-import { useState } from "react";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Alert } from "react-native";
+import { useState, useEffect, useMemo } from "react";
 import { router } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
 import { useFinancialStore } from "@/hooks/financial-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
-import { DollarSign, FileText, TrendingUp, TrendingDown } from "lucide-react-native";
+import { DollarSign, FileText, Calendar } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
+import BreedPicker from "@/components/BreedPicker";
+import { CHICKEN_BREEDS, DUCK_BREEDS, RABBIT_BREEDS } from "@/constants/breeds";
 
-type TransactionType = 'expense' | 'income';
-type ExpenseCategory = 'feed' | 'bedding' | 'medical' | 'equipment' | 'other';
-type IncomeType = 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other';
-
-export default function AddTransactionScreen() {
-  const { addExpense, addIncome, income, expenses, eggProduction } = useLivestock();
+export default function AddExpenseScreen() {
+  const { groups, getGroupsByType } = useLivestock();
+  const { addRecord } = useFinancialStore();
   const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
-  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
-  const [expenseCategory, setExpenseCategory] = useState(settings.expenseCategories[0] || 'feed');
-  const [incomeType, setIncomeType] = useState(settings.incomeTypes[0] || 'eggs');
+  
+  const [category, setCategory] = useState(settings.expenseCategories[0] || 'feed');
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getLocalDateString());
   const [livestockType, setLivestockType] = useState<'chicken' | 'rabbit' | 'duck' | 'general'>('general');
   const [description, setDescription] = useState("");
+  const [groupId, setGroupId] = useState<string>("");
+  const [breed, setBreed] = useState<string>("");
   const [recurring, setRecurring] = useState(false);
+
+  // Get breeds for current livestock type
+  const availableBreeds = useMemo(() => {
+    switch (livestockType) {
+      case 'chicken':
+        return [...CHICKEN_BREEDS, ...(settings.customChickenBreeds || [])].sort();
+      case 'duck':
+        return [...DUCK_BREEDS, ...(settings.customDuckBreeds || [])].sort();
+      case 'rabbit':
+        return [...RABBIT_BREEDS, ...(settings.customRabbitBreeds || [])].sort();
+      default:
+        return [];
+    }
+  }, [livestockType, settings]);
+
+  // Get groups for current livestock type
+  const currentGroups = useMemo(() => {
+    if (livestockType === 'general') return [];
+    return getGroupsByType(livestockType);
+  }, [livestockType, getGroupsByType]);
+
+  // Reset group and breed when livestock type changes
+  useEffect(() => {
+    setGroupId("");
+    setBreed("");
+  }, [livestockType]);
+
+  // Auto-select group if only one exists
+  useEffect(() => {
+    if (currentGroups.length === 1) {
+      setGroupId(currentGroups[0].id);
+    } else if (currentGroups.length === 0) {
+      setGroupId("");
+    }
+  }, [currentGroups]);
+
+  // Group options for picker
+  const groupOptions = ['None', ...currentGroups.map(g => g.name)];
+  
+  const getGroupIdFromName = (name: string) => {
+    if (name === 'None') return '';
+    const group = currentGroups.find(g => g.name === name);
+    return group?.id || '';
+  };
+  
+  const getGroupNameFromId = (id: string) => {
+    if (!id) return 'None';
+    const group = currentGroups.find(g => g.id === id);
+    return group?.name || 'None';
+  };
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -32,73 +82,27 @@ export default function AddTransactionScreen() {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
-  const quickSelectOptions = transactionType === 'expense' 
-    ? settings.expenseQuickSelects
-    : settings.incomeQuickSelects;
-
-  const handleQuickSelect = (option: any) => {
-    setAmount(option.amount);
-    setDescription(option.description);
-    if (transactionType === 'expense') {
-      setExpenseCategory(option.category as ExpenseCategory);
-    } else {
-      setIncomeType(option.type as IncomeType);
-    }
-  };
-
   const handleSave = async () => {
-    if (!amount || !date) {
-      if (Platform.OS === 'web') {
-        alert("Please fill in all required fields");
-      }
+    if (!amount || !date || !description) {
+      Alert.alert("Error", "Please fill in all required fields");
       return;
     }
 
-    const transactionAmount = parseFloat(amount);
-    if (isNaN(transactionAmount) || transactionAmount <= 0) {
-      if (Platform.OS === 'web') {
-        alert("Please enter a valid amount");
-      }
+    const expenseAmount = parseFloat(amount);
+    if (isNaN(expenseAmount) || expenseAmount <= 0) {
+      Alert.alert("Error", "Please enter a valid amount");
       return;
     }
 
-    if (transactionType === 'expense') {
-      await addExpense({
-        category: expenseCategory as 'feed' | 'bedding' | 'medical' | 'equipment' | 'other',
-        amount: transactionAmount,
-        date,
-        livestockType,
-        description,
-        recurring,
-      });
-    } else {
-      await addIncome({
-        type: incomeType as 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other',
-        amount: transactionAmount,
-        date,
-        livestockType: livestockType === 'general' ? 'chicken' : livestockType,
-        description,
-      });
-    }
-
-    // Calculate and save ROI snapshot
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0) + (transactionType === 'expense' ? transactionAmount : 0);
-    const totalIncome = income.reduce((sum, i) => sum + i.amount, 0) + (transactionType === 'income' ? transactionAmount : 0);
-    let totalSold = 0, totalLaid = 0, totalBroken = 0, totalDonated = 0;
-    income.forEach(r => {
-      if (r.type === 'eggs' && r.quantity) {
-        if (r.amount === 0) totalDonated += r.quantity;
-        else totalSold += r.quantity;
-      }
+    await addRecord({
+      date,
+      type: 'expense',
+      category: category.charAt(0).toUpperCase() + category.slice(1),
+      amount: expenseAmount,
+      description,
+      groupId: groupId || undefined,
+      breed: breed || undefined,
     });
-    eggProduction.forEach(r => {
-      totalLaid += r.laid || r.count;
-      totalBroken += r.broken || 0;
-    });
-    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
-    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
-    const roi = (totalIncome + consumptionSavings) - totalExpenses;
-    await saveROISnapshot(roi);
 
     router.back();
   };
@@ -117,121 +121,117 @@ export default function AddTransactionScreen() {
       >
       <View style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Transaction Type *</Text>
-          <View style={styles.typeButtons}>
-            <TouchableOpacity
-              style={[styles.typeButton, transactionType === 'expense' && styles.typeButtonActiveExpense]}
-              onPress={() => setTransactionType('expense')}
-            >
-              <TrendingDown size={18} color={transactionType === 'expense' ? '#fff' : '#6b7280'} />
-              <Text style={[styles.typeButtonText, transactionType === 'expense' && styles.typeButtonTextActive]}>
-                Expense
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.typeButton, transactionType === 'income' && styles.typeButtonActiveIncome]}
-              onPress={() => setTransactionType('income')}
-            >
-              <TrendingUp size={18} color={transactionType === 'income' ? '#fff' : '#6b7280'} />
-              <Text style={[styles.typeButtonText, transactionType === 'income' && styles.typeButtonTextActive]}>
-                Income
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Quick Select</Text>
-          <View style={styles.quickSelectGrid}>
-            {quickSelectOptions.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.quickSelectButton}
-                onPress={() => handleQuickSelect(option)}
-              >
-                <Text style={styles.quickSelectText}>{option.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {transactionType === 'expense' ? (
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Category *</Text>
-            <View style={styles.categoryGrid}>
-              {settings.expenseCategories.map((cat) => {
-                const categoryName = cat.charAt(0).toUpperCase() + cat.slice(1);
-                return (
-                  <TouchableOpacity
-                    key={cat}
-                    style={[styles.categoryButton, expenseCategory === cat && styles.categoryButtonActive]}
-                    onPress={() => setExpenseCategory(cat)}
-                  >
-                    <Text style={[styles.categoryButtonText, expenseCategory === cat && styles.categoryButtonTextActive]}>
-                      {categoryName}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        ) : (
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Income Type *</Text>
-            <View style={styles.categoryGrid}>
-              {settings.incomeTypes.map((type) => {
-                const typeName = type.charAt(0).toUpperCase() + type.slice(1);
-                return (
-                  <TouchableOpacity
-                    key={type}
-                    style={[styles.categoryButton, incomeType === type && styles.categoryButtonActive]}
-                    onPress={() => setIncomeType(type)}
-                  >
-                    <Text style={[styles.categoryButtonText, incomeType === type && styles.categoryButtonTextActive]}>
-                      {typeName}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Applies To *</Text>
-          <View style={styles.livestockButtons}>
-            {(['general', 'chicken', 'duck', 'rabbit'] as const).map((type) => {
-              const typeName = type.charAt(0).toUpperCase() + type.slice(1);
-              const isDisabled = type === 'rabbit';
+          <Text style={styles.label}>Category *</Text>
+          <View style={styles.categoryGrid}>
+            {settings.expenseCategories.map((cat) => {
+              const categoryName = cat.charAt(0).toUpperCase() + cat.slice(1);
               return (
                 <TouchableOpacity
-                  key={type}
-                  style={[styles.livestockButton, livestockType === type && styles.livestockButtonActive, isDisabled && styles.livestockButtonDisabled]}
-                  onPress={() => !isDisabled && setLivestockType(type)}
-                  disabled={isDisabled}
+                  key={cat}
+                  style={[styles.categoryButton, category === cat && styles.categoryButtonActive]}
+                  onPress={() => setCategory(cat)}
                 >
-                  <Text style={[styles.livestockButtonText, livestockType === type && styles.livestockButtonTextActive, isDisabled && styles.livestockButtonTextDisabled]}>
-                    {typeName}
+                  <Text style={[styles.categoryButtonText, category === cat && styles.categoryButtonTextActive]}>
+                    {categoryName}
                   </Text>
-                  {isDisabled && <Text style={styles.comingSoonBadge}>Coming Soon</Text>}
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
 
-        {transactionType === 'expense' && (
-          <View style={styles.inputGroup}>
-            <TouchableOpacity 
-              style={styles.checkboxRow}
-              onPress={() => setRecurring(!recurring)}
-              activeOpacity={0.7}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>For</Text>
+          <View style={styles.livestockButtons}>
+            <TouchableOpacity
+              style={[styles.livestockButton, livestockType === 'general' && styles.livestockButtonActive]}
+              onPress={() => setLivestockType('general')}
             >
-              <View style={[styles.checkbox, recurring && styles.checkboxChecked]}>
-                {recurring && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.checkboxLabel}>Recurring Expense (for cost-per-egg calculation)</Text>
+              <Text style={[styles.livestockButtonText, livestockType === 'general' && styles.livestockButtonTextActive]}>
+                General
+              </Text>
             </TouchableOpacity>
+            {settings.enabledAnimals.chickens && (
+              <TouchableOpacity
+                style={[styles.livestockButton, livestockType === 'chicken' && styles.livestockButtonActive]}
+                onPress={() => setLivestockType('chicken')}
+              >
+                <Text style={[styles.livestockButtonText, livestockType === 'chicken' && styles.livestockButtonTextActive]}>
+                  Chickens
+                </Text>
+              </TouchableOpacity>
+            )}
+            {settings.enabledAnimals.ducks && (
+              <TouchableOpacity
+                style={[styles.livestockButton, livestockType === 'duck' && styles.livestockButtonActive]}
+                onPress={() => setLivestockType('duck')}
+              >
+                <Text style={[styles.livestockButtonText, livestockType === 'duck' && styles.livestockButtonTextActive]}>
+                  Ducks
+                </Text>
+              </TouchableOpacity>
+            )}
+            {settings.enabledAnimals.rabbits && (
+              <TouchableOpacity
+                style={[styles.livestockButton, livestockType === 'rabbit' && styles.livestockButtonActive]}
+                onPress={() => setLivestockType('rabbit')}
+              >
+                <Text style={[styles.livestockButtonText, livestockType === 'rabbit' && styles.livestockButtonTextActive]}>
+                  Rabbits
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {livestockType !== 'general' && currentGroups.length > 0 && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Group (optional)</Text>
+            <BreedPicker
+              label=""
+              value={getGroupNameFromId(groupId)}
+              onChange={(name) => setGroupId(getGroupIdFromName(name))}
+              breeds={groupOptions}
+              placeholder="Select Group"
+              maxVisibleItems={6}
+              modalTitle="Select Group"
+            />
+          </View>
+        )}
+
+        {livestockType !== 'general' && availableBreeds.length > 0 && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Breed (optional)</Text>
+            <BreedPicker
+              label=""
+              value={breed}
+              onChange={setBreed}
+              breeds={availableBreeds}
+              placeholder="Select Breed"
+              maxVisibleItems={6}
+              modalTitle="Select Breed"
+            />
+          </View>
+        )}
+
+        {settings.expenseQuickSelects.length > 0 && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Quick Select</Text>
+            <View style={styles.quickSelectGrid}>
+              {settings.expenseQuickSelects.map((quick, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.quickSelectButton}
+                  onPress={() => {
+                    setCategory(quick.category || category);
+                    setAmount(quick.amount);
+                    setDescription(quick.description);
+                  }}
+                >
+                  <Text style={styles.quickSelectText}>{quick.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
 
@@ -288,7 +288,7 @@ export default function AddTransactionScreen() {
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <FileText size={16} color="#6b7280" />
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>Description *</Text>
           </View>
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -301,20 +301,30 @@ export default function AddTransactionScreen() {
           />
         </View>
 
+        <View style={styles.inputGroup}>
+          <TouchableOpacity 
+            style={styles.checkboxRow} 
+            onPress={() => setRecurring(!recurring)}
+          >
+            <View style={[styles.checkbox, recurring && styles.checkboxChecked]}>
+              {recurring && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <Text style={styles.checkboxLabel}>Recurring expense</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.buttons}>
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>
-              {transactionType === 'expense' ? 'Add Expense' : 'Add Income'}
-            </Text>
+            <Text style={styles.saveButtonText}>Add Expense</Text>
           </TouchableOpacity>
         </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-    );
+  );
 }
 
 const styles = StyleSheet.create({
@@ -379,38 +389,6 @@ const styles = StyleSheet.create({
   categoryButtonTextActive: {
     color: "#fff",
   },
-  typeButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  typeButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  typeButtonActiveExpense: {
-    backgroundColor: "#ef4444",
-    borderColor: "#ef4444",
-  },
-  typeButtonActiveIncome: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
-  },
-  typeButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#6b7280",
-  },
-  typeButtonTextActive: {
-    color: "#fff",
-  },
   dateButtonsRow: {
     flexDirection: "row" as const,
     gap: 8,
@@ -437,11 +415,12 @@ const styles = StyleSheet.create({
   },
   livestockButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   livestockButton: {
-    flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -459,66 +438,6 @@ const styles = StyleSheet.create({
   },
   livestockButtonTextActive: {
     color: "#fff",
-  },
-  livestockButtonDisabled: {
-    opacity: 0.5,
-    backgroundColor: "#e5e7eb",
-  },
-  livestockButtonTextDisabled: {
-    color: "#9ca3af",
-  },
-  comingSoonBadge: {
-    fontSize: 10,
-    color: "#9ca3af",
-    marginTop: 2,
-    fontStyle: "italic",
-  },
-  quickSelectGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  quickSelectButton: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  quickSelectText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#374151",
-  },
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: "#d1d5db",
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  checkboxChecked: {
-    backgroundColor: "#10b981",
-    borderColor: "#10b981",
-  },
-  checkmark: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    color: "#374151",
-    flex: 1,
   },
   buttons: {
     flexDirection: "row",
@@ -549,5 +468,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  quickSelectGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  quickSelectButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f3f4f6",
+  },
+  quickSelectText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: "#ef4444",
+    borderColor: "#ef4444",
+  },
+  checkmark: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: "#374151",
   },
 });

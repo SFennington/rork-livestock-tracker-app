@@ -341,9 +341,9 @@ export default function DashboardScreen() {
             <Text style={styles.actionText}>Breeding</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-expense')}>
+        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/add-transaction')}>
           <DollarSign size={20} color="#fff" />
-          <Text style={styles.actionText}>Finance</Text>
+          <Text style={styles.actionText}>Log Finance</Text>
         </TouchableOpacity>
       </View>
 
