@@ -78,7 +78,7 @@ export default function GroupDetailScreen() {
                       const chickIds = groupAnimals.filter(a => a.stage === 'chick').map(a => a.id).join(',');
                       router.push({
                         pathname: '/mature-animals' as any,
-                        params: { animalIds: chickIds, type: 'chicken' }
+                        params: { ids: chickIds, type: 'chicken' }
                       });
                     }}
                   >

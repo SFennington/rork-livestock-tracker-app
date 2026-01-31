@@ -282,18 +282,13 @@ export default function AddChickenEventScreen() {
             </>
           ) : (
             <>
-          {/* Group Header */}
-          {preselectedGroupId && (() => {
-            const selectedGroup = groups.find(g => g.id === preselectedGroupId);
-            return selectedGroup ? (
-              <View style={[styles.inputGroup, { marginBottom: 24 }]}>
-                <View style={[styles.groupHeaderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Text style={[styles.groupHeaderLabel, { color: colors.textSecondary }]}>Adding event to group:</Text>
-                  <Text style={[styles.groupHeaderName, { color: colors.text }]}>{selectedGroup.name}</Text>
-                </View>
-              </View>
-            ) : null;
-          })()}
+          {/* Display Group Name */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Group</Text>
+            <Text style={styles.groupNameDisplay}>
+              {chickenGroups.find(g => g.id === groupId)?.name || 'Unknown Group'}
+            </Text>
+          </View>
           
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
@@ -430,14 +425,6 @@ export default function AddChickenEventScreen() {
                   )}
                 </View>
               )}
-
-              {/* Display Group Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Group</Text>
-                <Text style={styles.groupNameDisplay}>
-                  {chickenGroups.find(g => g.id === groupId)?.name || 'Unknown Group'}
-                </Text>
-              </View>
 
               {/* Multi-Breed Entries */}
               <View style={styles.inputGroup}>
