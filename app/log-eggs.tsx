@@ -11,7 +11,7 @@ import BreedPicker from "@/components/BreedPicker";
 import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function LogEggsScreen() {
-  const { addEggProduction, eggProduction, income, expenses, getGroupsByType } = useLivestock();
+  const { addEggProduction, eggProduction, income, expenses, getGroupsByType, getAliveAnimals } = useLivestock();
   const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const { colors } = useTheme();
@@ -26,6 +26,27 @@ export default function LogEggsScreen() {
   const [groupId, setGroupId] = useState<string>("");
 
   const chickenGroups = getGroupsByType('chicken');
+  
+  // Get unique breeds from alive chickens only
+  const aliveChickens = getAliveAnimals('chicken');
+  const existingBreeds = Array.from(new Set(aliveChickens.map(a => a.breed))).sort();
+  
+  // Group names for dropdown (with None option)
+  const groupOptions = ['None', ...chickenGroups.map(g => g.name)];
+  
+  // Helper to convert group name to ID
+  const getGroupIdFromName = (name: string) => {
+    if (name === 'None') return '';
+    const group = chickenGroups.find(g => g.name === name);
+    return group?.id || '';
+  };
+  
+  // Helper to convert group ID to name
+  const getGroupNameFromId = (id: string) => {
+    if (!id) return 'None';
+    const group = chickenGroups.find(g => g.id === id);
+    return group?.name || 'None';
+  };
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -104,88 +125,103 @@ export default function LogEggsScreen() {
         <View style={styles.form}>
           <Text style={styles.screenTitle}>Log Egg Record</Text>
           
+          {/* Side-by-side Inputs */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Eggs Laid</Text>
-            <View style={styles.buttonGrid}>
-              {recentLaidQuantities.length > 0 ? (
-                recentLaidQuantities.map((qty) => (
-                  <TouchableOpacity
-                    key={qty}
-                    style={[styles.quantityButton, laidQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => { setLaidQuantity(qty); setLaidInput(qty.toString()); }}
-                  >
-                    <Text style={[styles.quantityButtonText, laidQuantity === qty && styles.quantityButtonTextActive]}>
-                      {qty}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                ['10', '12', '15'].map((qty) => (
-                  <TouchableOpacity
-                    key={qty}
-                    style={[styles.quantityButton, laidQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => { setLaidQuantity(parseInt(qty)); setLaidInput(qty); }}
-                  >
-                    <Text style={[styles.quantityButtonText, laidQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
-                      {qty}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
+            <View style={styles.sideBySideContainer}>
+              <View style={styles.halfWidth}>
+                <Text style={styles.sectionTitle}>Eggs Laid</Text>
+                <TextInput
+                  style={styles.quantityInput}
+                  placeholder="Enter quantity"
+                  keyboardType="numeric"
+                  value={laidInput}
+                  onChangeText={(text) => {
+                    setLaidInput(text);
+                    const parsed = parseInt(text);
+                    setLaidQuantity(isNaN(parsed) ? null : parsed);
+                  }}
+                />
+              </View>
+              
+              <View style={styles.halfWidth}>
+                <Text style={styles.sectionTitle}>Eggs Broken</Text>
+                <TextInput
+                  style={styles.quantityInput}
+                  placeholder="Enter quantity"
+                  keyboardType="numeric"
+                  value={brokenInput}
+                  onChangeText={(text) => {
+                    setBrokenInput(text);
+                    const parsed = parseInt(text);
+                    setBrokenQuantity(isNaN(parsed) ? null : parsed);
+                  }}
+                />
+              </View>
             </View>
-            <TextInput
-              style={styles.quantityInput}
-              placeholder="Or enter quantity"
-              keyboardType="numeric"
-              value={laidInput}
-              onChangeText={(text) => {
-                setLaidInput(text);
-                const parsed = parseInt(text);
-                setLaidQuantity(isNaN(parsed) ? null : parsed);
-              }}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Eggs Broken</Text>
-            <View style={styles.buttonGrid}>
-              {recentBrokenQuantities.length > 0 ? (
-                recentBrokenQuantities.map((qty) => (
-                  <TouchableOpacity
-                    key={qty}
-                    style={[styles.quantityButton, brokenQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => { setBrokenQuantity(qty); setBrokenInput(qty.toString()); }}
-                  >
-                    <Text style={[styles.quantityButtonText, brokenQuantity === qty && styles.quantityButtonTextActive]}>
-                      {qty}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                ['1', '2', '3'].map((qty) => (
-                  <TouchableOpacity
-                    key={qty}
-                    style={[styles.quantityButton, brokenQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => { setBrokenQuantity(parseInt(qty)); setBrokenInput(qty); }}
-                  >
-                    <Text style={[styles.quantityButtonText, brokenQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
-                      {qty}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
+            
+            {/* Quick select buttons for Laid */}
+            <View style={{ marginTop: 12 }}>
+              <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Quick Select - Laid</Text>
+              <View style={styles.buttonGrid}>
+                {recentLaidQuantities.length > 0 ? (
+                  recentLaidQuantities.map((qty) => (
+                    <TouchableOpacity
+                      key={qty}
+                      style={[styles.quantityButton, laidQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                      onPress={() => { setLaidQuantity(qty); setLaidInput(qty.toString()); }}
+                    >
+                      <Text style={[styles.quantityButtonText, laidQuantity === qty && styles.quantityButtonTextActive]}>
+                        {qty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  ['10', '12', '15'].map((qty) => (
+                    <TouchableOpacity
+                      key={qty}
+                      style={[styles.quantityButton, laidQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                      onPress={() => { setLaidQuantity(parseInt(qty)); setLaidInput(qty); }}
+                    >
+                      <Text style={[styles.quantityButtonText, laidQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                        {qty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
             </View>
-            <TextInput
-              style={styles.quantityInput}
-              placeholder="Or enter quantity"
-              keyboardType="numeric"
-              value={brokenInput}
-              onChangeText={(text) => {
-                setBrokenInput(text);
-                const parsed = parseInt(text);
-                setBrokenQuantity(isNaN(parsed) ? null : parsed);
-              }}
-            />
+            
+            {/* Quick select buttons for Broken */}
+            <View style={{ marginTop: 12 }}>
+              <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Quick Select - Broken</Text>
+              <View style={styles.buttonGrid}>
+                {recentBrokenQuantities.length > 0 ? (
+                  recentBrokenQuantities.map((qty) => (
+                    <TouchableOpacity
+                      key={qty}
+                      style={[styles.quantityButton, brokenQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                      onPress={() => { setBrokenQuantity(qty); setBrokenInput(qty.toString()); }}
+                    >
+                      <Text style={[styles.quantityButtonText, brokenQuantity === qty && styles.quantityButtonTextActive]}>
+                        {qty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  ['1', '2', '3'].map((qty) => (
+                    <TouchableOpacity
+                      key={qty}
+                      style={[styles.quantityButton, brokenQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                      onPress={() => { setBrokenQuantity(parseInt(qty)); setBrokenInput(qty); }}
+                    >
+                      <Text style={[styles.quantityButtonText, brokenQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                        {qty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -194,39 +230,19 @@ export default function LogEggsScreen() {
               label=""
               value={breed}
               onChange={setBreed}
-              breeds={CHICKEN_BREEDS}
+              breeds={existingBreeds.length > 0 ? existingBreeds : CHICKEN_BREEDS}
             />
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Group (optional)</Text>
-            {chickenGroups.length > 0 ? (
-              <View style={{ gap: 8 }}>
-                <TouchableOpacity 
-                  style={[styles.groupButton, groupId === '' && [styles.groupButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                  onPress={() => setGroupId('')}
-                >
-                  <Text style={[styles.groupButtonText, groupId === '' && styles.groupButtonTextActive]}>
-                    None
-                  </Text>
-                </TouchableOpacity>
-                {chickenGroups.map((group) => (
-                  <TouchableOpacity 
-                    key={group.id}
-                    style={[styles.groupButton, groupId === group.id && [styles.groupButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => setGroupId(group.id)}
-                  >
-                    <Text style={[styles.groupButtonText, groupId === group.id && styles.groupButtonTextActive]}>
-                      {group.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <Text style={[styles.sectionSubtitle, { fontStyle: 'italic' }]}>
-                No groups available
-              </Text>
-            )}
+            <BreedPicker
+              label=""
+              value={getGroupNameFromId(groupId)}
+              onChange={(name) => setGroupId(getGroupIdFromName(name))}
+              breeds={groupOptions}
+              placeholder="Select group"
+            />
           </View>
 
           <View style={styles.section}>
@@ -406,6 +422,13 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 13,
     color: "#9ca3af",
+  },
+  sideBySideContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  halfWidth: {
+    flex: 1,
   },
   buttons: {
     flexDirection: "row",

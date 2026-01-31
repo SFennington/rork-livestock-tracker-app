@@ -611,8 +611,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       return updatedLocal;
     });
     
-    // Auto-create individual animals for acquired events
-    if (event.type === 'acquired' && event.quantity > 0) {
+    // Auto-create individual animals for acquired and hatched events
+    if ((event.type === 'acquired' || event.type === 'hatched') && event.quantity > 0) {
       console.log('[livestock-store] Creating animals for event:', { breeds: event.breeds, breed: event.breed, sex: event.sex, quantity: event.quantity });
       
       const newAnimals: IndividualAnimal[] = [];
@@ -709,8 +709,9 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       }
     }
     
-    // Auto-create expense/income record if cost is provided
-    if (event.cost && event.cost > 0) {
+    // Auto-create expense/income record if cost is provided (legacy single-cost only)
+    // Multi-breed costs are handled in add-chicken-event.tsx
+    if (event.cost && event.cost > 0 && (!event.breeds || event.breeds.length === 0)) {
       const description = event.notes || `${event.breed || 'Chickens'}`;
       
       if (event.type === 'sold') {

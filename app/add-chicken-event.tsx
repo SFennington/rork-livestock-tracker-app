@@ -21,6 +21,11 @@ export default function AddChickenEventScreen() {
   const params = useLocalSearchParams();
   const preselectedGroupId = params.groupId as string | undefined;
   
+  // Get unique breeds from alive chickens for sold events
+  const aliveChickens = getAliveAnimals('chicken');
+  const existingBreeds = Array.from(new Set(aliveChickens.map(a => a.breed))).sort();
+  const allBreeds = [...CHICKEN_BREEDS, ...(settings.customChickenBreeds || [])].sort();
+  
   const [step, setStep] = useState<'group' | 'event'>(preselectedGroupId ? 'event' : 'group');
   const [groupName, setGroupName] = useState('');
   const [groupNotes, setGroupNotes] = useState('');
@@ -514,7 +519,7 @@ export default function AddChickenEventScreen() {
                       label=""
                       value={breedEntry.breed}
                       onChange={(breed) => updateBreedEntry(index, 'breed', breed)}
-                      breeds={CHICKEN_BREEDS}
+                      breeds={eventType === 'sold' ? existingBreeds : allBreeds}
                       placeholder="Select breed"
                     />
                     

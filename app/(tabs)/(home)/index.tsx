@@ -3,13 +3,13 @@ import { useLivestock, useRabbitBreeding, useRabbitHealth, getLocalDateString } 
 import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
-import { Egg, Heart, DollarSign, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit } from "lucide-react-native";
+import { Egg, Heart, DollarSign, Calendar, Bird, AlertTriangle, Baby, Syringe, Rabbit, Plus, Minus, ShoppingCart } from "lucide-react-native";
 import { router } from "expo-router";
 import { useMemo, useEffect } from "react";
 import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
-  const { rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getAliveAnimals } = useLivestock();
+  const { rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getAliveAnimals, chickenHistory, duckHistory } = useLivestock();
   const loadROISnapshots = useFinancialStore(state => state.loadROISnapshots);
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
@@ -98,6 +98,151 @@ export default function DashboardScreen() {
       avgDaysCount: actualDaysForAvg,
       roosters,
       hens,
+      chicks,
+      hasDataIssue,
+    };
+  }, [rabbits, eggProduction, breedingRecords, expenses, income, getAliveAnimals, settings]);
+
+  // Combined activity feed with timestamps
+  const recentActivity = useMemo(() => {
+    const activities: Array<{
+      id: string;
+      type: 'egg' | 'chicken-event' | 'duck-event' | 'breeding';
+      timestamp: string;
+      icon: any;
+      text: string;
+      subtitle?: string;
+      color: string;
+    }> = [];
+
+    // Add egg logs
+    eggProduction.forEach(egg => {
+      const timestamp = egg.timestamp || `${egg.date}T12:00:00`;
+      activities.push({
+        id: egg.id,
+        type: 'egg',
+        timestamp,
+        icon: Egg,
+        text: `${egg.count} eggs ${egg.laid ? 'laid' : 'collected'}${egg.broken ? `, ${egg.broken} broken` : ''}`,
+        subtitle: egg.breed ? `Breed: ${egg.breed}` : undefined,
+        color: colors.accent,
+      });
+    });
+
+    // Add chicken events
+    chickenHistory.forEach(event => {
+      const timestamp = `${event.date}T12:00:00`;
+      let icon = Plus;
+      let text = '';
+      const eventTypeObj = settings.chickenEventTypes?.find(et => et.name === event.type);
+      const operation = eventTypeObj?.operation || 'add';
+      
+      if (operation === 'subtract') {
+        icon = Minus;
+      }
+      
+      switch (event.type) {
+        case 'acquired':
+          text = `Acquired ${event.quantity} chicken${event.quantity > 1 ? 's' : ''}`;
+          break;
+        case 'hatched':
+          text = `${event.quantity} chick${event.quantity > 1 ? 's' : ''} hatched`;
+          break;
+        case 'sold':
+          text = `Sold ${event.quantity} chicken${event.quantity > 1 ? 's' : ''}`;
+          icon = ShoppingCart;
+          break;
+        case 'death':
+          text = `${event.quantity} chicken${event.quantity > 1 ? 's' : ''} died`;
+          break;
+        default:
+          text = `${event.type}: ${event.quantity} chicken${event.quantity > 1 ? 's' : ''}`;
+      }
+      
+      activities.push({
+        id: event.id,
+        type: 'chicken-event',
+        timestamp,
+        icon,
+        text,
+        subtitle: event.breed ? `Breed: ${event.breed}` : undefined,
+        color: operation === 'add' ? colors.primary : colors.error,
+      });
+    });
+
+    // Add duck events
+    duckHistory.forEach(event => {
+      const timestamp = `${event.date}T12:00:00`;
+      let icon = Plus;
+      let text = '';
+      
+      switch (event.type) {
+        case 'acquired':
+          text = `Acquired ${event.quantity} duck${event.quantity > 1 ? 's' : ''}`;
+          break;
+        case 'death':
+          text = `${event.quantity} duck${event.quantity > 1 ? 's' : ''} died`;
+          icon = Minus;
+          break;
+        case 'sold':
+          text = `Sold ${event.quantity} duck${event.quantity > 1 ? 's' : ''}`;
+          icon = ShoppingCart;
+          break;
+        default:
+          text = `${event.type}: ${event.quantity} duck${event.quantity > 1 ? 's' : ''}`;
+      }
+      
+      activities.push({
+        id: event.id,
+        type: 'duck-event',
+        timestamp,
+        icon,
+        text,
+        subtitle: event.breed ? `Breed: ${event.breed}` : undefined,
+        color: event.type === 'acquired' ? colors.primary : colors.error,
+      });
+    });
+
+    // Add breeding records
+    breedingRecords.forEach(breeding => {
+      const timestamp = `${breeding.breedingDate}T12:00:00`;
+      const buck = rabbits.find(r => r.id === breeding.buckId);
+      const doe = rabbits.find(r => r.id === breeding.doeId);
+      
+      activities.push({
+        id: breeding.id,
+        type: 'breeding',
+        timestamp,
+        icon: Heart,
+        text: `${buck?.name || 'Unknown'} × ${doe?.name || 'Unknown'}`,
+        subtitle: `Status: ${breeding.status}`,
+        color: colors.secondary,
+      });
+    });
+
+    // Sort by timestamp descending (newest first) and limit to 15 items
+    return activities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 15);
+  }, [eggProduction, chickenHistory, duckHistory, breedingRecords, rabbits, colors, settings]);
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString();
+  };
       chicks,
       hasDataIssue,
       totalLaid,
@@ -278,47 +423,37 @@ export default function DashboardScreen() {
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Activity</Text>
-        {eggProduction.length === 0 && breedingRecords.length === 0 ? (
+        {recentActivity.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Calendar size={48} color={colors.textMuted} />
             <Text style={[styles.emptyText, { color: colors.text }]}>No recent activity</Text>
             <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>Start by adding livestock and logging daily activities</Text>
           </View>
         ) : (
-          <View style={[styles.activityList, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {[...eggProduction].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3).map((egg) => {
-              const [year, month, day] = egg.date.split('-');
-              const displayDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          <ScrollView 
+            style={[styles.activityList, { backgroundColor: colors.card, borderColor: colors.border, maxHeight: 400 }]}
+            nestedScrollEnabled
+          >
+            {recentActivity.map((activity) => {
+              const IconComponent = activity.icon;
               return (
-                <View key={egg.id} style={[styles.activityItem, { borderBottomColor: colors.border }]}>
-                  <Egg size={20} color={colors.accent} />
+                <View key={activity.id} style={[styles.activityItem, { borderBottomColor: colors.border }]}>
+                  <IconComponent size={20} color={activity.color} />
                   <View style={styles.activityContent}>
-                    <Text style={[styles.activityText, { color: colors.text }]}>{egg.count} eggs collected</Text>
+                    <Text style={[styles.activityText, { color: colors.text }]}>{activity.text}</Text>
+                    {activity.subtitle && (
+                      <Text style={[styles.activitySubtitle, { color: colors.textMuted, fontSize: 12 }]}>
+                        {activity.subtitle}
+                      </Text>
+                    )}
                     <Text style={[styles.activityDate, { color: colors.textMuted }]}>
-                      {displayDate.toLocaleDateString()}
+                      {formatTimestamp(activity.timestamp)}
                     </Text>
                   </View>
                 </View>
               );
             })}
-            {[...breedingRecords].sort((a, b) => new Date(b.breedingDate).getTime() - new Date(a.breedingDate).getTime()).slice(0, 2).map((breeding) => {
-              const buck = rabbits.find(r => r.id === breeding.buckId);
-              const doe = rabbits.find(r => r.id === breeding.doeId);
-              return (
-                <View key={breeding.id} style={[styles.activityItem, { borderBottomColor: colors.border }]}>
-                  <Heart size={20} color={colors.secondary} />
-                  <View style={styles.activityContent}>
-                    <Text style={[styles.activityText, { color: colors.text }]}>
-                      {buck?.name || 'Unknown'} × {doe?.name || 'Unknown'}
-                    </Text>
-                    <Text style={[styles.activityDate, { color: colors.textMuted }]}>
-                      Status: {breeding.status}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+          </ScrollView>
         )}
       </View>
 
@@ -481,6 +616,10 @@ const styles = StyleSheet.create({
   activityText: {
     fontSize: 14,
     fontWeight: "500" as const,
+  },
+  activitySubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
   activityDate: {
     fontSize: 12,
