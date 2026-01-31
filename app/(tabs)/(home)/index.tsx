@@ -9,7 +9,7 @@ import { useMemo, useEffect } from "react";
 import EggLogChecker from "@/components/EggLogChecker";
 
 export default function DashboardScreen() {
-  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate, getDuckCountOnDate } = useLivestock();
+  const { chickens, rabbits, eggProduction, breedingRecords, expenses, income, isLoading, getRoostersAndHensCount, getChickenCountOnDate, getDuckCountOnDate, getAliveAnimals } = useLivestock();
   const loadROISnapshots = useFinancialStore(state => state.loadROISnapshots);
   const { upcomingKindlings, activeBreedings } = useRabbitBreeding();
   const { dueVaccinations } = useRabbitHealth();
@@ -29,10 +29,16 @@ export default function DashboardScreen() {
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const totalIncome = income.reduce((sum, i) => sum + i.amount, 0);
     const activeBreedings = breedingRecords.filter(b => b.status === 'bred').length;
-    const activeChickens = getChickenCountOnDate(today);
-    const activeDucks = getDuckCountOnDate(today);
+    
+    // Count individual animals instead of using history
+    const activeChickens = getAliveAnimals('chicken').length;
+    const activeDucks = getAliveAnimals('duck').length;
     const activeRabbits = rabbits.filter(r => r.status === 'active').reduce((sum, r) => sum + r.quantity, 0);
-    const { roosters, hens } = getRoostersAndHensCount(today);
+    
+    // Count roosters and hens from individual animals
+    const aliveChickens = getAliveAnimals('chicken');
+    const roosters = aliveChickens.filter(a => a.sex === 'M' && (!a.stage || a.stage === 'mature')).length;
+    const hens = aliveChickens.filter(a => a.sex === 'F' && (!a.stage || a.stage === 'mature')).length;
     
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
@@ -95,7 +101,7 @@ export default function DashboardScreen() {
       totalSold,
       totalDonated,
     };
-  }, [rabbits, eggProduction, breedingRecords, expenses, income, getRoostersAndHensCount, getChickenCountOnDate, settings.eggsOnHand, settings.eggValuePerDozen]);
+  }, [rabbits, eggProduction, breedingRecords, expenses, income, getAliveAnimals, settings.eggsOnHand, settings.eggValuePerDozen]);
 
   if (isLoading) {
     return (
