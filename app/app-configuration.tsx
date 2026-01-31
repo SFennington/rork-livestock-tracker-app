@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { useAppSettings, QuickSelectOption, ChickenEventType } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Plus, Trash2, Edit3, RotateCcw, Minus } from "lucide-react-native";
+import { Plus, Trash2, Edit3, RotateCcw, Minus, Eye, EyeOff } from "lucide-react-native";
 
 export default function AppConfigurationScreen() {
   const { settings, updateExpenseCategories, updateIncomeTypes, updateChickenEventTypes, updateExpenseQuickSelects, updateIncomeQuickSelects, updateEnabledAnimals, resetToDefaults } = useAppSettings();
@@ -81,12 +81,26 @@ export default function AppConfigurationScreen() {
   };
 
   const handleRemoveChickenEventType = (index: number) => {
-    const updated = chickenEventTypes.filter((_, i) => i !== index);
-    setChickenEventTypes(updated);
-    updateChickenEventTypes(updated);
+    const eventType = chickenEventTypes[index];
+    // Don't allow removing built-in types, only toggle hidden
+    if (eventType.builtIn) {
+      const updated = chickenEventTypes.map((event, i) => 
+        i === index ? { ...event, hidden: !event.hidden } : event
+      );
+      setChickenEventTypes(updated);
+      updateChickenEventTypes(updated);
+    } else {
+      const updated = chickenEventTypes.filter((_, i) => i !== index);
+      setChickenEventTypes(updated);
+      updateChickenEventTypes(updated);
+    }
   };
 
   const handleToggleChickenEventOperation = (index: number) => {
+    const eventType = chickenEventTypes[index];
+    // Don't allow changing operation for built-in types
+    if (eventType.builtIn) return;
+    
     const updated = chickenEventTypes.map((event, i) => 
       i === index ? { ...event, operation: event.operation === 'add' ? 'subtract' : 'add' } as ChickenEventType : event
     );
@@ -383,14 +397,27 @@ export default function AppConfigurationScreen() {
             {chickenEventTypes.map((eventType, index) => (
               <View key={index} style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TouchableOpacity 
-                  style={[styles.operationBadge, { backgroundColor: eventType.operation === 'add' ? '#10b981' : '#ef4444' }]}
+                  style={[
+                    styles.operationBadge, 
+                    { 
+                      backgroundColor: eventType.operation === 'add' ? '#10b981' : '#ef4444',
+                      opacity: eventType.builtIn ? 0.5 : 1
+                    }
+                  ]}
                   onPress={() => handleToggleChickenEventOperation(index)}
+                  disabled={eventType.builtIn}
                 >
                   {eventType.operation === 'add' ? <Plus size={12} color="#fff" /> : <Minus size={12} color="#fff" />}
                 </TouchableOpacity>
-                <Text style={[styles.chipText, { color: colors.text }]}>{eventType.name}</Text>
+                <Text style={[styles.chipText, { color: colors.text, opacity: eventType.hidden ? 0.5 : 1 }]}>
+                  {eventType.name}
+                </Text>
                 <TouchableOpacity onPress={() => handleRemoveChickenEventType(index)}>
-                  <Trash2 size={14} color={colors.error} />
+                  {eventType.builtIn ? (
+                    eventType.hidden ? <Eye size={14} color={colors.textMuted} /> : <EyeOff size={14} color={colors.textMuted} />
+                  ) : (
+                    <Trash2 size={14} color={colors.error} />
+                  )}
                 </TouchableOpacity>
               </View>
             ))}

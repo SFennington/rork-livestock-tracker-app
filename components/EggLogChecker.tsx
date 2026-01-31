@@ -20,6 +20,7 @@ export default function EggLogChecker() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const missing: string[] = [];
+    // Create set of unique dates that have any egg records
     const eggDates = new Set(eggProduction.map(e => e.date));
 
     // Only check for missing days after the first egg log

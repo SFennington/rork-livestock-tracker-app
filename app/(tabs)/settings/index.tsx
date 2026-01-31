@@ -49,13 +49,12 @@ export default function SettingsScreen() {
   
   // Collapsed section states
   const [collapsedSections, setCollapsedSections] = useState({
-    appearance: false,
-    appConfig: false,
-    eggInventory: false,
-    dataManagement: false,
-    autoBackups: false,
-    csvImport: false,
-    about: false,
+    appearance: true,
+    appConfig: true,
+    eggInventory: true,
+    dataManagement: true,
+    autoBackups: true,
+    csvImport: true,
   });
 
   const toggleSection = (section: keyof typeof collapsedSections) => {
@@ -730,24 +729,19 @@ export default function SettingsScreen() {
                     throw new Error(`Invalid date: "${row.date}"`);
                   }
                   const normalizedDate = dateObj.toISOString().split('T')[0];
-                  const existingRecord = livestock.eggProduction.find(
-                    e => e.date === normalizedDate
-                  );
-                  if (existingRecord) {
-                    console.log('Skipping duplicate egg production for date:', normalizedDate);
-                  } else {
-                    console.log('Adding egg production:', normalizedDate, 'laid:', laid, 'sold:', sold, 'broken:', broken, 'donated:', donated);
-                    await livestock.addEggProduction({
-                      date: normalizedDate,
-                      count: totalCount,
-                      laid,
-                      sold,
-                      broken,
-                      donated,
-                      notes: row.notes || '',
-                    });
-                    importedCount++;
-                    console.log('Successfully added egg production');
+                  
+                  console.log('Adding egg production:', normalizedDate, 'laid:', laid, 'sold:', sold, 'broken:', broken, 'donated:', donated);
+                  await livestock.addEggProduction({
+                    date: normalizedDate,
+                    count: totalCount,
+                    laid,
+                    sold,
+                    broken,
+                    donated,
+                    notes: row.notes || '',
+                  });
+                  importedCount++;
+                  console.log('Successfully added egg production');
                   }
                 } catch (dateError) {
                   const errMsg = dateError instanceof Error ? dateError.message : 'Date parsing failed';
@@ -1460,18 +1454,9 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.sectionHeader}
-            onPress={() => toggleSection('about')}
-            activeOpacity={0.7}
-          >
+          <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-            {collapsedSections.about ? 
-              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
-              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
-            }
-          </TouchableOpacity>
-          {!collapsedSections.about && (
+          </View>
           <View style={[styles.aboutCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
               Livestock Tracker helps you manage your farm animals, track production, 
@@ -1481,7 +1466,6 @@ export default function SettingsScreen() {
               Version 1.4.1
             </Text>
           </View>
-          )}
         </View>
 
         <View style={styles.bottomSpacing} />

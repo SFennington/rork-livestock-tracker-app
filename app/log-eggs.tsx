@@ -7,9 +7,11 @@ import { useAppSettings } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
+import BreedPicker from "@/components/BreedPicker";
+import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function LogEggsScreen() {
-  const { addEggProduction, eggProduction, income, expenses } = useLivestock();
+  const { addEggProduction, eggProduction, income, expenses, getGroupsByType } = useLivestock();
   const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const { colors } = useTheme();
@@ -20,6 +22,10 @@ export default function LogEggsScreen() {
   const [brokenQuantity, setBrokenQuantity] = useState<number | null>(null);
   const [brokenInput, setBrokenInput] = useState("");
   const [date, setDate] = useState(params.date || getLocalDateString());
+  const [breed, setBreed] = useState<string>("");
+  const [groupId, setGroupId] = useState<string>("");
+
+  const chickenGroups = getGroupsByType('chicken');
 
   const getDateString = (daysAgo: number): string => {
     const date = new Date();
@@ -49,21 +55,17 @@ export default function LogEggsScreen() {
       return;
     }
 
-    console.log('Saving egg production:', { date, laidQuantity, brokenQuantity });
-    const existingEntry = eggProduction.find(e => e.date === date);
-    console.log('Existing entry:', existingEntry);
-    
-    const laid = laidQuantity ?? existingEntry?.laid ?? 0;
-    const broken = brokenQuantity ?? existingEntry?.broken ?? 0;
-    
+    const laid = laidQuantity ?? 0;
+    const broken = brokenQuantity ?? 0;
     const totalCount = laid;
-    console.log('Total count to save:', totalCount, 'laid:', laid, 'broken:', broken);
 
     await addEggProduction({
       date,
       count: totalCount,
       laid: laid > 0 ? laid : undefined,
       broken: broken > 0 ? broken : undefined,
+      breed: breed || undefined,
+      groupId: groupId || undefined,
     });
 
     // Calculate and save ROI snapshot
@@ -184,6 +186,47 @@ export default function LogEggsScreen() {
                 setBrokenQuantity(isNaN(parsed) ? null : parsed);
               }}
             />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Breed (optional)</Text>
+            <BreedPicker
+              label=""
+              value={breed}
+              onChange={setBreed}
+              breeds={CHICKEN_BREEDS}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Group (optional)</Text>
+            {chickenGroups.length > 0 ? (
+              <View style={{ gap: 8 }}>
+                <TouchableOpacity 
+                  style={[styles.groupButton, groupId === '' && [styles.groupButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                  onPress={() => setGroupId('')}
+                >
+                  <Text style={[styles.groupButtonText, groupId === '' && styles.groupButtonTextActive]}>
+                    None
+                  </Text>
+                </TouchableOpacity>
+                {chickenGroups.map((group) => (
+                  <TouchableOpacity 
+                    key={group.id}
+                    style={[styles.groupButton, groupId === group.id && [styles.groupButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                    onPress={() => setGroupId(group.id)}
+                  >
+                    <Text style={[styles.groupButtonText, groupId === group.id && styles.groupButtonTextActive]}>
+                      {group.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.sectionSubtitle, { fontStyle: 'italic' }]}>
+                No groups available
+              </Text>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -338,6 +381,31 @@ const styles = StyleSheet.create({
   },
   dateButtonTextActive: {
     color: "#fff",
+  },
+  groupButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  groupButtonActive: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
+  },
+  groupButtonText: {
+    fontSize: 14,
+    fontWeight: "600" as const,
+    color: "#6b7280",
+  },
+  groupButtonTextActive: {
+    color: "#fff",
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: "#9ca3af",
   },
   buttons: {
     flexDirection: "row",

@@ -13,6 +13,8 @@ export interface QuickSelectOption {
 export interface ChickenEventType {
   name: string;
   operation: 'add' | 'subtract';
+  builtIn?: boolean;
+  hidden?: boolean;
 }
 
 export interface AppSettings {
@@ -38,11 +40,11 @@ const defaultSettings: AppSettings = {
   expenseCategories: ['feed', 'bedding', 'medical', 'equipment', 'other'],
   incomeTypes: ['eggs', 'meat', 'livestock', 'breeding', 'other'],
   chickenEventTypes: [
-    { name: 'acquired', operation: 'add' },
-    { name: 'hatched', operation: 'add' },
-    { name: 'death', operation: 'subtract' },
-    { name: 'sold', operation: 'subtract' },
-    { name: 'consumed', operation: 'subtract' },
+    { name: 'acquired', operation: 'add', builtIn: true },
+    { name: 'hatched', operation: 'add', builtIn: true },
+    { name: 'death', operation: 'subtract', builtIn: true },
+    { name: 'sold', operation: 'subtract', builtIn: true },
+    { name: 'consumed', operation: 'subtract', builtIn: true },
   ],
   expenseQuickSelects: [
     { label: 'Feed - $50', amount: '50', category: 'feed', description: 'Feed purchase' },
@@ -82,7 +84,14 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
           if (chickenEventTypes && chickenEventTypes.length > 0 && typeof chickenEventTypes[0] === 'string') {
             chickenEventTypes = chickenEventTypes.map((eventType: string) => ({
               name: eventType,
-              operation: eventType === 'acquired' || eventType === 'hatched' ? 'add' : 'subtract'
+              operation: eventType === 'acquired' || eventType === 'hatched' ? 'add' : 'subtract',
+              builtIn: ['acquired', 'hatched', 'death', 'sold', 'consumed'].includes(eventType),
+            }));
+          } else if (chickenEventTypes && chickenEventTypes.length > 0) {
+            // Add builtIn flag to existing object format if missing
+            chickenEventTypes = chickenEventTypes.map((eventType: ChickenEventType) => ({
+              ...eventType,
+              builtIn: eventType.builtIn !== undefined ? eventType.builtIn : ['acquired', 'hatched', 'death', 'sold', 'consumed'].includes(eventType.name),
             }));
           }
           

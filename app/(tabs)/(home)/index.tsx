@@ -47,7 +47,8 @@ export default function DashboardScreen() {
     const recentEggs = recentEggsRecords.reduce((sum, e) => sum + e.count, 0);
     
     // Calculate actual number of unique days with egg data in the last 30 days
-    const actualDaysForAvg = recentEggsRecords.length;
+    const uniqueDates = new Set(recentEggsRecords.map(e => e.date));
+    const actualDaysForAvg = uniqueDates.size;
     
     let totalLaid = 0;
     let totalSold = 0;

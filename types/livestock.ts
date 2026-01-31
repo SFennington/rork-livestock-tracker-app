@@ -134,7 +134,9 @@ export interface EggProduction {
   laid?: number;
   broken?: number;
   donated?: number;
+  breed?: string; // Breed of chickens that laid the eggs
   groupId?: string; // Links to Group for tracking
+  timestamp?: string; // ISO timestamp for when record was created
   notes?: string;
 }
 

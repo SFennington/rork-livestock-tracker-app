@@ -3,6 +3,7 @@ import { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { Hash, FileText, DollarSign, User, Calendar, ChevronDown, List, Plus, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,6 +15,7 @@ import type { BreedEntry } from "@/types/livestock";
 export default function AddChickenEventScreen() {
   const { addChickenHistoryEvent, getAliveAnimals, updateAnimal, groups, getGroupsByType, addGroup } = useLivestock();
   const { settings } = useAppSettings();
+  const { addRecord } = useFinancialStore();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -24,9 +26,17 @@ export default function AddChickenEventScreen() {
   const [groupNotes, setGroupNotes] = useState('');
   const [useExistingGroup, setUseExistingGroup] = useState(false);
   
-  const [eventType, setEventType] = useState(settings.chickenEventTypes[0]?.name || 'acquired');
+  const [eventType, setEventType] = useState(settings.chickenEventTypes.filter(et => !et.hidden)[0]?.name || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [stage, setStage] = useState<'chick' | 'mature'>('mature');
+
+  // Auto-set stage to chick when hatched is selected
+  const handleEventTypeChange = (newEventType: string) => {
+    setEventType(newEventType);
+    if (newEventType === 'hatched') {
+      setStage('chick');
+    }
+  };
   const [hatchDate, setHatchDate] = useState('');
   const [showHatchCalendar, setShowHatchCalendar] = useState(false);
   
@@ -77,8 +87,39 @@ export default function AddChickenEventScreen() {
     }
     
     // Step 2: Create event
-    // Validate breeds array for acquired events
-    if (eventType === 'acquired') {
+    const eventTypeObj = settings.chickenEventTypes.find(et => et.name === eventType);
+    const isAddOperation = eventTypeObj?.operation === 'add';
+    
+    // Handle Death/Loss - uses animal picker, not breeds
+    if (eventType === 'death') {
+      if (selectedAnimalIds.length === 0) {
+        Alert.alert("Error", "Please select at least one animal");
+        return;
+      }
+
+      // Mark all selected animals as dead
+      for (const animalId of selectedAnimalIds) {
+        await updateAnimal(animalId, {
+          status: 'dead',
+          deathDate: date,
+          deathReason: notes || undefined,
+        });
+      }
+
+      await addChickenHistoryEvent({
+        date,
+        type: 'death' as const,
+        quantity: selectedAnimalIds.length,
+        groupId: groupId || undefined,
+        notes: notes || undefined,
+      });
+      
+      router.back();
+      return;
+    }
+
+    // Validate breeds array for multi-breed events (acquired, hatched, sold)
+    if (['acquired', 'hatched', 'sold'].includes(eventType)) {
       const validBreeds = breeds.filter(b => b.breed && (b.roosters > 0 || b.hens > 0 || (b.chicks && b.chicks > 0)));
       console.log('[AddChickenEvent] Breeds before filtering:', breeds);
       console.log('[AddChickenEvent] Valid breeds after filter:', validBreeds);
@@ -103,7 +144,7 @@ export default function AddChickenEventScreen() {
 
       const eventData = {
         date,
-        type: 'acquired' as const,
+        type: eventType as 'acquired' | 'hatched' | 'sold',
         quantity: totalQty,
         breeds: validBreeds,
         sex: determinedSex,
@@ -114,50 +155,71 @@ export default function AddChickenEventScreen() {
       };
       console.log('[AddChickenEvent] Event data being sent:', JSON.stringify(eventData, null, 2));
 
-      await addChickenHistoryEvent(eventData);
-    } else {
-      // For other event types, use legacy single-breed approach
-      if (!date || !quantity) {
-        Alert.alert("Error", "Please fill in all required fields");
-        return;
-      }
+      const savedEvent = await addChickenHistoryEvent(eventData);
 
-      const qty = parseInt(quantity);
-      if (isNaN(qty) || qty <= 0) {
-        Alert.alert("Error", "Quantity must be a positive number");
-        return;
-      }
-
-      // For death/consumed events, validate selected animals match quantity
-      if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
-        if (selectedAnimalIds.length !== qty) {
-          Alert.alert("Error", `Please select exactly ${qty} animal(s)`);
-          return;
-        }
-      }
-
-      await addChickenHistoryEvent({
-        date,
-        type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
-        quantity: qty,
-        breed: breed || undefined,
-        cost: cost ? parseFloat(cost) : undefined,
-        sex: sex || undefined,
-        groupId: groupId || undefined,
-        notes: notes || undefined,
-      });
-
-      // Mark selected animals as dead/consumed
-      if ((eventType === 'death' || eventType === 'consumed') && selectedAnimalIds.length > 0) {
-        for (const animalId of selectedAnimalIds) {
-          await updateAnimal(animalId, {
-            status: eventType === 'consumed' ? 'consumed' : 'dead',
-            deathDate: date,
-            deathReason: notes || undefined,
+      // Create financial records if there's a cost/price
+      const totalCost = validBreeds.reduce((sum, b) => sum + (b.cost || 0), 0);
+      if (totalCost > 0) {
+        const breedSummary = validBreeds
+          .map(b => {
+            const qty = stage === 'chick' ? (b.chicks || 0) : b.roosters + b.hens;
+            return `${qty}× ${b.breed}`;
+          })
+          .join(', ');
+        
+        const description = notes || `${eventType.charAt(0).toUpperCase() + eventType.slice(1)}: ${breedSummary}`;
+        
+        if (eventType === 'sold') {
+          // Create income record
+          await addRecord({
+            date,
+            type: 'income',
+            category: 'Sales',
+            amount: totalCost,
+            description,
+            relatedEventId: savedEvent.id,
+            groupId: groupId || undefined,
+          });
+        } else {
+          // Create expense record for acquired/hatched
+          await addRecord({
+            date,
+            type: 'expense',
+            category: 'Livestock Purchase',
+            amount: totalCost,
+            description,
+            relatedEventId: savedEvent.id,
+            groupId: groupId || undefined,
           });
         }
       }
+
+      router.back();
+      return;
     }
+
+    // For other custom event types, use legacy single-breed approach
+    if (!date || !quantity) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+
+    const qty = parseInt(quantity);
+    if (isNaN(qty) || qty <= 0) {
+      Alert.alert("Error", "Quantity must be a positive number");
+      return;
+    }
+
+    await addChickenHistoryEvent({
+      date,
+      type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
+      quantity: qty,
+      breed: breed || undefined,
+      cost: cost ? parseFloat(cost) : undefined,
+      sex: sex || undefined,
+      groupId: groupId || undefined,
+      notes: notes || undefined,
+    });
 
     router.back();
   };
@@ -293,14 +355,16 @@ export default function AddChickenEventScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
             <View style={styles.eventTypeButtons}>
-              {settings.chickenEventTypes.map((eventTypeObj) => {
+              {settings.chickenEventTypes
+                .filter(eventTypeObj => !eventTypeObj.hidden)
+                .map((eventTypeObj) => {
                 const displayName = eventTypeObj.name === 'death' ? 'Death/Loss' : eventTypeObj.name.charAt(0).toUpperCase() + eventTypeObj.name.slice(1);
                 const operationSymbol = eventTypeObj.operation === 'add' ? '+' : '-';
                 return (
                   <TouchableOpacity
                     key={eventTypeObj.name}
                     style={[styles.eventTypeButton, eventType === eventTypeObj.name && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                    onPress={() => setEventType(eventTypeObj.name)}
+                    onPress={() => handleEventTypeChange(eventTypeObj.name)}
                   >
                     <Text style={[styles.eventTypeButtonText, eventType === eventTypeObj.name && styles.eventTypeButtonTextActive]}>
                       {operationSymbol} {displayName}
@@ -363,15 +427,20 @@ export default function AddChickenEventScreen() {
             )}
           </View>
 
-          {eventType === 'acquired' && (
+          {['acquired', 'hatched', 'sold'].includes(eventType) && (
             <>
               {/* Stage Selector */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Stage *</Text>
                 <View style={styles.sexButtons}>
                   <TouchableOpacity 
-                    style={[styles.sexButton, stage === 'mature' && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                    onPress={() => setStage('mature')}
+                    style={[
+                      styles.sexButton, 
+                      stage === 'mature' && { backgroundColor: colors.accent, borderColor: colors.accent },
+                      eventType === 'hatched' && { opacity: 0.5 }
+                    ]}
+                    onPress={() => eventType !== 'hatched' && setStage('mature')}
+                    disabled={eventType === 'hatched'}
                   >
                     <Text style={[styles.sexButtonText, stage === 'mature' && styles.sexButtonTextActive]}>
                       Mature
@@ -493,7 +562,9 @@ export default function AddChickenEventScreen() {
                     )}
                     
                     <View style={{ marginTop: 8 }}>
-                      <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Cost (optional)</Text>
+                      <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>
+                        {eventType === 'sold' ? 'Price (optional)' : 'Cost (optional)'}
+                      </Text>
                       <TextInput
                         style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
                         value={breedEntry.cost ? String(breedEntry.cost) : ''}
@@ -517,7 +588,7 @@ export default function AddChickenEventScreen() {
             </>
           )}
 
-          {eventType !== 'acquired' && (
+          {!['acquired', 'hatched', 'sold', 'death'].includes(eventType) && (
             <>
               <View style={styles.inputGroup}>
                 <View style={styles.labelRow}>
@@ -545,11 +616,11 @@ export default function AddChickenEventScreen() {
             </>
           )}
 
-          {(eventType === 'death' || eventType === 'consumed') && (
+          {eventType === 'death' && (
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <List size={16} color="#6b7280" />
-                <Text style={styles.label}>Select Animals (optional)</Text>
+                <Text style={styles.label}>Select Animals *</Text>
               </View>
               <TouchableOpacity 
                 style={styles.animalPickerButton}
@@ -558,27 +629,29 @@ export default function AddChickenEventScreen() {
                 <Text style={styles.animalPickerButtonText}>
                   {selectedAnimalIds.length > 0 
                     ? `${selectedAnimalIds.length} animal(s) selected`
-                    : 'Tap to select specific animals'}
+                    : 'Tap to select animals'}
                 </Text>
               </TouchableOpacity>
             </View>
           )}
 
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <FileText size={16} color="#6b7280" />
-              <Text style={styles.label}>Notes (optional)</Text>
+          {eventType !== 'death' && (
+            <View style={styles.inputGroup}>
+              <View style={styles.labelRow}>
+                <FileText size={16} color="#6b7280" />
+                <Text style={styles.label}>Notes (optional)</Text>
+              </View>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Any additional information"
+                placeholderTextColor="#9ca3af"
+                multiline
+                numberOfLines={4}
+              />
             </View>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Any additional information"
-              placeholderTextColor="#9ca3af"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
+          )}
           </>
           )}
 
