@@ -257,7 +257,7 @@ export default function LivestockScreen() {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Chicken Groups</Text>
               <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
                 <Plus size={20} color="#fff" />
-                <Text style={styles.addButtonText}>Create Group</Text>
+                <Text style={styles.addButtonText}>Log New Event</Text>
               </TouchableOpacity>
             </View>
 
