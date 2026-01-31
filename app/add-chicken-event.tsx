@@ -483,6 +483,7 @@ export default function AddChickenEventScreen() {
                       <View style={{ marginTop: 8 }}>
                         <Text style={[styles.breedEntryLabel, { color: colors.textSecondary }]}>Quantity</Text>
                         <TextInput
+                          key={`chick-qty-${index}`}
                           style={[styles.breedEntryInput, { borderColor: colors.border, color: colors.text }]}
                           value={breedEntry.roosters > 0 ? String(breedEntry.roosters) : ''}
                           onChangeText={(text) => {
