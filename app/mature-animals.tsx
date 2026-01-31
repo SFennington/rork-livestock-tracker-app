@@ -6,6 +6,13 @@ import { useState, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, Check } from "lucide-react-native";
 
+interface BreedCount {
+  breed: string;
+  total: number;
+  maleCount: string;
+  femaleCount: string;
+}
+
 export default function MatureAnimalsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -23,12 +30,56 @@ export default function MatureAnimalsScreen() {
     return animals.filter(a => animalIds.includes(a.id));
   }, [animals, animalIds]);
 
+  // Group animals by breed
+  const breedGroups = useMemo(() => {
+    const groups: { [breed: string]: typeof animalsToMature } = {};
+    animalsToMature.forEach(animal => {
+      const breed = animal.breed || 'Unknown';
+      if (!groups[breed]) groups[breed] = [];
+      groups[breed].push(animal);
+    });
+    return groups;
+  }, [animalsToMature]);
+
   const animalType = animalsToMature[0]?.type || 'chicken';
   const totalCount = animalsToMature.length;
 
-  const [maleCount, setMaleCount] = useState('');
-  const [femaleCount, setFemaleCount] = useState('');
+  // State for each breed's counts
+  const [breedCounts, setBreedCounts] = useState<BreedCount[]>(() => {
+    return Object.entries(breedGroups).map(([breed, animals]) => ({
+      breed,
+      total: animals.length,
+      maleCount: '',
+      femaleCount: '',
+    }));
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const updateBreedCount = (breed: string, field: 'maleCount' | 'femaleCount', value: string) => {
+    setBreedCounts(prev => prev.map(bc => 
+      bc.breed === breed ? { ...bc, [field]: value } : bc
+    ));
+  };
+
+  // Calculate totals and validation
+  const validation = useMemo(() => {
+    let allValid = true;
+    const errors: string[] = [];
+    
+    breedCounts.forEach(bc => {
+      const male = parseInt(bc.maleCount, 10) || 0;
+      const female = parseInt(bc.femaleCount, 10) || 0;
+      const sum = male + female;
+      
+      if (sum > bc.total) {
+        allValid = false;
+        errors.push(`${bc.breed}: ${sum}/${bc.total} (too many)`);
+      }
+    });
+    
+    return { allValid, errors };
+  }, [breedCounts]);
 
   const getSexLabels = () => {
     if (animalType === 'chicken') return { male: 'Roosters', female: 'Hens' };
@@ -48,28 +99,36 @@ export default function MatureAnimalsScreen() {
   const stageLabel = getStageLabel();
 
   const handleSubmit = async () => {
-    const male = parseInt(maleCount, 10) || 0;
-    const female = parseInt(femaleCount, 10) || 0;
-
-    if (male + female !== totalCount) {
-      Alert.alert('Invalid Count', `Male + Female must equal ${totalCount}`);
-      return;
-    }
-
-    if (male < 0 || female < 0) {
-      Alert.alert('Invalid Count', 'Counts must be positive numbers');
+    if (!validation.allValid) {
+      Alert.alert('Invalid Count', validation.errors.join('\n'));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await matureAnimals({
-        animalIds,
-        maleCount: male,
-        femaleCount: female,
-      });
+      // Process each breed separately
+      for (const bc of breedCounts) {
+        const male = parseInt(bc.maleCount, 10) || 0;
+        const female = parseInt(bc.femaleCount, 10) || 0;
+        
+        if (male + female === 0) continue; // Skip if no animals selected for this breed
+        
+        // Get animal IDs for this breed
+        const breedAnimalIds = breedGroups[bc.breed].slice(0, male + female).map(a => a.id);
+        
+        await matureAnimals({
+          animalIds: breedAnimalIds,
+          maleCount: male,
+          femaleCount: female,
+        });
+      }
 
-      Alert.alert('Success', `${totalCount} ${stageLabel.toLowerCase()} converted to mature`, [
+      const totalMatured = breedCounts.reduce((sum, bc) => 
+        sum + (parseInt(bc.maleCount, 10) || 0) + (parseInt(bc.femaleCount, 10) || 0), 
+        0
+      );
+
+      Alert.alert('Success', `${totalMatured} ${stageLabel.toLowerCase()} converted to mature`, [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error) {
@@ -78,9 +137,6 @@ export default function MatureAnimalsScreen() {
       setIsSubmitting(false);
     }
   };
-
-  const currentTotal = (parseInt(maleCount, 10) || 0) + (parseInt(femaleCount, 10) || 0);
-  const isValid = currentTotal === totalCount;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -96,50 +152,64 @@ export default function MatureAnimalsScreen() {
         <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.infoTitle, { color: colors.text }]}>Converting {totalCount} {stageLabel}</Text>
           <Text style={[styles.infoSubtext, { color: colors.textSecondary }]}>
-            Specify how many are male and female
+            Specify how many are male and female for each breed (can convert partial amounts)
           </Text>
         </View>
 
-        <View style={[styles.form, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: colors.text }]}>{sexLabels.male}:</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.background }]}
-              value={maleCount}
-              onChangeText={setMaleCount}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
+        {breedCounts.map((bc) => {
+          const male = parseInt(bc.maleCount, 10) || 0;
+          const female = parseInt(bc.femaleCount, 10) || 0;
+          const sum = male + female;
+          const isOverLimit = sum > bc.total;
+          
+          return (
+            <View key={bc.breed} style={[styles.breedCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.breedTitle, { color: colors.text }]}>{bc.breed}</Text>
+              <Text style={[styles.breedSubtext, { color: colors.textSecondary }]}>
+                {bc.total} {stageLabel.toLowerCase()} available
+              </Text>
+              
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.text }]}>{sexLabels.male}:</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.background }]}
+                  value={bc.maleCount}
+                  onChangeText={(val) => updateBreedCount(bc.breed, 'maleCount', val)}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
 
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: colors.text }]}>{sexLabels.female}:</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.background }]}
-              value={femaleCount}
-              onChangeText={setFemaleCount}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </View>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: colors.text }]}>{sexLabels.female}:</Text>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.background }]}
+                  value={bc.femaleCount}
+                  onChangeText={(val) => updateBreedCount(bc.breed, 'femaleCount', val)}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
 
-          <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total:</Text>
-            <Text style={[styles.totalValue, { color: isValid ? colors.success : colors.error }]}>
-              {currentTotal} / {totalCount}
-            </Text>
-          </View>
-        </View>
+              <View style={[styles.breedTotal, { borderTopColor: colors.border }]}>
+                <Text style={[styles.breedTotalLabel, { color: colors.text }]}>Total for breed:</Text>
+                <Text style={[styles.breedTotalValue, { color: isOverLimit ? colors.error : colors.text }]}>
+                  {sum} / {bc.total}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
 
         <TouchableOpacity
           style={[
             styles.submitButton,
-            { backgroundColor: isValid && !isSubmitting ? colors.primary : colors.border }
+            { backgroundColor: validation.allValid && !isSubmitting ? colors.primary : colors.border }
           ]}
           onPress={handleSubmit}
-          disabled={!isValid || isSubmitting}
+          disabled={!validation.allValid || isSubmitting}
         >
           <Check size={20} color="#fff" />
           <Text style={styles.submitButtonText}>
@@ -187,6 +257,37 @@ const styles = StyleSheet.create({
   },
   infoSubtext: {
     fontSize: 14,
+  },
+  breedCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  breedTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  breedSubtext: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  breedTotal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    marginTop: 4,
+  },
+  breedTotalLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  breedTotalValue: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   form: {
     padding: 16,
