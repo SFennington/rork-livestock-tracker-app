@@ -26,10 +26,13 @@ export default function AddChickenEventScreen() {
   const existingBreeds = Array.from(new Set(aliveChickens.map(a => a.breed))).sort();
   const allBreeds = [...CHICKEN_BREEDS, ...(settings.customChickenBreeds || [])].sort();
   
+  // Get chicken groups early for default state
+  const chickenGroups = getGroupsByType('chicken');
+  
   const [step, setStep] = useState<'group' | 'event'>(preselectedGroupId ? 'event' : 'group');
   const [groupName, setGroupName] = useState('');
   const [groupNotes, setGroupNotes] = useState('');
-  const [useExistingGroup, setUseExistingGroup] = useState(false);
+  const [useExistingGroup, setUseExistingGroup] = useState(chickenGroups.length > 0);
   
   const [eventType, setEventType] = useState(settings.chickenEventTypes.filter(et => !et.hidden)[0]?.name || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -272,17 +275,6 @@ export default function AddChickenEventScreen() {
                 <View style={styles.groupTypeButtons}>
                   <TouchableOpacity 
                     style={[
-                      styles.groupTypeButton,
-                      !useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }
-                    ]}
-                    onPress={() => setUseExistingGroup(false)}
-                  >
-                    <Text style={[styles.groupTypeButtonText, !useExistingGroup && styles.groupTypeButtonTextActive]}>
-                      Create New
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[
                       styles.groupTypeButton, 
                       useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent },
                       chickenGroups.length === 0 && { opacity: 0.4 }
@@ -292,6 +284,17 @@ export default function AddChickenEventScreen() {
                   >
                     <Text style={[styles.groupTypeButtonText, useExistingGroup && styles.groupTypeButtonTextActive]}>
                       Use Existing
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[
+                      styles.groupTypeButton,
+                      !useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }
+                    ]}
+                    onPress={() => setUseExistingGroup(false)}
+                  >
+                    <Text style={[styles.groupTypeButtonText, !useExistingGroup && styles.groupTypeButtonTextActive]}>
+                      Create New
                     </Text>
                   </TouchableOpacity>
                 </View>

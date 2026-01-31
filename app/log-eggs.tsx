@@ -159,74 +159,72 @@ export default function LogEggsScreen() {
               </View>
             </View>
             
-            {/* Quick select buttons in single row */}
-            <View style={{ marginTop: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                {/* Laid Quick Selects */}
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Quick - Laid</Text>
-                  <View style={styles.buttonGrid}>
-                    {recentLaidQuantities.length > 0 ? (
-                      recentLaidQuantities.slice(0, 3).map((qty) => (
-                        <TouchableOpacity
-                          key={qty}
-                          style={[styles.quantityButton, laidQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                          onPress={() => { setLaidQuantity(qty); setLaidInput(qty.toString()); }}
-                        >
-                          <Text style={[styles.quantityButtonText, laidQuantity === qty && styles.quantityButtonTextActive]}>
-                            {qty}
-                          </Text>
-                        </TouchableOpacity>
-                      ))
-                    ) : (
-                      ['10', '12', '15'].map((qty) => (
-                        <TouchableOpacity
-                          key={qty}
-                          style={[styles.quantityButton, laidQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                          onPress={() => { setLaidQuantity(parseInt(qty)); setLaidInput(qty); }}
-                        >
-                          <Text style={[styles.quantityButtonText, laidQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
-                            {qty}
-                          </Text>
-                        </TouchableOpacity>
-                      ))
-                    )}
-                  </View>
+            {/* Quick select buttons - all in one row */}
+            <View style={{ marginTop: 12, flexDirection: 'row', gap: 8 }}>
+              {/* Laid Quick Selects */}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Quick - Laid</Text>
+                <View style={styles.buttonGrid}>
+                  {recentLaidQuantities.length > 0 ? (
+                    recentLaidQuantities.slice(0, 3).map((qty) => (
+                      <TouchableOpacity
+                        key={qty}
+                        style={[styles.quantityButton, laidQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                        onPress={() => { setLaidQuantity(qty); setLaidInput(qty.toString()); }}
+                      >
+                        <Text style={[styles.quantityButtonText, laidQuantity === qty && styles.quantityButtonTextActive]}>
+                          {qty}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    ['10', '12', '15'].map((qty) => (
+                      <TouchableOpacity
+                        key={qty}
+                        style={[styles.quantityButton, laidQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                        onPress={() => { setLaidQuantity(parseInt(qty)); setLaidInput(qty); }}
+                      >
+                        <Text style={[styles.quantityButtonText, laidQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                          {qty}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </View>
-                
-                {/* Thin divider line */}
-                <View style={{ width: 1, height: 60, backgroundColor: '#d1d5db' }} />
-                
-                {/* Broken Quick Selects */}
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Quick - Broken</Text>
-                  <View style={styles.buttonGrid}>
-                    {recentBrokenQuantities.length > 0 ? (
-                      recentBrokenQuantities.slice(0, 3).map((qty) => (
-                        <TouchableOpacity
-                          key={qty}
-                          style={[styles.quantityButton, brokenQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                          onPress={() => { setBrokenQuantity(qty); setBrokenInput(qty.toString()); }}
-                        >
-                          <Text style={[styles.quantityButtonText, brokenQuantity === qty && styles.quantityButtonTextActive]}>
-                            {qty}
-                          </Text>
-                        </TouchableOpacity>
-                      ))
-                    ) : (
-                      ['1', '2', '3'].map((qty) => (
-                        <TouchableOpacity
-                          key={qty}
-                          style={[styles.quantityButton, brokenQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                          onPress={() => { setBrokenQuantity(parseInt(qty)); setBrokenInput(qty); }}
-                        >
-                          <Text style={[styles.quantityButtonText, brokenQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
-                            {qty}
-                          </Text>
-                        </TouchableOpacity>
-                      ))
-                    )}
-                  </View>
+              </View>
+              
+              {/* Thin divider line - extends from title to bottom of buttons */}
+              <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: '#d1d5db' }} />
+              
+              {/* Broken Quick Selects */}
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Quick - Broken</Text>
+                <View style={styles.buttonGrid}>
+                  {recentBrokenQuantities.length > 0 ? (
+                    recentBrokenQuantities.slice(0, 3).map((qty) => (
+                      <TouchableOpacity
+                        key={qty}
+                        style={[styles.quantityButton, brokenQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                        onPress={() => { setBrokenQuantity(qty); setBrokenInput(qty.toString()); }}
+                      >
+                        <Text style={[styles.quantityButtonText, brokenQuantity === qty && styles.quantityButtonTextActive]}>
+                          {qty}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    ['1', '2', '3'].map((qty) => (
+                      <TouchableOpacity
+                        key={qty}
+                        style={[styles.quantityButton, brokenQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                        onPress={() => { setBrokenQuantity(parseInt(qty)); setBrokenInput(qty); }}
+                      >
+                        <Text style={[styles.quantityButtonText, brokenQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                          {qty}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </View>
               </View>
             </View>
@@ -250,7 +248,8 @@ export default function LogEggsScreen() {
               onChange={(name) => setGroupId(getGroupIdFromName(name))}
               breeds={groupOptions}
               placeholder="Select Group"
-              maxVisibleItems={4}
+              maxVisibleItems={8}
+              modalTitle="Select Group"
             />
           </View>
 

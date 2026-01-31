@@ -11,9 +11,10 @@ interface BreedPickerProps {
   label?: string;
   placeholder?: string;
   maxVisibleItems?: number;
+  modalTitle?: string;
 }
 
-export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], onAddCustomBreed, label, placeholder = "Select breed", maxVisibleItems = 6 }: BreedPickerProps) {
+export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], onAddCustomBreed, label, placeholder = "Select breed", maxVisibleItems = 6, modalTitle = "Select Breed" }: BreedPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [customBreed, setCustomBreed] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -91,7 +92,7 @@ export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], 
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={styles.pickerContainer}>
               <View style={styles.pickerHeader}>
-                <Text style={styles.pickerTitle}>Select Breed</Text>
+                <Text style={styles.pickerTitle}>{modalTitle}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     setShowPicker(false);

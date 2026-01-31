@@ -112,6 +112,7 @@ export default function DashboardScreen() {
       id: string;
       type: 'egg' | 'chicken-event' | 'duck-event' | 'breeding';
       timestamp: string;
+      date: string;
       icon: any;
       text: string;
       subtitle?: string;
@@ -120,24 +121,19 @@ export default function DashboardScreen() {
 
     // Add egg logs
     eggProduction.forEach(egg => {
-      // Use actual timestamp if available, otherwise use date with current time for today's date, or noon for past dates
+      // Use date + time from timestamp if available, otherwise use date with time based on when it was likely recorded
       let timestamp: string;
       if (egg.timestamp) {
         timestamp = egg.timestamp;
       } else {
-        const today = getLocalDateString();
-        if (egg.date === today) {
-          // For today, use current time
-          timestamp = new Date().toISOString();
-        } else {
-          // For past dates, use noon
-          timestamp = `${egg.date}T12:00:00`;
-        }
+        // Use the record date with a default time (noon) for sorting
+        timestamp = `${egg.date}T12:00:00`;
       }
       activities.push({
         id: egg.id,
         type: 'egg',
         timestamp,
+        date: egg.date,
         icon: Egg,
         text: `${egg.count} eggs ${egg.laid ? 'laid' : 'collected'}${egg.broken ? `, ${egg.broken} broken` : ''}`,
         subtitle: egg.breed ? `Breed: ${egg.breed}` : undefined,
@@ -147,7 +143,8 @@ export default function DashboardScreen() {
 
     // Add chicken events
     chickenHistory.forEach(event => {
-      const timestamp = `${event.date}T12:00:00`;
+      // Use the event timestamp if available, otherwise use the event date with noon
+      const timestamp = event.timestamp || `${event.date}T12:00:00`;
       let icon = Plus;
       let text = '';
       const eventTypeObj = settings.chickenEventTypes?.find(et => et.name === event.type);
@@ -179,6 +176,7 @@ export default function DashboardScreen() {
         id: event.id,
         type: 'chicken-event',
         timestamp,
+        date: event.date,
         icon,
         text,
         subtitle: event.breed ? `Breed: ${event.breed}` : undefined,
@@ -188,7 +186,8 @@ export default function DashboardScreen() {
 
     // Add duck events
     duckHistory.forEach(event => {
-      const timestamp = `${event.date}T12:00:00`;
+      // Use the event timestamp if available, otherwise use the event date with noon
+      const timestamp = event.timestamp || `${event.date}T12:00:00`;
       let icon = Plus;
       let text = '';
       
@@ -212,6 +211,7 @@ export default function DashboardScreen() {
         id: event.id,
         type: 'duck-event',
         timestamp,
+        date: event.date,
         icon,
         text,
         subtitle: event.breed ? `Breed: ${event.breed}` : undefined,
@@ -221,7 +221,7 @@ export default function DashboardScreen() {
 
     // Add breeding records
     breedingRecords.forEach(breeding => {
-      const timestamp = `${breeding.breedingDate}T12:00:00`;
+      const timestamp = breeding.timestamp || `${breeding.breedingDate}T12:00:00`;
       const buck = rabbits.find(r => r.id === breeding.buckId);
       const doe = rabbits.find(r => r.id === breeding.doeId);
       
@@ -229,6 +229,7 @@ export default function DashboardScreen() {
         id: breeding.id,
         type: 'breeding',
         timestamp,
+        date: breeding.breedingDate,
         icon: Heart,
         text: `${buck?.name || 'Unknown'} × ${doe?.name || 'Unknown'}`,
         subtitle: `Status: ${breeding.status}`,
@@ -236,9 +237,16 @@ export default function DashboardScreen() {
       });
     });
 
-    // Sort by timestamp descending (newest first) and limit to 15 items
+    // Sort by date first (descending), then by timestamp (descending) for same-day events
     return activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a, b) => {
+        // Compare dates first
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) return dateCompare;
+        
+        // If same date, sort by timestamp
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      })
       .slice(0, 15);
   }, [eggProduction, chickenHistory, duckHistory, breedingRecords, rabbits, colors, settings]);
 
