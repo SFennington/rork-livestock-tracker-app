@@ -176,48 +176,124 @@ export default function AppConfigurationScreen() {
           <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
             Control which animals appear in your dashboard and records
           </Text>
-          <View style={styles.animalTogglesContainer}>
-            {Object.entries(enabledAnimals).map(([animal, enabled]) => {
-              const isDisabled = animal !== 'chickens';
-              const isChicken = animal === 'chickens';
-              
-              return (
-                <TouchableOpacity
-                  key={animal}
-                  style={[
-                    styles.animalToggle,
-                    {
-                      backgroundColor: (isChicken || (enabled && !isDisabled)) ? colors.primary : colors.card,
-                      borderColor: (isChicken || (enabled && !isDisabled)) ? colors.primary : colors.border,
-                      opacity: isDisabled ? 0.5 : 1,
-                    }
-                  ]}
-                  onPress={() => {
-                    if (isChicken) {
-                      // Chicken is always enabled, cannot be toggled off
-                      return;
-                    }
-                    if (isDisabled) {
-                      Alert.alert('Coming Soon', 'Other animals will be available in a future update.');
-                      return;
-                    }
-                    const updated = { ...enabledAnimals, [animal]: !enabled, chickens: true };
-                    setEnabledAnimals(updated);
-                    updateEnabledAnimals(updated);
-                  }}
-                  disabled={isDisabled}
-                >
-                  <Text style={[styles.animalToggleText, { color: (isChicken || (enabled && !isDisabled)) ? '#fff' : colors.text }]}>
-                    {animal.charAt(0).toUpperCase() + animal.slice(1)}
-                  </Text>
-                  {isDisabled && (
-                    <View style={[styles.comingSoonBadge, { backgroundColor: '#f59e0b' }]}>
-                      <Text style={styles.comingSoonText}>Coming Soon</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+          
+          {/* Available Animals Row */}
+          <View style={styles.animalRow}>
+            <TouchableOpacity
+              style={[
+                styles.animalToggle,
+                {
+                  backgroundColor: colors.primary,
+                  borderColor: colors.primary,
+                }
+              ]}
+              onPress={() => {
+                // Chicken is always enabled, cannot be toggled off
+              }}
+            >
+              <Text style={[styles.animalToggleText, { color: '#fff' }]}>
+                Chickens
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.animalToggle,
+                {
+                  backgroundColor: enabledAnimals.ducks ? colors.primary : colors.card,
+                  borderColor: enabledAnimals.ducks ? colors.primary : colors.border,
+                }
+              ]}
+              onPress={() => {
+                const updated = { ...enabledAnimals, ducks: !enabledAnimals.ducks, chickens: true };
+                setEnabledAnimals(updated);
+                updateEnabledAnimals(updated);
+              }}
+            >
+              <Text style={[styles.animalToggleText, { color: enabledAnimals.ducks ? '#fff' : colors.text }]}>
+                Ducks
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Coming Soon Section */}
+          <View style={[styles.comingSoonSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.comingSoonLabel, { color: colors.textMuted }]}>
+              🔜 COMING SOON
+            </Text>
+            <View style={styles.animalRow}>
+            <TouchableOpacity
+              style={[
+                styles.animalToggle,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  opacity: 0.5,
+                }
+              ]}
+              onPress={() => {
+                Alert.alert('Coming Soon', 'Quail will be available in a future update.');
+              }}
+            >
+              <Text style={[styles.animalToggleText, { color: colors.text }]}>
+                Quail
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.animalToggle,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  opacity: 0.5,
+                }
+              ]}
+              onPress={() => {
+                Alert.alert('Coming Soon', 'Rabbits will be available in a future update.');
+              }}
+            >
+              <Text style={[styles.animalToggleText, { color: colors.text }]}>
+                Rabbits
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.animalToggle,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  opacity: 0.5,
+                }
+              ]}
+              onPress={() => {
+                Alert.alert('Coming Soon', 'Goats will be available in a future update.');
+              }}
+            >
+              <Text style={[styles.animalToggleText, { color: colors.text }]}>
+                Goats
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.animalToggle,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  opacity: 0.5,
+                }
+              ]}
+              onPress={() => {
+                Alert.alert('Coming Soon', 'Pigs will be available in a future update.');
+              }}
+            >
+              <Text style={[styles.animalToggleText, { color: colors.text }]}>
+                Pigs
+              </Text>
+            </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -623,17 +699,37 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  animalRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 8,
+  },
   animalToggle: {
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: "center",
+    flex: 1,
     minWidth: 100,
   },
   animalToggleText: {
     fontSize: 14,
     fontWeight: "600" as const,
+  },
+  comingSoonSection: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  comingSoonLabel: {
+    fontSize: 13,
+    marginBottom: 12,
+    fontWeight: "700" as const,
+    letterSpacing: 0.5,
+    textAlign: "center" as const,
   },
   comingSoonBadge: {
     marginTop: 4,

@@ -1,18 +1,27 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
 import { ArrowLeft, Plus, Calendar, TrendingUp, TrendingDown, ShoppingCart, Edit2, ArrowUp, MoreVertical } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 export default function GroupDetailScreen() {
   const { groupId, type } = useLocalSearchParams();
   const { groups, chickenHistory, getAliveAnimals, getChickenStageCount } = useLivestock();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const group = groups.find(g => g.id === groupId);
+  
+  useEffect(() => {
+    if (group) {
+      navigation.setOptions({
+        title: group.name,
+      });
+    }
+  }, [group, navigation]);
   const groupAnimals = getAliveAnimals(type as 'chicken').filter(a => a.groupId === groupId);
   const groupEvents = chickenHistory.filter(e => e.groupId === groupId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
@@ -43,19 +52,7 @@ export default function GroupDetailScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[styles.topHeader, { backgroundColor: colors.accent }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.topHeaderContent}>
-          <Text style={styles.topHeaderTitle}>{group.name}</Text>
-        </View>
-        <Text style={styles.topHeaderBirdCount}>
-          {groupAnimals.length} birds
-        </Text>
-      </View>
-
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Current Count</Text>

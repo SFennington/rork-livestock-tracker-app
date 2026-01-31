@@ -64,6 +64,14 @@ function RootLayoutNav() {
       <Stack.Screen name="rabbit-offspring-summary" options={{ title: "Offspring Summary", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="rabbit-offspring/[id]" options={{ title: "Offspring Details", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="app-configuration" options={{ title: "App Configuration" }} />
+      <Stack.Screen 
+        name="group-detail" 
+        options={{ 
+          title: "Group Details",
+          headerStyle: { backgroundColor: colors.accent },
+          headerBackVisible: true,
+        }} 
+      />
       <Stack.Screen name="mature-animals" options={{ presentation: "modal", title: "Mature Animals", headerShown: false }} />
       </Stack>
     </>
