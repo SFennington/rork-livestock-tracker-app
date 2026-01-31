@@ -639,7 +639,12 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       
       // Process each breed entry
       for (const breedEntry of breedsToProcess) {
-        console.log('[livestock-store] Processing breed entry:', breedEntry);
+        console.log('[livestock-store] Processing breed entry:', JSON.stringify(breedEntry, null, 2));
+        
+        if (!breedEntry.breed || breedEntry.breed.trim() === '') {
+          console.warn('[livestock-store] Skipping breed entry with empty breed name');
+          continue;
+        }
         
         const existingNumbers = animals
           .filter(a => a.type === 'chicken')

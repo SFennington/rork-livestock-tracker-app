@@ -153,7 +153,12 @@ export default function GroupDetailScreen() {
                         <Text style={[styles.historyCardDate, { color: colors.textSecondary }]}>{event.date}</Text>
                         {event.breeds && event.breeds.length > 0 && (
                           <Text style={[styles.historyCardBreed, { color: colors.textMuted }]}>
-                            {event.breeds.map(b => `${b.breed} (${b.roosters}M/${b.hens}F)`).join(', ')}
+                            {event.breeds.map(b => {
+                              if (event.stage === 'chick' && b.chicks) {
+                                return `${b.breed} (${b.chicks} chicks)`;
+                              }
+                              return `${b.breed} (${b.roosters}M/${b.hens}F)`;
+                            }).join(', ')}
                           </Text>
                         )}
                       </View>
