@@ -8,7 +8,7 @@ import { useMemo, useEffect, useState } from "react";
 
 export default function GroupDetailScreen() {
   const { groupId, type } = useLocalSearchParams();
-  const { groups, chickenHistory, getAliveAnimals, getChickenStageCount, updateGroup, deleteGroup, getGroupsByType, updateAnimal, duckHistory } = useLivestock();
+  const { groups, chickenHistory, getAliveAnimals, getAllAnimals, getChickenStageCount, updateGroup, deleteGroup, getGroupsByType, updateAnimal, duckHistory } = useLivestock();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -84,31 +84,44 @@ export default function GroupDetailScreen() {
     if (!group) return;
     
     if (deleteOption === 'delete') {
+      // Get all animals in the group (not just alive ones, to ensure we get the current list)
+      const allGroupAnimals = getAllAnimals(type as 'chicken').filter(a => a.groupId === groupId && a.status === 'alive');
+      
+      console.log(`[GroupDetail] Deleting ${allGroupAnimals.length} animals from group ${group.name}`);
+      
       // Delete all animals in the group
-      for (const animal of groupAnimals) {
+      for (const animal of allGroupAnimals) {
+        console.log(`[GroupDetail] Marking animal ${animal.id} as dead`);
         await updateAnimal(animal.id, { status: 'dead', deathDate: new Date().toISOString().split('T')[0] });
       }
+      
       // Delete the group
       await deleteGroup(group.id);
       
       if (Platform.OS === 'web') {
-        alert('Group and animals deleted');
+        alert(`Group and ${allGroupAnimals.length} animals deleted`);
       } else {
-        Alert.alert('Success', 'Group and animals deleted');
+        Alert.alert('Success', `Group and ${allGroupAnimals.length} animals deleted`);
       }
       router.back();
     } else if (deleteOption === 'merge' && selectedMergeGroupId) {
+      // Get all animals in the group for merging
+      const allGroupAnimals = getAllAnimals(type as 'chicken').filter(a => a.groupId === groupId && a.status === 'alive');
+      
+      console.log(`[GroupDetail] Moving ${allGroupAnimals.length} animals to group ${selectedMergeGroupId}`);
+      
       // Move all animals to selected group
-      for (const animal of groupAnimals) {
+      for (const animal of allGroupAnimals) {
         await updateAnimal(animal.id, { groupId: selectedMergeGroupId });
       }
+      
       // Delete the group
       await deleteGroup(group.id);
       
       if (Platform.OS === 'web') {
-        alert('Animals moved and group deleted');
+        alert(`${allGroupAnimals.length} animals moved and group deleted`);
       } else {
-        Alert.alert('Success', 'Animals moved and group deleted');
+        Alert.alert('Success', `${allGroupAnimals.length} animals moved and group deleted`);
       }
       router.back();
     }
