@@ -167,6 +167,9 @@ export default function AddChickenEventScreen() {
 
       // Create financial records if there's a cost/price
       const totalCost = validBreeds.reduce((sum, b) => sum + (b.cost || 0), 0);
+      console.log('[AddChickenEvent] Total cost calculated:', totalCost);
+      console.log('[AddChickenEvent] Valid breeds with costs:', validBreeds.map(b => ({ breed: b.breed, cost: b.cost })));
+      
       if (totalCost > 0) {
         const breedSummary = validBreeds
           .map(b => {
@@ -176,6 +179,8 @@ export default function AddChickenEventScreen() {
           .join(', ');
         
         const description = notes || `${eventType.charAt(0).toUpperCase() + eventType.slice(1)}: ${breedSummary}`;
+        
+        console.log('[AddChickenEvent] Creating financial record:', { eventType, totalCost, description });
         
         if (eventType === 'sold') {
           // Create income record
@@ -188,6 +193,7 @@ export default function AddChickenEventScreen() {
             relatedEventId: savedEvent.id,
             groupId: groupId || undefined,
           });
+          console.log('[AddChickenEvent] Income record created');
         } else {
           // Create expense record for acquired/hatched
           await addRecord({
@@ -199,7 +205,10 @@ export default function AddChickenEventScreen() {
             relatedEventId: savedEvent.id,
             groupId: groupId || undefined,
           });
+          console.log('[AddChickenEvent] Expense record created');
         }
+      } else {
+        console.log('[AddChickenEvent] No financial record created - totalCost is 0');
       }
 
       router.back();
