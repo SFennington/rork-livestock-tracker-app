@@ -70,10 +70,12 @@ export default function LivestockScreen() {
     
     // Get counts from individual animals (primary source)
     const aliveChickens = getAliveAnimals('chicken');
+    console.log('[Livestock] Alive chickens:', aliveChickens.map(a => ({ id: a.id, breed: a.breed, sex: a.sex, status: a.status })));
     const eventIdsWithAnimals = new Set(aliveChickens.filter(a => a.eventId).map(a => a.eventId));
     
     for (const animal of aliveChickens) {
       const breed = animal.breed || 'Unknown';
+      console.log('[Livestock] Processing animal:', { id: animal.id, breed: animal.breed, calculatedBreed: breed });
       breakdown[breed] = (breakdown[breed] || 0) + 1;
     }
     
