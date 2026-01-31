@@ -742,7 +742,6 @@ export default function SettingsScreen() {
                   });
                   importedCount++;
                   console.log('Successfully added egg production');
-                  }
                 } catch (dateError) {
                   const errMsg = dateError instanceof Error ? dateError.message : 'Date parsing failed';
                   console.error('Date error:', errMsg);
