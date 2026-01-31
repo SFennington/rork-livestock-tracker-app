@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platfo
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
+import { useFinancialStore } from "@/hooks/financial-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
 import { Hash, FileText, DollarSign, User, Calendar, ChevronDown, List } from "lucide-react-native";
@@ -12,6 +13,7 @@ import { DUCK_BREEDS } from "@/constants/breeds";
 
 export default function AddDuckEventScreen() {
   const { addDuckHistoryEvent, getAliveAnimals, updateAnimal } = useLivestock();
+  const { addRecord } = useFinancialStore();
   const { settings } = useAppSettings();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -66,7 +68,7 @@ export default function AddDuckEventScreen() {
       }
     }
 
-    await addDuckHistoryEvent({
+    const savedEvent = await addDuckHistoryEvent({
       date,
       type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
       quantity: qty,
@@ -83,6 +85,37 @@ export default function AddDuckEventScreen() {
           status: eventType === 'consumed' ? 'consumed' : 'dead',
           deathDate: date,
           deathReason: notes || undefined,
+        });
+      }
+    }
+
+    // Create financial record if there's a cost
+    const costAmount = cost ? parseFloat(cost) : 0;
+    if (costAmount > 0) {
+      const description = notes || `${eventType.charAt(0).toUpperCase() + eventType.slice(1)}: ${qty}× ${breed || 'Unknown'}`;
+      
+      const eventTypeObj = settings.chickenEventTypes.find(et => et.name === eventType);
+      const isAddOperation = eventTypeObj?.operation === 'add';
+      
+      if (isAddOperation) {
+        // Create expense record for add operations
+        await addRecord({
+          date,
+          type: 'expense',
+          category: 'Livestock Purchase',
+          amount: costAmount,
+          description,
+          relatedEventId: savedEvent.id,
+        });
+      } else {
+        // Create income record for subtract operations (like sold)
+        await addRecord({
+          date,
+          type: 'income',
+          category: 'Sales',
+          amount: costAmount,
+          description,
+          relatedEventId: savedEvent.id,
         });
       }
     }

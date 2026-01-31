@@ -218,7 +218,7 @@ export default function AddChickenEventScreen() {
       return;
     }
 
-    await addChickenHistoryEvent({
+    const savedEvent = await addChickenHistoryEvent({
       date,
       type: eventType as 'acquired' | 'death' | 'sold' | 'consumed',
       quantity: qty,
@@ -228,6 +228,39 @@ export default function AddChickenEventScreen() {
       groupId: groupId || undefined,
       notes: notes || undefined,
     });
+
+    // Create financial record if there's a cost
+    const costAmount = cost ? parseFloat(cost) : 0;
+    if (costAmount > 0) {
+      const description = notes || `${eventType.charAt(0).toUpperCase() + eventType.slice(1)}: ${qty}× ${breed || 'Unknown'}`;
+      
+      const eventTypeObj = settings.chickenEventTypes.find(et => et.name === eventType);
+      const isAddOperation = eventTypeObj?.operation === 'add';
+      
+      if (isAddOperation) {
+        // Create expense record for add operations
+        await addRecord({
+          date,
+          type: 'expense',
+          category: 'Livestock Purchase',
+          amount: costAmount,
+          description,
+          relatedEventId: savedEvent.id,
+          groupId: groupId || undefined,
+        });
+      } else {
+        // Create income record for subtract operations (like sold)
+        await addRecord({
+          date,
+          type: 'income',
+          category: 'Sales',
+          amount: costAmount,
+          description,
+          relatedEventId: savedEvent.id,
+          groupId: groupId || undefined,
+        });
+      }
+    }
 
     router.back();
   };
