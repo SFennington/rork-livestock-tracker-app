@@ -282,9 +282,11 @@ export default function AddChickenEventScreen() {
           {preselectedGroupId && (() => {
             const selectedGroup = groups.find(g => g.id === preselectedGroupId);
             return selectedGroup ? (
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>GROUP</Text>
-                <Text style={[styles.header, { color: colors.text, marginBottom: 0 }]}>{selectedGroup.name}</Text>
+              <View style={[styles.inputGroup, { marginBottom: 24 }]}>
+                <View style={[styles.groupHeaderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Text style={[styles.groupHeaderLabel, { color: colors.textSecondary }]}>Adding event to group:</Text>
+                  <Text style={[styles.groupHeaderName, { color: colors.text }]}>{selectedGroup.name}</Text>
+                </View>
               </View>
             ) : null;
           })()}
@@ -717,6 +719,21 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
     textAlignVertical: "top",
+  },
+  groupHeaderCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  groupHeaderLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  groupHeaderName: {
+    fontSize: 20,
+    fontWeight: '700',
   },
   eventTypeButtons: {
     flexDirection: "row",
