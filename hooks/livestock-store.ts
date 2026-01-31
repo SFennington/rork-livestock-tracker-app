@@ -914,6 +914,16 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
   }, []);
 
   const deleteGroup = useCallback(async (id: string) => {
+    // First, ungroup any animals that belong to this group
+    setAnimals(prev => {
+      const updated = prev.map(a => 
+        a.groupId === id ? { ...a, groupId: undefined } : a
+      );
+      void storage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(updated));
+      return updated;
+    });
+    
+    // Then delete the group
     setGroups(prev => {
       const updated = prev.filter(g => g.id !== id);
       void storage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updated));
