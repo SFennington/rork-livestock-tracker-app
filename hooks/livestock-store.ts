@@ -683,6 +683,26 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           });
           animalIndex++;
         }
+        
+        // Create chicks (unsexed)
+        if (breedEntry.chicks) {
+          for (let i = 0; i < breedEntry.chicks; i++) {
+            newAnimals.push({
+              id: createId(),
+              type: 'chicken',
+              breed: breedEntry.breed,
+              dateAdded: event.date,
+              status: 'alive',
+              sex: undefined,
+              number: startNumber + animalIndex,
+              stage: 'chick',
+              hatchDate: event.hatchDate,
+              eventId: newEvent.id,
+              groupId: event.groupId,
+            });
+            animalIndex++;
+          }
+        }
       }
       
       console.log('[livestock-store] Created animals:', newAnimals.map(a => ({ id: a.id, breed: a.breed, sex: a.sex, number: a.number })));

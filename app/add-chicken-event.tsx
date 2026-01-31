@@ -431,33 +431,13 @@ export default function AddChickenEventScreen() {
                 </View>
               )}
 
-              {/* Group Selector */}
-              {chickenGroups.length > 0 && !preselectedGroupId && (
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Group (optional)</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                    <TouchableOpacity 
-                      style={[styles.sexButton, !groupId && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                      onPress={() => setGroupId('')}
-                    >
-                      <Text style={[styles.sexButtonText, !groupId && styles.sexButtonTextActive]}>
-                        No Group
-                      </Text>
-                    </TouchableOpacity>
-                    {chickenGroups.map((group) => (
-                      <TouchableOpacity 
-                        key={group.id}
-                        style={[styles.sexButton, groupId === group.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                        onPress={() => setGroupId(group.id)}
-                      >
-                        <Text style={[styles.sexButtonText, groupId === group.id && styles.sexButtonTextActive]}>
-                          {group.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
+              {/* Display Group Name */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Group</Text>
+                <Text style={styles.groupNameDisplay}>
+                  {chickenGroups.find(g => g.id === groupId)?.name || 'Unknown Group'}
+                </Text>
+              </View>
 
               {/* Multi-Breed Entries */}
               <View style={styles.inputGroup}>
@@ -694,6 +674,7 @@ const styles = StyleSheet.create({
   },
   form: {
     padding: 20,
+    paddingTop: 8,
   },
   inputGroup: {
     marginBottom: 20,
@@ -850,6 +831,12 @@ const styles = StyleSheet.create({
   },
   sexButtonTextActive: {
     color: "#fff",
+  },
+  groupNameDisplay: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    paddingVertical: 8,
   },
   quickDateButtons: {
     flexDirection: "row",
