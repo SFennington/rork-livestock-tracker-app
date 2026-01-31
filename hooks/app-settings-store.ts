@@ -44,7 +44,7 @@ const defaultSettings: AppSettings = {
   ],
   enabledAnimals: {
     chickens: true,
-    rabbits: true,
+    rabbits: false,
     goats: false,
     ducks: false,
   },

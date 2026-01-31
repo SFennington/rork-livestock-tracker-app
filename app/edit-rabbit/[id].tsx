@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, KeyboardAvoidingView } from "react-native";
 import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
@@ -111,8 +111,13 @@ export default function EditRabbitScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <View style={styles.form}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Name *</Text>
@@ -388,6 +393,7 @@ export default function EditRabbitScreen() {
         </View>
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

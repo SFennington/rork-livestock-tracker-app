@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, Modal } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, Modal, KeyboardAvoidingView } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
@@ -91,11 +91,17 @@ export default function AddDuckEventScreen() {
   };
 
   return (
-    <ScrollView 
-      style={[styles.container, { paddingTop: insets.top }]} 
-      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
+      <ScrollView 
+        style={[styles.container, { paddingTop: insets.top }]} 
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
@@ -334,6 +340,7 @@ export default function AddDuckEventScreen() {
         </View>
       </Modal>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

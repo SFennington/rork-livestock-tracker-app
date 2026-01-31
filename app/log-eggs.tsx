@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInput } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInput, KeyboardAvoidingView } from "react-native";
 import { useState, useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock, getLocalDateString } from "@/hooks/livestock-store";
@@ -102,8 +102,13 @@ export default function LogEggsScreen() {
 
 
   return (
-    <View style={[styles.backgroundContainer, { paddingBottom: insets.bottom, backgroundColor: colors.accent }]}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.backgroundContainer, { paddingBottom: insets.bottom, backgroundColor: colors.accent }]}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
           <Text style={styles.screenTitle}>Log Egg Record</Text>
           
@@ -229,6 +234,7 @@ export default function LogEggsScreen() {
         </View>
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, Modal } from "react-native";
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Platform, Alert, Modal, KeyboardAvoidingView } from "react-native";
 import { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
@@ -81,6 +81,9 @@ export default function AddChickenEventScreen() {
     // Validate breeds array for acquired events
     if (eventType === 'acquired') {
       const validBreeds = breeds.filter(b => b.breed && (b.roosters > 0 || b.hens > 0));
+      console.log('[AddChickenEvent] Breeds before filtering:', breeds);
+      console.log('[AddChickenEvent] Valid breeds after filter:', validBreeds);
+      
       if (validBreeds.length === 0) {
         Alert.alert("Error", "Please add at least one breed with roosters or hens");
         return;
@@ -96,9 +99,9 @@ export default function AddChickenEventScreen() {
       if (totalRoosters > 0 && totalHens === 0) determinedSex = 'M';
       else if (totalHens > 0 && totalRoosters === 0) determinedSex = 'F';
 
-      await addChickenHistoryEvent({
+      const eventData = {
         date,
-        type: 'acquired',
+        type: 'acquired' as const,
         quantity: totalQty,
         breeds: validBreeds,
         sex: determinedSex,
@@ -106,7 +109,10 @@ export default function AddChickenEventScreen() {
         hatchDate: stage === 'chick' ? hatchDate || undefined : undefined,
         groupId: groupId || undefined,
         notes: notes || undefined,
-      });
+      };
+      console.log('[AddChickenEvent] Event data being sent:', JSON.stringify(eventData, null, 2));
+
+      await addChickenHistoryEvent(eventData);
     } else {
       // For other event types, use legacy single-breed approach
       if (!date || !quantity) {
@@ -174,10 +180,16 @@ export default function AddChickenEventScreen() {
   const chickenGroups = getGroupsByType('chicken');
 
   return (
-    <ScrollView 
-      style={[styles.container, { paddingTop: insets.top }]} 
-      contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView 
+        style={[styles.container, { paddingTop: insets.top }]} 
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
     >
         <View style={styles.form}>
           {step === 'group' ? (
@@ -190,21 +202,27 @@ export default function AddChickenEventScreen() {
               <View style={styles.inputGroup}>
                 <View style={styles.groupTypeButtons}>
                   <TouchableOpacity 
-                    style={[styles.groupTypeButton, !useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                    style={[
+                      styles.groupTypeButton,
+                      chickenGroups.length === 0 && { flex: 1 },
+                      !useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }
+                    ]}
                     onPress={() => setUseExistingGroup(false)}
                   >
                     <Text style={[styles.groupTypeButtonText, !useExistingGroup && styles.groupTypeButtonTextActive]}>
                       Create New
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.groupTypeButton, useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                    onPress={() => setUseExistingGroup(true)}
-                  >
-                    <Text style={[styles.groupTypeButtonText, useExistingGroup && styles.groupTypeButtonTextActive]}>
-                      Use Existing
-                    </Text>
-                  </TouchableOpacity>
+                  {chickenGroups.length > 0 && (
+                    <TouchableOpacity 
+                      style={[styles.groupTypeButton, useExistingGroup && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                      onPress={() => setUseExistingGroup(true)}
+                    >
+                      <Text style={[styles.groupTypeButtonText, useExistingGroup && styles.groupTypeButtonTextActive]}>
+                        Use Existing
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
 
@@ -236,19 +254,25 @@ export default function AddChickenEventScreen() {
               ) : (
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Select Group *</Text>
-                  <View style={{ gap: 8 }}>
-                    {chickenGroups.map((group) => (
-                      <TouchableOpacity 
-                        key={group.id}
-                        style={[styles.sexButton, groupId === group.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                        onPress={() => setGroupId(group.id)}
-                      >
-                        <Text style={[styles.sexButtonText, groupId === group.id && styles.sexButtonTextActive]}>
-                          {group.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  {chickenGroups.length > 0 ? (
+                    <View style={{ gap: 8 }}>
+                      {chickenGroups.map((group) => (
+                        <TouchableOpacity 
+                          key={group.id}
+                          style={[styles.sexButton, groupId === group.id && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                          onPress={() => setGroupId(group.id)}
+                        >
+                          <Text style={[styles.sexButtonText, groupId === group.id && styles.sexButtonTextActive]}>
+                            {group.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={[styles.label, { fontStyle: 'italic', color: '#9ca3af' }]}>
+                      No groups available. Please create a new group.
+                    </Text>
+                  )}
                 </View>
               )}
             </>
@@ -613,6 +637,7 @@ export default function AddChickenEventScreen() {
         </View>
       </Modal>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

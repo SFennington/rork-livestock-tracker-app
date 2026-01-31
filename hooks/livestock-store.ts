@@ -624,6 +624,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     
     // Auto-create individual animals for acquired events
     if (event.type === 'acquired' && event.quantity > 0) {
+      console.log('[livestock-store] Creating animals for event:', { breeds: event.breeds, breed: event.breed, sex: event.sex, quantity: event.quantity });
+      
       const newAnimals: IndividualAnimal[] = [];
       
       // Support both legacy single-breed and new multi-breed structure
@@ -632,8 +634,12 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
         ? event.breeds 
         : (event.breed && event.breed.trim() ? [{ breed: event.breed, roosters: event.sex === 'M' ? event.quantity : 0, hens: event.sex === 'F' ? event.quantity : 0, cost: event.cost }] : []);
       
+      console.log('[livestock-store] Breeds to process:', JSON.stringify(breedsToProcess, null, 2));
+      
       // Process each breed entry
       for (const breedEntry of breedsToProcess) {
+        console.log('[livestock-store] Processing breed entry:', breedEntry);
+        
         const existingNumbers = animals
           .filter(a => a.type === 'chicken')
           .map(a => a.number || 0);
@@ -677,6 +683,8 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
           animalIndex++;
         }
       }
+      
+      console.log('[livestock-store] Created animals:', newAnimals.map(a => ({ id: a.id, breed: a.breed, sex: a.sex, number: a.number })));
       
       if (newAnimals.length > 0) {
         setAnimals(prev => {
