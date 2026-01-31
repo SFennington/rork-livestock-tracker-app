@@ -252,6 +252,8 @@ export default function AnalyticsScreen() {
       hasDataIssue,
       totalSold,
       totalDonated,
+      totalLaid,
+      totalBroken,
       monthlyEggsByYear,
       months,
       sortedYears,
@@ -1284,6 +1286,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     marginTop: 8,
+    width: '100%',
+    textAlign: 'center',
   },
   statLabel: {
     fontSize: 12,
