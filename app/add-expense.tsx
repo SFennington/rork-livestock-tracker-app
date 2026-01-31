@@ -120,7 +120,7 @@ export default function AddTransactionScreen() {
           <Text style={styles.label}>Transaction Type *</Text>
           <View style={styles.typeButtons}>
             <TouchableOpacity
-              style={[styles.typeButton, transactionType === 'expense' && styles.typeButtonActive]}
+              style={[styles.typeButton, transactionType === 'expense' && styles.typeButtonActiveExpense]}
               onPress={() => setTransactionType('expense')}
             >
               <TrendingDown size={18} color={transactionType === 'expense' ? '#fff' : '#6b7280'} />
@@ -129,7 +129,7 @@ export default function AddTransactionScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.typeButton, transactionType === 'income' && styles.typeButtonActive]}
+              style={[styles.typeButton, transactionType === 'income' && styles.typeButtonActiveIncome]}
               onPress={() => setTransactionType('income')}
             >
               <TrendingUp size={18} color={transactionType === 'income' ? '#fff' : '#6b7280'} />
@@ -395,9 +395,13 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
     backgroundColor: "#fff",
   },
-  typeButtonActive: {
+  typeButtonActiveExpense: {
     backgroundColor: "#ef4444",
     borderColor: "#ef4444",
+  },
+  typeButtonActiveIncome: {
+    backgroundColor: "#10b981",
+    borderColor: "#10b981",
   },
   typeButtonText: {
     fontSize: 14,
