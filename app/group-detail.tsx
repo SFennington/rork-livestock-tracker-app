@@ -50,10 +50,10 @@ export default function GroupDetailScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>{group.name}</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {groupAnimals.length} birds
-          </Text>
         </View>
+        <Text style={[styles.headerBirdCount, { color: colors.textSecondary }]}>
+          {groupAnimals.length} birds
+        </Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -210,6 +210,10 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     marginTop: 2,
+  },
+  headerBirdCount: {
+    fontSize: 14,
+    fontWeight: "600" as const,
   },
   content: {
     flex: 1,

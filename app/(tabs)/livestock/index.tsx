@@ -282,13 +282,16 @@ export default function LivestockScreen() {
               )}
             </View>
 
-            <View style={styles.historyHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Chicken Groups</Text>
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-chicken-event')} testID="add-chicken-event-btn">
-                <Plus size={20} color="#fff" />
-                <Text style={styles.addButtonText}>Log New Event</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[styles.addButton, styles.fullWidthButton, { backgroundColor: colors.accent }]} 
+              onPress={() => router.push('/add-chicken-event')} 
+              testID="add-chicken-event-btn"
+            >
+              <Plus size={20} color="#fff" />
+              <Text style={styles.addButtonText}>Log New Event</Text>
+            </TouchableOpacity>
+            
+            <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24, marginBottom: 12 }]}>Chicken Groups</Text>
 
             {chickenGroups.length === 0 ? (
               <View style={styles.emptyState}>
@@ -810,5 +813,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 13,
     lineHeight: 18,
+  },
+  fullWidthButton: {
+    width: '100%',
+    marginBottom: 8,
   },
 });

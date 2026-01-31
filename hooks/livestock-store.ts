@@ -627,9 +627,10 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       const newAnimals: IndividualAnimal[] = [];
       
       // Support both legacy single-breed and new multi-breed structure
+      // Only use fallback if breeds array doesn't exist AND breed field has a value
       const breedsToProcess = event.breeds && event.breeds.length > 0 
         ? event.breeds 
-        : [{ breed: event.breed || 'Unknown', roosters: event.sex === 'M' ? event.quantity : 0, hens: event.sex === 'F' ? event.quantity : 0, cost: event.cost }];
+        : (event.breed ? [{ breed: event.breed, roosters: event.sex === 'M' ? event.quantity : 0, hens: event.sex === 'F' ? event.quantity : 0, cost: event.cost }] : []);
       
       // Process each breed entry
       for (const breedEntry of breedsToProcess) {
@@ -653,6 +654,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
             stage: event.stage || 'mature',
             hatchDate: event.hatchDate,
             eventId: newEvent.id,
+            groupId: event.groupId,
           });
           animalIndex++;
         }
@@ -670,6 +672,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
             stage: event.stage || 'mature',
             hatchDate: event.hatchDate,
             eventId: newEvent.id,
+            groupId: event.groupId,
           });
           animalIndex++;
         }
