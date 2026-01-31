@@ -201,7 +201,7 @@ export default function AddIncomeScreen() {
           />
           {type === 'eggs' && (
             <Text style={styles.hint}>
-              💡 For eggs, enter individual eggs (not dozens). Example: 144 eggs = 12 dozen
+              💡 For egg income, enter dozens sold. Unit Price should be price per dozen
             </Text>
           )}
         </View>
