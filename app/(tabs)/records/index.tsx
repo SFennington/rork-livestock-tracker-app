@@ -54,7 +54,7 @@ export default function RecordsScreen() {
   const [showEggEditModal, setShowEggEditModal] = useState(false);
   const [showMoneyEditModal, setShowMoneyEditModal] = useState(false);
   const [editingEggRecord, setEditingEggRecord] = useState<{ id: string; date: string; laid: number; broken: number; notes: string } | null>(null);
-  const [editingMoneyRecord, setEditingMoneyRecord] = useState<{ id: string; date: string; amount: number; description: string; isIncome: boolean } | null>(null);
+  const [editingMoneyRecord, setEditingMoneyRecord] = useState<{ id: string; date: string; amount: number; quantity?: number; description: string; recurring?: boolean; isIncome: boolean } | null>(null);
 
   const [eggSort, setEggSort] = useState<{ key: EggSortKey; dir: SortDirection }>({ key: "date", dir: "desc" });
   const [breedSort, setBreedSort] = useState<{ key: BreedSortKey; dir: SortDirection }>({ key: "breedingDate", dir: "desc" });
@@ -796,15 +796,15 @@ export default function RecordsScreen() {
                         <SortIcon dir={moneySort.dir} active={moneySort.key === 'amount'} />
                       </TouchableOpacity>
                       <View style={[styles.cell, styles.cellSm]}>
-                        <Text style={styles.headText}>Qty (doz)</Text>
+                        <Text style={styles.headText}>Recurring</Text>
+                      </View>
+                      <View style={[styles.cell, styles.cellSm]}>
+                        <Text style={styles.headText}>QTY</Text>
                       </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setMoneySort(prev => toggleSort(prev, 'description'))} testID="money-sort-desc">
                         <Text style={styles.headText}>Description</Text>
                         <SortIcon dir={moneySort.dir} active={moneySort.key === 'description'} />
                       </TouchableOpacity>
-                      <View style={[styles.cell, styles.cellSm]}>
-                        <Text style={styles.headText}>Recurring</Text>
-                      </View>
                     </View>
 
                     {filteredSortedMoney.map((record, index) => (
@@ -813,36 +813,27 @@ export default function RecordsScreen() {
                           id: record.id,
                           date: record.date,
                           amount: record.amount,
+                          quantity: record.isIncome && 'quantity' in record ? record.quantity : undefined,
                           description: record.description ?? '',
+                          recurring: !record.isIncome && 'recurring' in record ? record.recurring : undefined,
                           isIncome: record.isIncome
                         });
                         setShowMoneyEditModal(true);
                       }} activeOpacity={0.7}>
-                        <View style={[styles.cell, styles.cellXs]}>
+                        <View style={[styles.cell, styles.cellXs, styles.cellCenter]}>
                           <TouchableOpacity accessibilityRole="checkbox" testID={`money-select-${record.isIncome ? 'i' : 'e'}-${record.id}`} onPress={(e) => { e.stopPropagation(); toggleMoneySelected(moneyKey(record.isIncome, record.id)); }} style={[styles.checkbox, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxChecked]}>
                             <View style={[styles.checkboxInner, selectedMoneyKeys.has(moneyKey(record.isIncome, record.id)) && styles.checkboxInnerChecked]} />
                           </TouchableOpacity>
                         </View>
-                        <View style={[styles.cell, styles.cellMd]}>
+                        <View style={[styles.cell, styles.cellMd, styles.cellCenter]}>
                           <Text style={styles.bodyText}>{formatShortDate(record.date)}</Text>
                         </View>
-                        <View style={[styles.cell, styles.cellSm]}>
+                        <View style={[styles.cell, styles.cellSm, styles.cellCenter]}>
                           <Text style={[styles.bodyText, { color: record.isIncome ? '#10b981' : '#ef4444', fontWeight: '600' }]}>
                             {record.isIncome ? '+' : '-'}${record.amount.toFixed(2)}
                           </Text>
                         </View>
-                        <View style={[styles.cell, styles.cellSm]}>
-                          <Text style={styles.bodyText}>
-                            {record.isIncome && 'quantity' in record && record.quantity ? 
-                              `${record.quantity.toFixed(1)}` : 
-                              '-'
-                            }
-                          </Text>
-                        </View>
-                        <View style={[styles.cell, styles.cellLg]}>
-                          <Text style={styles.bodyText}>{record.description ?? ''}</Text>
-                        </View>
-                        <View style={[styles.cell, styles.cellSm]}>
+                        <View style={[styles.cell, styles.cellSm, styles.cellCenter]}>
                           {!record.isIncome ? (
                             <TouchableOpacity accessibilityRole="checkbox" testID={`money-recurring-${record.id}`} onPress={async (e) => {
                               e.stopPropagation();
@@ -854,11 +845,24 @@ export default function RecordsScreen() {
                                 console.log('update recurring error', err);
                               }
                             }} style={[styles.checkbox, ('recurring' in record && record.recurring) && styles.checkboxChecked]}>
-                              <View style={[styles.checkboxInner, ('recurring' in record && record.recurring) && styles.checkboxInnerChecked]} />
+                              {('recurring' in record && record.recurring) && (
+                                <Text style={styles.checkmarkText}>✓</Text>
+                              )}
                             </TouchableOpacity>
                           ) : (
                             <Text style={[styles.bodyText, { color: '#9ca3af' }]}>N/A</Text>
                           )}
+                        </View>
+                        <View style={[styles.cell, styles.cellSm, styles.cellCenter]}>
+                          <Text style={styles.bodyText}>
+                            {record.isIncome && 'quantity' in record && record.quantity ? 
+                              `${record.quantity.toFixed(1)}` : 
+                              '-'
+                            }
+                          </Text>
+                        </View>
+                        <View style={[styles.cell, styles.cellLg]}>
+                          <Text style={styles.bodyText}>{record.description ?? ''}</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -991,11 +995,9 @@ export default function RecordsScreen() {
               <View style={styles.modalBody}>
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Date</Text>
-                  <DatePicker
-                    value={editingMoneyRecord.date}
-                    onChange={(d) => setEditingMoneyRecord({ ...editingMoneyRecord, date: d })}
-                    label=""
-                  />
+                  <View style={[styles.modalInput, styles.modalInputReadonly, { borderColor: colors.border }]}>
+                    <Text style={[styles.modalInputText, { color: colors.text }]}>{formatShortDate(editingMoneyRecord.date)}</Text>
+                  </View>
                 </View>
 
                 <View style={styles.modalField}>
@@ -1010,6 +1012,20 @@ export default function RecordsScreen() {
                   />
                 </View>
 
+                {editingMoneyRecord.isIncome && (
+                  <View style={styles.modalField}>
+                    <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Quantity (dozens)</Text>
+                    <TextInput
+                      style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                      value={editingMoneyRecord.quantity !== undefined ? String(editingMoneyRecord.quantity) : ''}
+                      onChangeText={(t) => setEditingMoneyRecord({ ...editingMoneyRecord, quantity: t ? parseFloat(t) : undefined })}
+                      keyboardType="decimal-pad"
+                      placeholder="0.0"
+                      testID="money-modal-quantity"
+                    />
+                  </View>
+                )}
+
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Description</Text>
                   <TextInput
@@ -1022,6 +1038,23 @@ export default function RecordsScreen() {
                     testID="money-modal-description"
                   />
                 </View>
+
+                {!editingMoneyRecord.isIncome && (
+                  <View style={styles.modalField}>
+                    <TouchableOpacity
+                      style={styles.modalCheckboxRow}
+                      onPress={() => setEditingMoneyRecord({ ...editingMoneyRecord, recurring: !editingMoneyRecord.recurring })}
+                      testID="money-modal-recurring"
+                    >
+                      <View style={[styles.checkbox, editingMoneyRecord.recurring && styles.checkboxChecked]}>
+                        {editingMoneyRecord.recurring && (
+                          <Text style={styles.checkmarkText}>✓</Text>
+                        )}
+                      </View>
+                      <Text style={[styles.modalLabel, { color: colors.text, marginTop: 0 }]}>Recurring Expense</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 <View style={styles.modalActions}>
                   <TouchableOpacity
@@ -1039,6 +1072,7 @@ export default function RecordsScreen() {
                           await updateIncome(editingMoneyRecord.id, {
                             date: editingMoneyRecord.date,
                             amount: editingMoneyRecord.amount,
+                            quantity: editingMoneyRecord.quantity,
                             description: editingMoneyRecord.description.trim() || undefined,
                           });
                         } else {
@@ -1046,6 +1080,7 @@ export default function RecordsScreen() {
                             date: editingMoneyRecord.date,
                             amount: editingMoneyRecord.amount,
                             description: editingMoneyRecord.description.trim() || undefined,
+                            recurring: editingMoneyRecord.recurring,
                           });
                         }
                         setShowMoneyEditModal(false);
@@ -1280,6 +1315,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+  },
+  cellCenter: {
+    justifyContent: "center",
+  },
+  checkmarkText: {
+    color: "#10b981",
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 16,
   },
   cellXs: {
     width: 50,
@@ -1582,6 +1626,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     backgroundColor: '#fff',
+  },
+  modalInputReadonly: {
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+  },
+  modalInputText: {
+    fontSize: 16,
+  },
+  modalCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   modalActions: {
     flexDirection: 'row',
