@@ -10,12 +10,18 @@ export interface QuickSelectOption {
   description: string;
 }
 
+export interface ChickenEventType {
+  name: string;
+  operation: 'add' | 'subtract';
+}
+
 export interface AppSettings {
   expenseCategories: string[];
   incomeTypes: string[];
-  chickenEventTypes: string[];
+  chickenEventTypes: ChickenEventType[];
   expenseQuickSelects: QuickSelectOption[];
   incomeQuickSelects: QuickSelectOption[];
+  customChickenBreeds: string[];
   enabledAnimals: {
     chickens: boolean;
     rabbits: boolean;
@@ -31,7 +37,13 @@ const STORAGE_KEY = 'app_settings';
 const defaultSettings: AppSettings = {
   expenseCategories: ['feed', 'bedding', 'medical', 'equipment', 'other'],
   incomeTypes: ['eggs', 'meat', 'livestock', 'breeding', 'other'],
-  chickenEventTypes: ['acquired', 'death', 'sold', 'consumed'],
+  chickenEventTypes: [
+    { name: 'acquired', operation: 'add' },
+    { name: 'hatched', operation: 'add' },
+    { name: 'death', operation: 'subtract' },
+    { name: 'sold', operation: 'subtract' },
+    { name: 'consumed', operation: 'subtract' },
+  ],
   expenseQuickSelects: [
     { label: 'Feed - $50', amount: '50', category: 'feed', description: 'Feed purchase' },
     { label: 'Bedding - $30', amount: '30', category: 'bedding', description: 'Bedding material' },
@@ -42,6 +54,7 @@ const defaultSettings: AppSettings = {
     { label: 'Meat Sales - $100', amount: '100', type: 'meat', description: 'Meat sales' },
     { label: 'Livestock Sales - $150', amount: '150', type: 'livestock', description: 'Livestock sales' },
   ],
+  customChickenBreeds: [],
   enabledAnimals: {
     chickens: true,
     rabbits: false,
@@ -63,10 +76,21 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
+          
+          // Migrate old string array to new object array format
+          let chickenEventTypes = parsed.chickenEventTypes;
+          if (chickenEventTypes && chickenEventTypes.length > 0 && typeof chickenEventTypes[0] === 'string') {
+            chickenEventTypes = chickenEventTypes.map((eventType: string) => ({
+              name: eventType,
+              operation: eventType === 'acquired' || eventType === 'hatched' ? 'add' : 'subtract'
+            }));
+          }
+          
           // Merge with defaults to ensure all fields exist
           setSettings({
             ...defaultSettings,
             ...parsed,
+            chickenEventTypes: chickenEventTypes || defaultSettings.chickenEventTypes,
           });
         }
       } catch (error) {
@@ -96,7 +120,7 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     await saveSettings({ ...settings, incomeTypes: types });
   }, [settings, saveSettings]);
 
-  const updateChickenEventTypes = useCallback(async (types: string[]) => {
+  const updateChickenEventTypes = useCallback(async (types: ChickenEventType[]) => {
     await saveSettings({ ...settings, chickenEventTypes: types });
   }, [settings, saveSettings]);
 
@@ -120,6 +144,13 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     await saveSettings({ ...settings, eggValuePerDozen });
   }, [settings, saveSettings]);
 
+  const addCustomChickenBreed = useCallback(async (breed: string) => {
+    const trimmedBreed = breed.trim();
+    if (trimmedBreed && !settings.customChickenBreeds.includes(trimmedBreed)) {
+      await saveSettings({ ...settings, customChickenBreeds: [...settings.customChickenBreeds, trimmedBreed] });
+    }
+  }, [settings, saveSettings]);
+
   const resetToDefaults = useCallback(async () => {
     await saveSettings(defaultSettings);
   }, [saveSettings]);
@@ -135,6 +166,7 @@ export const [AppSettingsProvider, useAppSettings] = createContextHook(() => {
     updateIncomeQuickSelects,
     updateEggsOnHand,
     updateEggValuePerDozen,
+    addCustomChickenBreed,
     resetToDefaults,
   };
 });

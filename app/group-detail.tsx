@@ -14,16 +14,26 @@ export default function GroupDetailScreen() {
   const navigation = useNavigation();
 
   const group = groups.find(g => g.id === groupId);
+  const isUngrouped = groupId === 'ungrouped';
   
   useEffect(() => {
-    if (group) {
+    if (isUngrouped) {
+      navigation.setOptions({
+        title: 'Ungrouped',
+      });
+    } else if (group) {
       navigation.setOptions({
         title: group.name,
       });
     }
-  }, [group, navigation]);
-  const groupAnimals = getAliveAnimals(type as 'chicken').filter(a => a.groupId === groupId);
-  const groupEvents = chickenHistory.filter(e => e.groupId === groupId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [group, isUngrouped, navigation]);
+  
+  const groupAnimals = getAliveAnimals(type as 'chicken').filter(a => 
+    isUngrouped ? !a.groupId : a.groupId === groupId
+  );
+  const groupEvents = chickenHistory.filter(e => 
+    isUngrouped ? !e.groupId : e.groupId === groupId
+  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
   const { roosters, hens, chicks } = useMemo(() => {
     const groupChickens = groupAnimals;
@@ -43,7 +53,7 @@ export default function GroupDetailScreen() {
     return Object.entries(breakdown).sort(([, a], [, b]) => b - a);
   }, [groupAnimals]);
 
-  if (!group) {
+  if (!isUngrouped && !group) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Text style={{ color: colors.text }}>Group not found</Text>
@@ -115,17 +125,27 @@ export default function GroupDetailScreen() {
         <View style={styles.eventsSection}>
           <View style={styles.eventsSectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Event History</Text>
-            <TouchableOpacity
-              style={[styles.addButton, { backgroundColor: colors.accent }]}
-              onPress={() => router.push({
-                pathname: '/add-chicken-event',
-                params: { groupId }
-              })}
-            >
-              <Plus size={20} color="#fff" />
-              <Text style={styles.addButtonText}>Add Event</Text>
-            </TouchableOpacity>
+            {!isUngrouped && (
+              <TouchableOpacity
+                style={[styles.addButton, { backgroundColor: colors.accent }]}
+                onPress={() => router.push({
+                  pathname: '/add-chicken-event',
+                  params: { groupId }
+                })}
+              >
+                <Plus size={20} color="#fff" />
+                <Text style={styles.addButtonText}>Add Event</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
+          {isUngrouped && groupAnimals.length > 0 && (
+            <View style={[styles.infoBox, { backgroundColor: '#fef3c7', borderColor: '#f59e0b', marginBottom: 16 }]}>
+              <Text style={[styles.infoText, { color: '#92400e' }]}>
+                💡 These animals don't belong to any group. You can move them to a group from the Manage Animals screen.
+              </Text>
+            </View>
+          )}
 
           {groupEvents.length === 0 ? (
             <View style={styles.emptyState}>
@@ -157,7 +177,7 @@ export default function GroupDetailScreen() {
                               if (event.stage === 'chick' && b.chicks) {
                                 return `${b.breed} (${b.chicks} chicks)`;
                               }
-                              return `${b.breed} (${b.roosters}M/${b.hens}F)`;
+                              return `${b.breed} (${b.roosters}R/${b.hens}H)`;
                             }).join(', ')}
                           </Text>
                         )}
@@ -354,6 +374,15 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
+  },
+  infoBox: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  infoText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   list: {
     gap: 12,

@@ -40,6 +40,15 @@ export default function LivestockScreen() {
 
   const chickenGroups = useMemo(() => getGroupsByType('chicken'), [getGroupsByType]);
   const duckGroups = useMemo(() => getGroupsByType('duck'), [getGroupsByType]);
+  
+  // Check for ungrouped animals
+  const ungroupedChickens = useMemo(() => {
+    return getAliveAnimals('chicken').filter(a => !a.groupId);
+  }, [getAliveAnimals]);
+  
+  const ungroupedDucks = useMemo(() => {
+    return getAliveAnimals('duck').filter(a => !a.groupId);
+  }, [getAliveAnimals]);
 
   const today = new Date().toISOString().split('T')[0];
   
@@ -317,7 +326,7 @@ export default function LivestockScreen() {
             
             <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24, marginBottom: 12 }]}>Chicken Groups</Text>
 
-            {chickenGroups.length === 0 ? (
+            {chickenGroups.length === 0 && ungroupedChickens.length === 0 ? (
               <View style={styles.emptyState}>
                 <Bird size={48} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.text }]}>No chicken groups</Text>
@@ -325,6 +334,32 @@ export default function LivestockScreen() {
               </View>
             ) : (
               <View style={styles.list}>
+                {ungroupedChickens.length > 0 && (
+                  <TouchableOpacity
+                    key="ungrouped-chickens"
+                    style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => router.push({
+                      pathname: '/group-detail',
+                      params: { groupId: 'ungrouped', type: 'chicken' }
+                    })}
+                  >
+                    <View style={styles.groupCardHeader}>
+                      <View style={[styles.groupIconContainer, { backgroundColor: colors.surface }]}>
+                        <Bird size={24} color={colors.textMuted} />
+                      </View>
+                      <View style={styles.groupCardContent}>
+                        <Text style={[styles.groupCardTitle, { color: colors.text }]}>Ungrouped</Text>
+                        <Text style={[styles.groupCardDate, { color: colors.textSecondary }]}>
+                          Animals without a group
+                        </Text>
+                      </View>
+                      <View style={styles.groupCardRight}>
+                        <Text style={[styles.groupCardCount, { color: colors.primary }]}>{ungroupedChickens.length}</Text>
+                        <Text style={[styles.groupCardCountLabel, { color: colors.textMuted }]}>birds</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                )}
                 {chickenGroups.map((group) => {
                   const groupAnimals = getAliveAnimals('chicken').filter(a => a.groupId === group.id);
                   const groupCount = groupAnimals.length;

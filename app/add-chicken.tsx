@@ -3,6 +3,7 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, Palette, FileText, Hash, Calendar, ChevronDown } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -10,7 +11,8 @@ import BreedPicker from "@/components/BreedPicker";
 import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function AddChickenScreen() {
-  const { addChicken } = useLivestock();
+  const { addChicken, chickens } = useLivestock();
+  const { settings, addCustomChickenBreed } = useAppSettings();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
@@ -21,6 +23,12 @@ export default function AddChickenScreen() {
   const [color, setColor] = useState("");
   const [notes, setNotes] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+
+  // Get used breeds from existing chickens
+  const usedBreeds = Array.from(new Set(chickens.map(c => c.breed)));
+  
+  // Merge standard breeds with custom breeds, removing duplicates
+  const allBreeds = Array.from(new Set([...CHICKEN_BREEDS, ...settings.customChickenBreeds]));
 
   const totalCost = (parseFloat(pricePerUnit) || 0) * (parseInt(quantity) || 0);
 
@@ -82,7 +90,9 @@ export default function AddChickenScreen() {
             label="Breed *"
             value={breed}
             onChange={setBreed}
-            breeds={CHICKEN_BREEDS}
+            breeds={allBreeds}
+            usedBreeds={usedBreeds}
+            onAddCustomBreed={addCustomChickenBreed}
             placeholder="Select chicken breed"
           />
         </View>

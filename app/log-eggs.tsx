@@ -15,9 +15,10 @@ export default function LogEggsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string }>();
-  const [quantity, setQuantity] = useState<number | null>(null);
-  const [quantityInput, setQuantityInput] = useState("");
-  const [type, setType] = useState<'laid' | 'broken' | 'donated'>('laid');
+  const [laidQuantity, setLaidQuantity] = useState<number | null>(null);
+  const [laidInput, setLaidInput] = useState("");
+  const [brokenQuantity, setBrokenQuantity] = useState<number | null>(null);
+  const [brokenInput, setBrokenInput] = useState("");
   const [date, setDate] = useState(params.date || getLocalDateString());
 
   const getDateString = (daysAgo: number): string => {
@@ -26,54 +27,43 @@ export default function LogEggsScreen() {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
-  const recentQuantities = useMemo(() => {
+  const recentLaidQuantities = useMemo(() => {
     const sortedRecords = [...eggProduction].sort((a, b) => b.date.localeCompare(a.date));
-    
-    const quantities = sortedRecords.map(e => {
-      if (type === 'laid' && e.laid) return e.laid;
-      if (type === 'broken' && e.broken) return e.broken;
-      if (type === 'donated' && e.donated) return e.donated;
-      return null;
-    }).filter((q): q is number => q !== null && q > 0);
-    
+    const quantities = sortedRecords.map(e => e.laid).filter((q): q is number => q !== null && q !== undefined && q > 0);
     const uniqueQty = Array.from(new Set(quantities)).slice(0, 5).sort((a, b) => a - b);
     return uniqueQty;
-  }, [eggProduction, type]);
+  }, [eggProduction]);
+
+  const recentBrokenQuantities = useMemo(() => {
+    const sortedRecords = [...eggProduction].sort((a, b) => b.date.localeCompare(a.date));
+    const quantities = sortedRecords.map(e => e.broken).filter((q): q is number => q !== null && q !== undefined && q > 0);
+    const uniqueQty = Array.from(new Set(quantities)).slice(0, 5).sort((a, b) => a - b);
+    return uniqueQty;
+  }, [eggProduction]);
 
   const handleSave = async () => {
-    if (!date || quantity === null) {
+    if (!date || (laidQuantity === null && brokenQuantity === null)) {
       if (Platform.OS === 'web') {
-        alert("Please select quantity and date");
+        alert("Please enter at least one quantity (laid or broken) and date");
       }
       return;
     }
 
-    console.log('Saving egg production:', { date, quantity, type });
+    console.log('Saving egg production:', { date, laidQuantity, brokenQuantity });
     const existingEntry = eggProduction.find(e => e.date === date);
     console.log('Existing entry:', existingEntry);
-    let newData: { laid?: number; broken?: number; donated?: number } = {};
     
-    if (existingEntry) {
-      newData = {
-        laid: existingEntry.laid,
-        broken: existingEntry.broken,
-        donated: existingEntry.donated,
-      };
-    }
+    const laid = laidQuantity ?? existingEntry?.laid ?? 0;
+    const broken = brokenQuantity ?? existingEntry?.broken ?? 0;
     
-    if (type === 'laid') newData.laid = quantity;
-    else if (type === 'broken') newData.broken = quantity;
-    else if (type === 'donated') newData.donated = quantity;
-    
-    const totalCount = newData.laid || 0;
-    console.log('Total count to save:', totalCount, 'newData:', newData);
+    const totalCount = laid;
+    console.log('Total count to save:', totalCount, 'laid:', laid, 'broken:', broken);
 
     await addEggProduction({
       date,
       count: totalCount,
-      laid: newData.laid || undefined,
-      broken: newData.broken || undefined,
-      donated: newData.donated || undefined,
+      laid: laid > 0 ? laid : undefined,
+      broken: broken > 0 ? broken : undefined,
     });
 
     // Calculate and save ROI snapshot
@@ -113,16 +103,16 @@ export default function LogEggsScreen() {
           <Text style={styles.screenTitle}>Log Egg Record</Text>
           
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quantity</Text>
+            <Text style={styles.sectionTitle}>Eggs Laid</Text>
             <View style={styles.buttonGrid}>
-              {recentQuantities.length > 0 ? (
-                recentQuantities.map((qty) => (
+              {recentLaidQuantities.length > 0 ? (
+                recentLaidQuantities.map((qty) => (
                   <TouchableOpacity
                     key={qty}
-                    style={[styles.quantityButton, quantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => { setQuantity(qty); setQuantityInput(qty.toString()); }}
+                    style={[styles.quantityButton, laidQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                    onPress={() => { setLaidQuantity(qty); setLaidInput(qty.toString()); }}
                   >
-                    <Text style={[styles.quantityButtonText, quantity === qty && styles.quantityButtonTextActive]}>
+                    <Text style={[styles.quantityButtonText, laidQuantity === qty && styles.quantityButtonTextActive]}>
                       {qty}
                     </Text>
                   </TouchableOpacity>
@@ -131,10 +121,10 @@ export default function LogEggsScreen() {
                 ['10', '12', '15'].map((qty) => (
                   <TouchableOpacity
                     key={qty}
-                    style={[styles.quantityButton, quantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                    onPress={() => { setQuantity(parseInt(qty)); setQuantityInput(qty); }}
+                    style={[styles.quantityButton, laidQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                    onPress={() => { setLaidQuantity(parseInt(qty)); setLaidInput(qty); }}
                   >
-                    <Text style={[styles.quantityButtonText, quantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                    <Text style={[styles.quantityButtonText, laidQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
                       {qty}
                     </Text>
                   </TouchableOpacity>
@@ -145,43 +135,55 @@ export default function LogEggsScreen() {
               style={styles.quantityInput}
               placeholder="Or enter quantity"
               keyboardType="numeric"
-              value={quantityInput}
+              value={laidInput}
               onChangeText={(text) => {
-                setQuantityInput(text);
+                setLaidInput(text);
                 const parsed = parseInt(text);
-                setQuantity(isNaN(parsed) ? null : parsed);
+                setLaidQuantity(isNaN(parsed) ? null : parsed);
               }}
             />
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Type</Text>
+            <Text style={styles.sectionTitle}>Eggs Broken</Text>
             <View style={styles.buttonGrid}>
-              <TouchableOpacity
-                style={[styles.typeButton, type === 'laid' && [styles.typeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                onPress={() => setType('laid')}
-              >
-                <Text style={[styles.typeButtonText, type === 'laid' && styles.typeButtonTextActive]}>
-                  Laid
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.typeButton, type === 'broken' && [styles.typeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                onPress={() => setType('broken')}
-              >
-                <Text style={[styles.typeButtonText, type === 'broken' && styles.typeButtonTextActive]}>
-                  Broken
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.typeButton, type === 'donated' && [styles.typeButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
-                onPress={() => setType('donated')}
-              >
-                <Text style={[styles.typeButtonText, type === 'donated' && styles.typeButtonTextActive]}>
-                  Donated
-                </Text>
-              </TouchableOpacity>
+              {recentBrokenQuantities.length > 0 ? (
+                recentBrokenQuantities.map((qty) => (
+                  <TouchableOpacity
+                    key={qty}
+                    style={[styles.quantityButton, brokenQuantity === qty && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                    onPress={() => { setBrokenQuantity(qty); setBrokenInput(qty.toString()); }}
+                  >
+                    <Text style={[styles.quantityButtonText, brokenQuantity === qty && styles.quantityButtonTextActive]}>
+                      {qty}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                ['1', '2', '3'].map((qty) => (
+                  <TouchableOpacity
+                    key={qty}
+                    style={[styles.quantityButton, brokenQuantity === parseInt(qty) && [styles.quantityButtonActive, { backgroundColor: colors.accent, borderColor: colors.accent }]]}
+                    onPress={() => { setBrokenQuantity(parseInt(qty)); setBrokenInput(qty); }}
+                  >
+                    <Text style={[styles.quantityButtonText, brokenQuantity === parseInt(qty) && styles.quantityButtonTextActive]}>
+                      {qty}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
+            <TextInput
+              style={styles.quantityInput}
+              placeholder="Or enter quantity"
+              keyboardType="numeric"
+              value={brokenInput}
+              onChangeText={(text) => {
+                setBrokenInput(text);
+                const parsed = parseInt(text);
+                setBrokenQuantity(isNaN(parsed) ? null : parsed);
+              }}
+            />
           </View>
 
           <View style={styles.section}>
@@ -224,9 +226,9 @@ export default function LogEggsScreen() {
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.saveButton, quantity === null && styles.saveButtonDisabled, quantity !== null && { backgroundColor: colors.accent }]} 
+              style={[styles.saveButton, (laidQuantity === null && brokenQuantity === null) && styles.saveButtonDisabled, (laidQuantity !== null || brokenQuantity !== null) && { backgroundColor: colors.accent }]} 
               onPress={handleSave}
-              disabled={quantity === null}
+              disabled={laidQuantity === null && brokenQuantity === null}
             >
               <Text style={styles.saveButtonText}>Save Record</Text>
             </TouchableOpacity>

@@ -5,7 +5,7 @@ import { useTheme, type ThemePalette, type ThemeMode } from "@/hooks/theme-store
 import { useLivestock } from "@/hooks/livestock-store";
 import { useAppSettings } from "@/hooks/app-settings-store";
 import { useBackup, type BackupSchedule } from "@/hooks/backup-store";
-import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon, ChevronRight } from "lucide-react-native";
+import { Palette, Check, Download, Upload, Database, FileSpreadsheet, Sun, Moon, FolderOpen, CloudUpload, Clock, Settings as SettingsIcon, Egg as EggIcon, ChevronRight, ChevronDown, ChevronUp } from "lucide-react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -46,6 +46,24 @@ export default function SettingsScreen() {
   const [backupLocation, setBackupLocation] = useState<string | null>(null);
   const [eggsOnHandInput, setEggsOnHandInput] = useState(Math.round(settings.eggsOnHand / 12).toString());
   const [eggValueInput, setEggValueInput] = useState(settings.eggValuePerDozen.toString());
+  
+  // Collapsed section states
+  const [collapsedSections, setCollapsedSections] = useState({
+    appearance: false,
+    appConfig: false,
+    eggInventory: false,
+    dataManagement: false,
+    autoBackups: false,
+    csvImport: false,
+    about: false,
+  });
+
+  const toggleSection = (section: keyof typeof collapsedSections) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const handlePaletteChange = (newPalette: ThemePalette) => {
     if (!newPalette || typeof newPalette !== 'string' || newPalette.length > 20) return;
@@ -929,10 +947,20 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('appearance')}
+            activeOpacity={0.7}
+          >
             {mode === 'dark' ? <Moon size={20} color={colors.primary} /> : <Sun size={20} color={colors.primary} />}
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
-          </View>
+            {collapsedSections.appearance ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.appearance && (
+            <>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Customize your app theme
           </Text>
@@ -1036,13 +1064,25 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('appConfig')}
+            activeOpacity={0.7}
+          >
             <SettingsIcon size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>App Configuration</Text>
-          </View>
+            {collapsedSections.appConfig ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.appConfig && (
+            <>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Customize categories, quick selects, and field options
           </Text>
@@ -1060,13 +1100,25 @@ export default function SettingsScreen() {
               💡 Edit expense/income categories, quick select presets, and event types to match your farm's needs.
             </Text>
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('eggInventory')}
+            activeOpacity={0.7}
+          >
             <EggIcon size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Egg Inventory</Text>
-          </View>
+            {collapsedSections.eggInventory ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.eggInventory && (
+            <>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Track eggs on hand and calculate consumption savings
           </Text>
@@ -1111,13 +1163,25 @@ export default function SettingsScreen() {
               💡 Consumed eggs = Total laid - Sold - On hand - Broken - Donated. This calculates the value of eggs your household consumed, adding to your total income as savings.
             </Text>
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('dataManagement')}
+            activeOpacity={0.7}
+          >
             <Database size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Data Management</Text>
-          </View>
+            {collapsedSections.dataManagement ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.dataManagement && (
+            <>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Backup and restore your farm data
           </Text>
@@ -1159,13 +1223,25 @@ export default function SettingsScreen() {
               💡 Export your data regularly to keep a backup. You can import it later to restore your information.
             </Text>
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('autoBackups')}
+            activeOpacity={0.7}
+          >
             <CloudUpload size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Automatic Backups</Text>
-          </View>
+            {collapsedSections.autoBackups ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.autoBackups && (
+            <>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Automatically save backups to your chosen location
           </Text>
@@ -1256,13 +1332,25 @@ export default function SettingsScreen() {
               💡 Auto backups are saved to app storage. Use "Export All Backups" to access and transfer them to Google Drive or other storage.
             </Text>
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('csvImport')}
+            activeOpacity={0.7}
+          >
             <FileSpreadsheet size={20} color={colors.primary} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>CSV Import/Export</Text>
-          </View>
+            {collapsedSections.csvImport ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.csvImport && (
+            <>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Import data from spreadsheets or download templates
           </Text>
@@ -1367,10 +1455,23 @@ export default function SettingsScreen() {
               💡 Download a template to see the required format. Fill it with your data and import it back.
             </Text>
           </View>
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('about')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+            {collapsedSections.about ? 
+              <ChevronRight size={20} color={colors.textMuted} style={styles.chevron} /> : 
+              <ChevronDown size={20} color={colors.textMuted} style={styles.chevron} />
+            }
+          </TouchableOpacity>
+          {!collapsedSections.about && (
           <View style={[styles.aboutCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
               Livestock Tracker helps you manage your farm animals, track production, 
@@ -1380,6 +1481,7 @@ export default function SettingsScreen() {
               Version 1.4.1
             </Text>
           </View>
+          )}
         </View>
 
         <View style={styles.bottomSpacing} />
@@ -1417,9 +1519,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
+  chevron: {
+    marginLeft: "auto",
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600" as const,
+    flex: 1,
   },
   sectionDescription: {
     fontSize: 14,

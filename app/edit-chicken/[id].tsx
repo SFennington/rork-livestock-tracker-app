@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
+import { useAppSettings } from "@/hooks/app-settings-store";
 import { DollarSign, Palette, FileText, Hash } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
@@ -11,6 +12,7 @@ import { CHICKEN_BREEDS } from "@/constants/breeds";
 
 export default function EditChickenScreen() {
   const { updateChicken, chickens, chickenHistory } = useLivestock();
+  const { settings, addCustomChickenBreed } = useAppSettings();
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -22,14 +24,11 @@ export default function EditChickenScreen() {
   const [color, setColor] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Get unique breeds from history
-  const availableBreeds = Array.from(
-    new Set(
-      chickenHistory.flatMap(event => 
-        event.breeds?.map(b => b.breed).filter(Boolean) || (event.breed ? [event.breed] : [])
-      )
-    )
-  ).sort();
+  // Get used breeds from existing chickens
+  const usedBreeds = Array.from(new Set(chickens.map(c => c.breed)));
+  
+  // Merge standard breeds with custom breeds, removing duplicates
+  const allBreeds = Array.from(new Set([...CHICKEN_BREEDS, ...settings.customChickenBreeds]));
 
   useEffect(() => {
     const chicken = chickens.find(c => c.id === id);
@@ -90,7 +89,9 @@ export default function EditChickenScreen() {
             label="Breed *"
             value={breed}
             onChange={setBreed}
-            breeds={availableBreeds}
+            breeds={allBreeds}
+            usedBreeds={usedBreeds}
+            onAddCustomBreed={addCustomChickenBreed}
             placeholder="Select chicken breed"
           />
         </View>

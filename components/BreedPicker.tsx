@@ -6,14 +6,30 @@ interface BreedPickerProps {
   value: string;
   onChange: (breed: string) => void;
   breeds: string[];
+  usedBreeds?: string[];
+  onAddCustomBreed?: (breed: string) => void;
   label?: string;
   placeholder?: string;
 }
 
-export default function BreedPicker({ value, onChange, breeds, label, placeholder = "Select breed" }: BreedPickerProps) {
+export default function BreedPicker({ value, onChange, breeds, usedBreeds = [], onAddCustomBreed, label, placeholder = "Select breed" }: BreedPickerProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [customBreed, setCustomBreed] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
+
+  // Sort breeds: 1) Used breeds alphabetically, 2) Unused breeds alphabetically, 3) "Other"
+  const sortedBreeds = [...breeds].sort((a, b) => {
+    if (a === 'Other') return 1;
+    if (b === 'Other') return -1;
+    
+    const aUsed = usedBreeds.includes(a);
+    const bUsed = usedBreeds.includes(b);
+    
+    if (aUsed && !bUsed) return -1;
+    if (!aUsed && bUsed) return 1;
+    
+    return a.localeCompare(b);
+  });
 
   const handleSelect = (breed: string) => {
     if (breed === 'Other') {
@@ -28,7 +44,11 @@ export default function BreedPicker({ value, onChange, breeds, label, placeholde
 
   const handleCustomSubmit = () => {
     if (customBreed.trim()) {
-      onChange(customBreed.trim());
+      const trimmedBreed = customBreed.trim();
+      onChange(trimmedBreed);
+      if (onAddCustomBreed) {
+        onAddCustomBreed(trimmedBreed);
+      }
       setShowPicker(false);
       setShowCustomInput(false);
       setCustomBreed("");
@@ -115,7 +135,7 @@ export default function BreedPicker({ value, onChange, breeds, label, placeholde
                 </View>
               ) : (
                 <ScrollView style={styles.breedList} showsVerticalScrollIndicator={true}>
-                  {breeds.map((breed) => (
+                  {sortedBreeds.map((breed) => (
                     <TouchableOpacity
                       key={breed}
                       style={[

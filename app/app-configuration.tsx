@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
-import { useAppSettings, QuickSelectOption } from "@/hooks/app-settings-store";
+import { useAppSettings, QuickSelectOption, ChickenEventType } from "@/hooks/app-settings-store";
 import { useTheme } from "@/hooks/theme-store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Plus, Trash2, Edit3, RotateCcw } from "lucide-react-native";
+import { Plus, Trash2, Edit3, RotateCcw, Minus } from "lucide-react-native";
 
 export default function AppConfigurationScreen() {
   const { settings, updateExpenseCategories, updateIncomeTypes, updateChickenEventTypes, updateExpenseQuickSelects, updateIncomeQuickSelects, updateEnabledAnimals, resetToDefaults } = useAppSettings();
@@ -25,6 +25,7 @@ export default function AppConfigurationScreen() {
   // Chicken Event Types
   const [chickenEventTypes, setChickenEventTypes] = useState(settings.chickenEventTypes);
   const [newChickenEventType, setNewChickenEventType] = useState("");
+  const [newChickenEventOperation, setNewChickenEventOperation] = useState<'add' | 'subtract'>('add');
 
   // Expense Quick Selects
   const [expenseQuickSelects, setExpenseQuickSelects] = useState(settings.expenseQuickSelects);
@@ -72,14 +73,23 @@ export default function AppConfigurationScreen() {
 
   const handleAddChickenEventType = () => {
     if (!newChickenEventType.trim()) return;
-    const updated = [...chickenEventTypes, newChickenEventType.trim().toLowerCase()];
+    const updated = [...chickenEventTypes, { name: newChickenEventType.trim().toLowerCase(), operation: newChickenEventOperation }];
     setChickenEventTypes(updated);
     updateChickenEventTypes(updated);
     setNewChickenEventType("");
+    setNewChickenEventOperation('add');
   };
 
   const handleRemoveChickenEventType = (index: number) => {
     const updated = chickenEventTypes.filter((_, i) => i !== index);
+    setChickenEventTypes(updated);
+    updateChickenEventTypes(updated);
+  };
+
+  const handleToggleChickenEventOperation = (index: number) => {
+    const updated = chickenEventTypes.map((event, i) => 
+      i === index ? { ...event, operation: event.operation === 'add' ? 'subtract' : 'add' } as ChickenEventType : event
+    );
     setChickenEventTypes(updated);
     updateChickenEventTypes(updated);
   };
@@ -367,12 +377,18 @@ export default function AppConfigurationScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Chicken Event Types</Text>
           <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
-            Manage chicken history event types
+            Manage chicken history event types (tap +/- to toggle operation)
           </Text>
           <View style={styles.chipContainer}>
-            {chickenEventTypes.map((type, index) => (
+            {chickenEventTypes.map((eventType, index) => (
               <View key={index} style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.chipText, { color: colors.text }]}>{type}</Text>
+                <TouchableOpacity 
+                  style={[styles.operationBadge, { backgroundColor: eventType.operation === 'add' ? '#10b981' : '#ef4444' }]}
+                  onPress={() => handleToggleChickenEventOperation(index)}
+                >
+                  {eventType.operation === 'add' ? <Plus size={12} color="#fff" /> : <Minus size={12} color="#fff" />}
+                </TouchableOpacity>
+                <Text style={[styles.chipText, { color: colors.text }]}>{eventType.name}</Text>
                 <TouchableOpacity onPress={() => handleRemoveChickenEventType(index)}>
                   <Trash2 size={14} color={colors.error} />
                 </TouchableOpacity>
@@ -380,6 +396,12 @@ export default function AppConfigurationScreen() {
             ))}
           </View>
           <View style={styles.addRow}>
+            <TouchableOpacity 
+              style={[styles.operationToggle, { backgroundColor: newChickenEventOperation === 'add' ? '#10b981' : '#ef4444' }]}
+              onPress={() => setNewChickenEventOperation(newChickenEventOperation === 'add' ? 'subtract' : 'add')}
+            >
+              {newChickenEventOperation === 'add' ? <Plus size={16} color="#fff" /> : <Minus size={16} color="#fff" />}
+            </TouchableOpacity>
             <TextInput
               style={[styles.addInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
               value={newChickenEventType}
@@ -597,13 +619,28 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
+  operationBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   chipText: {
     fontSize: 14,
     textTransform: "capitalize",
+    flex: 1,
   },
   addRow: {
     flexDirection: "row",
     gap: 8,
+  },
+  operationToggle: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   addInput: {
     flex: 1,

@@ -24,7 +24,7 @@ export default function AddChickenEventScreen() {
   const [groupNotes, setGroupNotes] = useState('');
   const [useExistingGroup, setUseExistingGroup] = useState(false);
   
-  const [eventType, setEventType] = useState(settings.chickenEventTypes[0] || 'acquired');
+  const [eventType, setEventType] = useState(settings.chickenEventTypes[0]?.name || 'acquired');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [stage, setStage] = useState<'chick' | 'mature'>('mature');
   const [hatchDate, setHatchDate] = useState('');
@@ -293,16 +293,17 @@ export default function AddChickenEventScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Event Type *</Text>
             <View style={styles.eventTypeButtons}>
-              {settings.chickenEventTypes.map((evtType) => {
-                const displayName = evtType === 'death' ? 'Death/Loss' : evtType.charAt(0).toUpperCase() + evtType.slice(1);
+              {settings.chickenEventTypes.map((eventTypeObj) => {
+                const displayName = eventTypeObj.name === 'death' ? 'Death/Loss' : eventTypeObj.name.charAt(0).toUpperCase() + eventTypeObj.name.slice(1);
+                const operationSymbol = eventTypeObj.operation === 'add' ? '+' : '-';
                 return (
                   <TouchableOpacity
-                    key={evtType}
-                    style={[styles.eventTypeButton, eventType === evtType && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                    onPress={() => setEventType(evtType)}
+                    key={eventTypeObj.name}
+                    style={[styles.eventTypeButton, eventType === eventTypeObj.name && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                    onPress={() => setEventType(eventTypeObj.name)}
                   >
-                    <Text style={[styles.eventTypeButtonText, eventType === evtType && styles.eventTypeButtonTextActive]}>
-                      {displayName}
+                    <Text style={[styles.eventTypeButtonText, eventType === eventTypeObj.name && styles.eventTypeButtonTextActive]}>
+                      {operationSymbol} {displayName}
                     </Text>
                   </TouchableOpacity>
                 );

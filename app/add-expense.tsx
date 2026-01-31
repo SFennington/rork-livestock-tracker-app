@@ -47,7 +47,7 @@ export default function AddTransactionScreen() {
   };
 
   const handleSave = async () => {
-    if (!amount || !date || !description) {
+    if (!amount || !date) {
       if (Platform.OS === 'web') {
         alert("Please fill in all required fields");
       }
@@ -288,7 +288,7 @@ export default function AddTransactionScreen() {
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <FileText size={16} color="#6b7280" />
-            <Text style={styles.label}>Description *</Text>
+            <Text style={styles.label}>Description</Text>
           </View>
           <TextInput
             style={[styles.input, styles.textArea]}
