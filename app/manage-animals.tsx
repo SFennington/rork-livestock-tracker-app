@@ -164,11 +164,22 @@ export default function ManageAnimalsScreen() {
     // Get all animals of this type first, then filter by normalized breed
     const allOfType = showDeadAnimals ? getAllAnimals(filterType) : getAliveAnimals(filterType);
     
+    console.log('[ManageAnimals] Filtering animals:', { 
+      filterType, 
+      filterBreed, 
+      filterGroupId, 
+      totalAnimals: allOfType.length,
+      animalBreeds: allOfType.map(a => ({ id: a.id, breed: a.breed, groupId: a.groupId }))
+    });
+    
     let filtered = allOfType;
     
     // Filter by groupId if specified
     if (filterGroupId) {
-      filtered = filtered.filter(a => a.groupId === filterGroupId);
+      filtered = filtered.filter(a => 
+        filterGroupId === 'ungrouped' ? !a.groupId : a.groupId === filterGroupId
+      );
+      console.log('[ManageAnimals] After groupId filter:', filtered.length);
     }
     
     if (!filterBreed) {
@@ -180,9 +191,20 @@ export default function ManageAnimalsScreen() {
     
     // Filter by normalized breed name
     const normalizedFilterBreed = getFullBreedName(filterBreed);
-    const list = filtered.filter(a => 
-      getFullBreedName(a.breed) === normalizedFilterBreed || a.breed === filterBreed
-    );
+    console.log('[ManageAnimals] Breed filter:', { filterBreed, normalizedFilterBreed });
+    
+    const list = filtered.filter(a => {
+      const match = getFullBreedName(a.breed) === normalizedFilterBreed || a.breed === filterBreed;
+      console.log('[ManageAnimals] Checking animal:', { 
+        id: a.id, 
+        breed: a.breed, 
+        normalized: getFullBreedName(a.breed),
+        match 
+      });
+      return match;
+    });
+    
+    console.log('[ManageAnimals] Filtered list length:', list.length);
     
     // If no animals found and a breed filter is active, try to find close matches (case-insensitive, partial match)
     if (list.length === 0 && filterBreed) {
