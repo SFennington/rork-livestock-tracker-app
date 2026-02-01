@@ -27,6 +27,8 @@ import type {
   Duck,
   Group
 } from '@/types/livestock';
+import type { EggLayerSpecies, EggLayerHistoryEvent } from '@/types/egg-layer';
+import { EGG_LAYER_CONFIGS } from '@/types/egg-layer';
 
 let __idCounter = 0;
 const createId = (): string => {
@@ -1396,6 +1398,67 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     });
   }, [vaccinations]);
 
+  // Unified Egg Layer Functions
+  // These provide a single interface for all egg-laying species
+  const getEggLayerHistory = useCallback((species: EggLayerSpecies): EggLayerHistoryEvent[] => {
+    if (species === 'chicken') {
+      return chickenHistory.map(e => ({ ...e, species: 'chicken' as const }));
+    }
+    if (species === 'duck') {
+      return duckHistory.map(e => ({ ...e, species: 'duck' as const }));
+    }
+    return [];
+  }, [chickenHistory, duckHistory]);
+
+  const addEggLayerHistoryEvent = useCallback(async (event: Omit<EggLayerHistoryEvent, 'id'>) => {
+    if (event.species === 'chicken') {
+      const { species, ...chickenEvent } = event;
+      return await addChickenHistoryEvent(chickenEvent as Omit<ChickenHistoryEvent, 'id'>);
+    }
+    if (event.species === 'duck') {
+      const { species, ...duckEvent } = event;
+      return await addDuckHistoryEvent(duckEvent as Omit<DuckHistoryEvent, 'id'>);
+    }
+  }, [addChickenHistoryEvent, addDuckHistoryEvent]);
+
+  const updateEggLayerHistoryEvent = useCallback(async (id: string, species: EggLayerSpecies, updates: Partial<EggLayerHistoryEvent>) => {
+    if (species === 'chicken') {
+      const { species: _, ...chickenUpdates } = updates;
+      await updateChickenHistoryEvent(id, chickenUpdates);
+    } else if (species === 'duck') {
+      const { species: _, ...duckUpdates } = updates;
+      await updateDuckHistoryEvent(id, duckUpdates);
+    }
+  }, [updateChickenHistoryEvent, updateDuckHistoryEvent]);
+
+  const deleteEggLayerHistoryEvent = useCallback(async (id: string, species: EggLayerSpecies) => {
+    if (species === 'chicken') {
+      await deleteChickenHistoryEvent(id);
+    } else if (species === 'duck') {
+      await deleteDuckHistoryEvent(id);
+    }
+  }, [deleteChickenHistoryEvent, deleteDuckHistoryEvent]);
+
+  const getEggLayerCountOnDate = useCallback((species: EggLayerSpecies, date: string): number => {
+    if (species === 'chicken') {
+      return getChickenCountOnDate(date);
+    }
+    if (species === 'duck') {
+      return getDuckCountOnDate(date);
+    }
+    return 0;
+  }, [getChickenCountOnDate, getDuckCountOnDate]);
+
+  const getEggLayerMaleFemaleCount = useCallback((species: EggLayerSpecies): { males: number; females: number } => {
+    if (species === 'chicken') {
+      return getRoostersAndHensCount();
+    }
+    if (species === 'duck') {
+      return getDrakesAndHensCount();
+    }
+    return { males: 0, females: 0 };
+  }, [getRoostersAndHensCount, getDrakesAndHensCount]);
+
   return useMemo(() => ({
     chickens,
     ducks,
@@ -1471,6 +1534,13 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     updateGroup,
     deleteGroup,
     getGroupsByType,
+    // Unified egg layer functions
+    getEggLayerHistory,
+    addEggLayerHistoryEvent,
+    updateEggLayerHistoryEvent,
+    deleteEggLayerHistoryEvent,
+    getEggLayerCountOnDate,
+    getEggLayerMaleFemaleCount,
     reloadData: loadData,
   }), [
     chickens,
@@ -1547,6 +1617,12 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
     updateGroup,
     deleteGroup,
     getGroupsByType,
+    getEggLayerHistory,
+    addEggLayerHistoryEvent,
+    updateEggLayerHistoryEvent,
+    deleteEggLayerHistoryEvent,
+    getEggLayerCountOnDate,
+    getEggLayerMaleFemaleCount,
     loadData,
   ]);
 });

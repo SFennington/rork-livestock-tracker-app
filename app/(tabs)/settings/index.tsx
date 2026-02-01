@@ -509,8 +509,17 @@ export default function SettingsScreen() {
               AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify((importedData.data.chickenHistory ?? []).map((c: any) => ({ ...c, timestamp: c.timestamp || `${c.date}T12:00:00.000Z` })))),
-              AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify((importedData.data.duckHistory ?? []).map((d: any) => ({ ...d, timestamp: d.timestamp || `${d.date}T12:00:00.000Z` })))),
+              // Add species field to history events for unified egg layer system (backward compatible)
+              AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify((importedData.data.chickenHistory ?? []).map((c: any) => ({ 
+                ...c, 
+                species: c.species || 'chicken',
+                timestamp: c.timestamp || `${c.date}T12:00:00.000Z` 
+              })))),
+              AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify((importedData.data.duckHistory ?? []).map((d: any) => ({ 
+                ...d, 
+                species: d.species || 'duck',
+                timestamp: d.timestamp || `${d.date}T12:00:00.000Z` 
+              })))),
               AsyncStorage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(importedData.data.animals ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(importedData.data.groups ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.FINANCIAL_RECORDS, JSON.stringify(financialRecords)),
@@ -621,8 +630,17 @@ export default function SettingsScreen() {
                     AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify((importedData.data.chickenHistory ?? []).map((c: any) => ({ ...c, timestamp: c.timestamp || `${c.date}T12:00:00.000Z` })))),
-                    AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify((importedData.data.duckHistory ?? []).map((d: any) => ({ ...d, timestamp: d.timestamp || `${d.date}T12:00:00.000Z` })))),
+                    // Add species field to history events for unified egg layer system (backward compatible)
+                    AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify((importedData.data.chickenHistory ?? []).map((c: any) => ({ 
+                      ...c, 
+                      species: c.species || 'chicken',
+                      timestamp: c.timestamp || `${c.date}T12:00:00.000Z` 
+                    })))),
+                    AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify((importedData.data.duckHistory ?? []).map((d: any) => ({ 
+                      ...d, 
+                      species: d.species || 'duck',
+                      timestamp: d.timestamp || `${d.date}T12:00:00.000Z` 
+                    })))),
                     AsyncStorage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(importedData.data.animals ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(importedData.data.groups ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.FINANCIAL_RECORDS, JSON.stringify(financialRecords)),
