@@ -4,7 +4,7 @@ import { useFinancialStore } from "@/hooks/financial-store";
 import { useTheme } from "@/hooks/theme-store";
 import { Egg, Heart, DollarSign, TrendingUp, ChevronUp, ChevronDown, Filter, Plus, X } from "lucide-react-native";
 import { router } from "expo-router";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DatePicker from "@/components/DatePicker";
 
@@ -38,8 +38,13 @@ export default function RecordsScreen() {
     groups,
     animals,
   } = useLivestock();
-  const { records: financialRecords, updateRecord, deleteRecord } = useFinancialStore();
+  const { records: financialRecords, updateRecord, deleteRecord, loadRecords } = useFinancialStore();
   const { colors } = useTheme();
+
+  // Load financial records on mount
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
 
   const [activeTab, setActiveTab] = useState<'eggs' | 'breeding' | 'financial'>('eggs');
   const [editingId, setEditingId] = useState<string | null>(null);

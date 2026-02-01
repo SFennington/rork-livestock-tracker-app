@@ -449,6 +449,7 @@ export default function SettingsScreen() {
             // Migrate old expenses/income to financial records format
             let financialRecords = importedData.data.financialRecords ?? [];
             if (financialRecords.length === 0 && (importedData.data.expenses || importedData.data.income)) {
+              console.log('Migrating financial records from old format...');
               const expenseRecords = (importedData.data.expenses ?? []).map((exp: any) => ({
                 id: exp.id,
                 date: exp.date,
@@ -469,6 +470,7 @@ export default function SettingsScreen() {
                 quantity: inc.quantity,
               }));
               financialRecords = [...expenseRecords, ...incomeRecords];
+              console.log(`Migrated ${expenseRecords.length} expenses + ${incomeRecords.length} income = ${financialRecords.length} total records`);
             }
 
             await Promise.all([
@@ -537,6 +539,7 @@ export default function SettingsScreen() {
                   // Migrate old expenses/income to financial records format
                   let financialRecords = importedData.data.financialRecords ?? [];
                   if (financialRecords.length === 0 && (importedData.data.expenses || importedData.data.income)) {
+                    console.log('Migrating financial records from old format...');
                     const expenseRecords = (importedData.data.expenses ?? []).map((exp: any) => ({
                       id: exp.id,
                       date: exp.date,
@@ -557,6 +560,7 @@ export default function SettingsScreen() {
                       quantity: inc.quantity,
                     }));
                     financialRecords = [...expenseRecords, ...incomeRecords];
+                    console.log(`Migrated ${expenseRecords.length} expenses + ${incomeRecords.length} income = ${financialRecords.length} total records`);
                   }
 
                   await Promise.all([
