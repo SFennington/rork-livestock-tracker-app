@@ -472,9 +472,10 @@ export default function SettingsScreen() {
             }
 
             await Promise.all([
-              AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(importedData.data.ducks ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
+              // Skip importing old chickens/ducks/rabbits arrays - they're deprecated
+              // AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
+              // AsyncStorage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(importedData.data.ducks ?? [])),
+              // AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans ?? [])),
@@ -559,9 +560,10 @@ export default function SettingsScreen() {
                   }
 
                   await Promise.all([
-                    AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(importedData.data.ducks ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
+                    // Skip importing old chickens/ducks/rabbits arrays - they're deprecated
+                    // AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
+                    // AsyncStorage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(importedData.data.ducks ?? [])),
+                    // AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans ?? [])),
