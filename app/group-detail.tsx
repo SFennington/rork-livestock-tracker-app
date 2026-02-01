@@ -59,12 +59,16 @@ export default function GroupDetailScreen() {
 
   const breedBreakdown = useMemo(() => {
     const breakdown: { [breed: string]: number } = {};
+    console.log('[GroupDetail] Computing breed breakdown for group:', { groupId, isUngrouped, animalCount: groupAnimals.length });
     for (const animal of groupAnimals) {
       const breed = animal.breed || 'Unknown';
+      console.log('[GroupDetail] Animal breed:', { id: animal.id, breed, originalBreed: animal.breed });
       breakdown[breed] = (breakdown[breed] || 0) + 1;
     }
-    return Object.entries(breakdown).sort(([, a], [, b]) => b - a);
-  }, [groupAnimals]);
+    const result = Object.entries(breakdown).sort(([, a], [, b]) => b - a);
+    console.log('[GroupDetail] Final breed breakdown:', result);
+    return result;
+  }, [groupAnimals, groupId, isUngrouped]);
 
   const handleRename = async () => {
     if (!group || !newGroupName.trim()) return;
