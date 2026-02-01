@@ -316,7 +316,7 @@ export default function AnalyticsScreen() {
     perChickenZoomAnchorRef.current = perChickenInitialZoom;
   }, [perChickenInitialZoom]);
   const perChickenDayWidth = BASE_DAY_WIDTH * perChickenZoom;
-  const perChickenContentWidth = Math.max(perChickenData.length, 30) * perChickenDayWidth;
+  const perChickenContentWidth = perChickenData.length * perChickenDayWidth;
   const perChickenHighlightWidth = Math.min(perChickenData.length, 30) * perChickenDayWidth;
   const perChickenHighlightX = chartPadding + Math.max(0, perChickenContentWidth - perChickenHighlightWidth);
   const perChickenLabelInterval = Math.max(1, Math.floor(30 / 10));
@@ -326,8 +326,9 @@ export default function AnalyticsScreen() {
   const last30DayAveragePerChicken = last30DaysPerChicken.length > 0 ? last30DayTotalPerChicken / last30DaysPerChicken.length : 0;
 
   const initialZoom = useMemo(() => {
-    const days = Math.max(chartData.length, 30);
-    const requiredWidth = days * BASE_DAY_WIDTH;
+    const days = chartData.length;
+    const minDisplayDays = Math.min(days, 30);
+    const requiredWidth = minDisplayDays * BASE_DAY_WIDTH;
     if (requiredWidth > VIEWPORT_WIDTH) {
       return Math.max(MIN_ZOOM, VIEWPORT_WIDTH / requiredWidth);
     }
@@ -343,7 +344,7 @@ export default function AnalyticsScreen() {
   }, [initialZoom]);
 
   const dayWidth = BASE_DAY_WIDTH * zoomScale;
-  const chartContentWidth = Math.max(chartData.length, 30) * dayWidth;
+  const chartContentWidth = chartData.length * dayWidth;
   const highlightWidth = Math.min(chartData.length, 30) * dayWidth;
   const highlightX = chartPadding + Math.max(0, chartContentWidth - highlightWidth);
   const labelInterval = Math.max(1, Math.floor(30 / 10));
