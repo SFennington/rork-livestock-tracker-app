@@ -10,6 +10,7 @@ export interface FinancialRecord {
   breed?: string; // Breed associated with this record
   animalId?: string; // Specific animal associated with this record
   quantity?: number; // Quantity of eggs (stored as individual eggs, not dozens)
+  timestamp?: string; // ISO timestamp for when record was created
 }
 
 export interface ROISnapshot {

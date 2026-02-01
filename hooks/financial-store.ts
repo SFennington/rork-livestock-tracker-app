@@ -43,7 +43,11 @@ export const useFinancialStore = create<FinancialState>((set, get) => ({
   },
   
   addRecord: async (record) => {
-    const newRecord: FinancialRecord = { ...record, id: createId() };
+    const newRecord: FinancialRecord = { 
+      ...record, 
+      id: createId(),
+      timestamp: new Date().toISOString()
+    };
     const updated = [...get().records, newRecord];
     set({ records: updated });
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

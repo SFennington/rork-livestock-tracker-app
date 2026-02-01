@@ -237,14 +237,18 @@ export default function DashboardScreen() {
       });
     });
 
-    // Sort by date first (descending), then by timestamp (descending) for same-day events
+    // Sort by creation date (extracted from timestamp) first (descending), then by timestamp (descending) within same creation day
     return activities
       .sort((a, b) => {
-        // Compare dates first
-        const dateCompare = b.date.localeCompare(a.date);
+        // Extract creation date (YYYY-MM-DD) from timestamp
+        const aCreatedDate = a.timestamp.split('T')[0];
+        const bCreatedDate = b.timestamp.split('T')[0];
+        
+        // Compare creation dates first (newest first)
+        const dateCompare = bCreatedDate.localeCompare(aCreatedDate);
         if (dateCompare !== 0) return dateCompare;
         
-        // If same date, sort by timestamp
+        // If same creation date, sort by timestamp (newest first)
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       })
       .slice(0, 15);

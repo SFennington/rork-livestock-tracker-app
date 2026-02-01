@@ -39,6 +39,7 @@ export interface ChickenHistoryEvent {
   stage?: 'chick' | 'mature'; // Lifecycle stage
   hatchDate?: string; // For chicks
   groupId?: string; // Links to Group for tracking
+  timestamp?: string; // ISO timestamp for when record was created
   notes?: string;
   chickenId?: string;
 }
@@ -67,6 +68,7 @@ export interface DuckHistoryEvent {
   stage?: 'duckling' | 'mature'; // Lifecycle stage
   hatchDate?: string; // For ducklings
   groupId?: string; // Links to Group for tracking
+  timestamp?: string; // ISO timestamp for when record was created
   notes?: string;
   duckId?: string;
 }

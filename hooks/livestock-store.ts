@@ -453,7 +453,11 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
   // Breeding record operations
   const addBreedingRecord = useCallback(async (record: Omit<BreedingRecord, 'id'>) => {
-    const newRecord: BreedingRecord = { ...record, id: createId() };
+    const newRecord: BreedingRecord = { 
+      ...record, 
+      id: createId(),
+      timestamp: new Date().toISOString()
+    };
     let updatedLocal: BreedingRecord[] = [];
     setBreedingRecords(prev => {
       updatedLocal = [...prev, newRecord];
@@ -603,7 +607,11 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
   // Chicken history operations
   const addChickenHistoryEvent = useCallback(async (event: Omit<ChickenHistoryEvent, 'id'>) => {
-    const newEvent: ChickenHistoryEvent = { ...event, id: createId() };
+    const newEvent: ChickenHistoryEvent = { 
+      ...event, 
+      id: createId(),
+      timestamp: new Date().toISOString()
+    };
     let updatedLocal: ChickenHistoryEvent[] = [];
     setChickenHistory(prev => {
       updatedLocal = [...prev, newEvent];
@@ -771,7 +779,11 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
 
   // Duck history operations
   const addDuckHistoryEvent = useCallback(async (event: Omit<DuckHistoryEvent, 'id'>) => {
-    const newEvent: DuckHistoryEvent = { ...event, id: createId() };
+    const newEvent: DuckHistoryEvent = { 
+      ...event, 
+      id: createId(),
+      timestamp: new Date().toISOString()
+    };
     let updatedLocal: DuckHistoryEvent[] = [];
     setDuckHistory(prev => {
       updatedLocal = [...prev, newEvent];
