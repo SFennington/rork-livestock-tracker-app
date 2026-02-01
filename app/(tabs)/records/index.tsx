@@ -38,7 +38,7 @@ export default function RecordsScreen() {
     groups,
     animals,
   } = useLivestock();
-  const { records: financialRecords, updateRecord, deleteRecord, loadRecords } = useFinancialStore();
+  const { records: financialRecords, updateRecord, deleteRecord, loadRecords, isLoading: financialLoading } = useFinancialStore();
   const { colors } = useTheme();
 
   // Load financial records on mount
@@ -304,12 +304,13 @@ export default function RecordsScreen() {
     }
   }, [selectedMoneyKeys, deleteRecord]);
 
-  if (isLoading) {
+  if (isLoading || financialLoading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}
         testID="records-loading">
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10b981" />
+          <Text style={{ color: colors.text, marginTop: 16 }}>Loading records...</Text>
         </View>
       </View>
     );
