@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useLivestock } from "@/hooks/livestock-store";
 import { useTheme } from "@/hooks/theme-store";
 import { X, Plus, Save, Trash2, Eye, EyeOff, Skull, ChevronLeft } from "lucide-react-native";
@@ -434,7 +434,12 @@ export default function ManageAnimalsScreen() {
   const selectedGroup = filterGroupId ? groups.find(g => g.id === filterGroupId) : null;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       {selectedGroup && (
         <View style={[styles.groupHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
           <Text style={[styles.groupHeaderLabel, { color: colors.textSecondary }]}>Group:</Text>
@@ -463,7 +468,7 @@ export default function ManageAnimalsScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.list}>
+      <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
         {filteredAnimals.length === 0 && filterBreed ? (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -895,6 +900,7 @@ export default function ManageAnimalsScreen() {
         </View>
       )}
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

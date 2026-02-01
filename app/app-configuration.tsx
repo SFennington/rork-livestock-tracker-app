@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert, Platform, KeyboardAvoidingView } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import { useAppSettings, QuickSelectOption, ChickenEventType } from "@/hooks/app-settings-store";
@@ -192,10 +192,15 @@ export default function AppConfigurationScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Enabled Animals */}
-        <View style={styles.section}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Enabled Animals */}
+          <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Enabled Animals</Text>
           <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
             Control which animals appear in your dashboard and records
@@ -611,6 +616,7 @@ export default function AppConfigurationScreen() {
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

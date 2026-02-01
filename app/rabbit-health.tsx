@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Modal } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { useState } from "react";
 import { useLivestock, useRabbitHealth } from "@/hooks/livestock-store";
 import { Heart, Syringe, Scale, Plus, X, Calendar, AlertTriangle } from "lucide-react-native";
@@ -126,9 +126,14 @@ export default function RabbitHealthScreen() {
   ];
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <View style={styles.container}>
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+        <View style={styles.container}>
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Quick Actions */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -574,6 +579,7 @@ export default function RabbitHealthScreen() {
         </Modal>
       </View>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

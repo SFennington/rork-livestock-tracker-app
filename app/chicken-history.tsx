@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Platform, Alert } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Platform, Alert, KeyboardAvoidingView } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
 import { useLivestock } from "@/hooks/livestock-store";
@@ -43,8 +43,13 @@ export default function ChickenHistoryScreen() {
   };
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <View style={styles.form}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Event Type *</Text>
@@ -117,6 +122,7 @@ export default function ChickenHistoryScreen() {
         </View>
       </ScrollView>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 

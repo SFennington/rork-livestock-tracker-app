@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, TextInput } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useLivestock, useRabbitBreeding } from "@/hooks/livestock-store";
 import { Calendar, AlertTriangle, Plus, Baby, Heart, CheckCircle2, MinusCircle, PlusCircle, Edit2 } from "lucide-react-native";
 import { router } from "expo-router";
@@ -194,9 +194,14 @@ export default function BreedingCalendarScreen() {
   }, [form, updateBreedingRecord, breedingRecords, rabbits, addRabbit]);
 
   return (
-    <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
-      <View style={styles.container}>
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={[styles.backgroundContainer, { paddingTop: insets.top }]}>
+        <View style={styles.container}>
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <TouchableOpacity testID="add-breeding" style={styles.addButton} onPress={() => router.push('/add-breeding')}>
             <Plus size={20} color="#fff" />
             <Text style={styles.addButtonText}>Plan New Breeding</Text>
@@ -466,6 +471,7 @@ export default function BreedingCalendarScreen() {
         </ScrollView>
       </View>
     </View>
+    </KeyboardAvoidingView>
   );
 }
 
