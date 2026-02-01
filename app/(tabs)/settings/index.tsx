@@ -462,10 +462,10 @@ export default function SettingsScreen() {
               const incomeRecords = (importedData.data.income ?? []).map((inc: any) => {
                 let quantity = inc.quantity;
                 // Convert egg quantities from individual eggs to dozens if needed
-                // If quantity > 50, assume it's in individual eggs and convert to dozens
-                // If quantity <= 50, assume it's already in dozens
-                if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity > 50) {
-                  quantity = Math.round(quantity / 12);
+                // If quantity is a multiple of 12, it's stored as individual eggs and needs conversion
+                // Otherwise, it's already in dozens
+                if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity % 12 === 0) {
+                  quantity = quantity / 12;
                   console.log(`Converting egg quantity ${inc.quantity} eggs -> ${quantity} dozen`);
                 }
                 return {
@@ -562,10 +562,10 @@ export default function SettingsScreen() {
                     const incomeRecords = (importedData.data.income ?? []).map((inc: any) => {
                       let quantity = inc.quantity;
                       // Convert egg quantities from individual eggs to dozens if needed
-                      // If quantity > 50, assume it's in individual eggs and convert to dozens
-                      // If quantity <= 50, assume it's already in dozens
-                      if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity > 50) {
-                        quantity = Math.round(quantity / 12);
+                      // If quantity is a multiple of 12, it's stored as individual eggs and needs conversion
+                      // Otherwise, it's already in dozens
+                      if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity % 12 === 0) {
+                        quantity = quantity / 12;
                         console.log(`Converting egg quantity ${inc.quantity} eggs -> ${quantity} dozen`);
                       }
                       return {
