@@ -459,14 +459,24 @@ export default function SettingsScreen() {
                 description: exp.description,
                 groupId: exp.groupId,
               }));
+              
+              // Detect if egg quantities are in individual eggs or dozens
+              // Check if any egg income has quantity that's a multiple of 12 - if so, all are in eggs
+              const eggIncomes = (importedData.data.income ?? []).filter((inc: any) => 
+                inc.type?.toLowerCase() === 'eggs' && inc.quantity
+              );
+              const isInEggs = eggIncomes.some((inc: any) => inc.quantity % 12 === 0);
+              if (isInEggs) {
+                console.log('Detected egg quantities in individual eggs format, will convert all to dozens');
+              } else {
+                console.log('Detected egg quantities already in dozens format, no conversion needed');
+              }
+              
               const incomeRecords = (importedData.data.income ?? []).map((inc: any) => {
                 let quantity = inc.quantity;
-                // Convert egg quantities from individual eggs to dozens if needed
-                // If quantity is a multiple of 12, it's stored as individual eggs and needs conversion
-                // Otherwise, it's already in dozens
-                if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity % 12 === 0) {
+                // Apply conversion to all egg entries if needed
+                if (inc.type?.toLowerCase() === 'eggs' && quantity && isInEggs) {
                   quantity = quantity / 12;
-                  console.log(`Converting egg quantity ${inc.quantity} eggs -> ${quantity} dozen`);
                 }
                 return {
                   id: inc.id,
@@ -559,14 +569,24 @@ export default function SettingsScreen() {
                       description: exp.description,
                       groupId: exp.groupId,
                     }));
+                    
+                    // Detect if egg quantities are in individual eggs or dozens
+                    // Check if any egg income has quantity that's a multiple of 12 - if so, all are in eggs
+                    const eggIncomes = (importedData.data.income ?? []).filter((inc: any) => 
+                      inc.type?.toLowerCase() === 'eggs' && inc.quantity
+                    );
+                    const isInEggs = eggIncomes.some((inc: any) => inc.quantity % 12 === 0);
+                    if (isInEggs) {
+                      console.log('Detected egg quantities in individual eggs format, will convert all to dozens');
+                    } else {
+                      console.log('Detected egg quantities already in dozens format, no conversion needed');
+                    }
+                    
                     const incomeRecords = (importedData.data.income ?? []).map((inc: any) => {
                       let quantity = inc.quantity;
-                      // Convert egg quantities from individual eggs to dozens if needed
-                      // If quantity is a multiple of 12, it's stored as individual eggs and needs conversion
-                      // Otherwise, it's already in dozens
-                      if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity % 12 === 0) {
+                      // Apply conversion to all egg entries if needed
+                      if (inc.type?.toLowerCase() === 'eggs' && quantity && isInEggs) {
                         quantity = quantity / 12;
-                        console.log(`Converting egg quantity ${inc.quantity} eggs -> ${quantity} dozen`);
                       }
                       return {
                         id: inc.id,
