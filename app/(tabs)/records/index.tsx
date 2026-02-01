@@ -484,11 +484,11 @@ export default function RecordsScreen() {
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'date'} />
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'laid'))} testID="eggs-sort-laid">
-                        <Text style={styles.headText} numberOfLines={1}>Laid</Text>
+                        <Text style={[styles.headText, { textAlign: 'center', width: '100%' }]} numberOfLines={1}>Laid</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'laid'} />
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.cell, styles.cellXsm]} onPress={() => setEggSort(prev => toggleSort(prev, 'broken'))} testID="eggs-sort-broken">
-                        <Text style={styles.headText} numberOfLines={1}>Broken</Text>
+                      <TouchableOpacity style={[styles.cell, styles.cellSm]} onPress={() => setEggSort(prev => toggleSort(prev, 'broken'))} testID="eggs-sort-broken">
+                        <Text style={[styles.headText, { textAlign: 'center', width: '100%' }]} numberOfLines={1}>Broken</Text>
                         <SortIcon dir={eggSort.dir} active={eggSort.key === 'broken'} />
                       </TouchableOpacity>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setEggSort(prev => toggleSort(prev, 'notes'))} testID="eggs-sort-notes">
@@ -516,10 +516,10 @@ export default function RecordsScreen() {
                         <View style={[styles.cell, styles.cellMd]}>
                           <Text style={styles.bodyText}>{formatShortDate(record.date)}</Text>
                         </View>
-                        <View style={[styles.cell, styles.cellSm]}>
+                        <View style={[styles.cell, styles.cellSm, styles.cellCenter]}>
                           <Text style={styles.bodyText}>{record.laid ?? record.count}</Text>
                         </View>
-                        <View style={[styles.cell, styles.cellXsm]}>
+                        <View style={[styles.cell, styles.cellSm, styles.cellCenter]}>
                           <Text style={styles.bodyText}>{record.broken ?? 0}</Text>
                         </View>
                         <View style={[styles.cell, styles.cellLg]}>
@@ -912,7 +912,7 @@ export default function RecordsScreen() {
                         <Text style={styles.headText}>Recurring</Text>
                       </View>
                       <View style={[styles.cell, styles.cellSm]}>
-                        <Text style={styles.headText}>QTY</Text>
+                        <Text style={[styles.headText, { textAlign: 'center', width: '100%' }]}>QTY</Text>
                       </View>
                       <TouchableOpacity style={[styles.cell, styles.cellLg]} onPress={() => setMoneySort(prev => toggleSort(prev, 'description'))} testID="money-sort-desc">
                         <Text style={styles.headText}>Description</Text>
@@ -969,7 +969,7 @@ export default function RecordsScreen() {
                         <View style={[styles.cell, styles.cellSm, styles.cellCenter]}>
                           <Text style={styles.bodyText}>
                             {record.isIncome && 'quantity' in record && record.quantity ? 
-                              `${record.quantity.toFixed(1)}` : 
+                              `${Math.round(record.quantity)}` : 
                               '-'
                             }
                           </Text>
@@ -1007,17 +1007,20 @@ export default function RecordsScreen() {
               <View style={styles.modalBody}>
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Date</Text>
-                  <DatePicker
-                    value={editingEggRecord.date}
-                    onChange={(d) => setEditingEggRecord({ ...editingEggRecord, date: d })}
-                    label=""
-                  />
+                  <Text style={[styles.modalDateDisplay, { color: '#fff' }]}>
+                    {editingEggRecord.date ? new Date(editingEggRecord.date + 'T00:00:00').toLocaleDateString('en-US', { 
+                      weekday: 'short',
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    }) : ''}
+                  </Text>
                 </View>
 
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Laid</Text>
                   <TextInput
-                    style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                    style={[styles.modalInput, { color: '#111827', borderColor: colors.border }]}
                     value={String(editingEggRecord.laid)}
                     onChangeText={(t) => setEditingEggRecord({ ...editingEggRecord, laid: parseInt(t) || 0 })}
                     keyboardType="numeric"
@@ -1028,7 +1031,7 @@ export default function RecordsScreen() {
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Broken</Text>
                   <TextInput
-                    style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                    style={[styles.modalInput, { color: '#111827', borderColor: colors.border }]}
                     value={String(editingEggRecord.broken)}
                     onChangeText={(t) => setEditingEggRecord({ ...editingEggRecord, broken: parseInt(t) || 0 })}
                     keyboardType="numeric"
@@ -1039,7 +1042,7 @@ export default function RecordsScreen() {
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Notes</Text>
                   <TextInput
-                    style={[styles.modalInput, { color: colors.text, borderColor: colors.border }]}
+                    style={[styles.modalInput, { color: '#111827', borderColor: colors.border }]}
                     value={editingEggRecord.notes}
                     onChangeText={(t) => setEditingEggRecord({ ...editingEggRecord, notes: t })}
                     placeholder="Optional notes"
@@ -1108,9 +1111,14 @@ export default function RecordsScreen() {
               <View style={styles.modalBody}>
                 <View style={styles.modalField}>
                   <Text style={[styles.modalLabel, { color: colors.textMuted }]}>Date</Text>
-                  <View style={[styles.modalInput, styles.modalInputReadonly, { borderColor: colors.border }]}>
-                    <Text style={[styles.modalInputText, { color: colors.text }]}>{formatShortDate(editingMoneyRecord.date)}</Text>
-                  </View>
+                  <Text style={[styles.modalDateDisplay, { color: '#fff' }]}>
+                    {editingMoneyRecord.date ? new Date(editingMoneyRecord.date + 'T00:00:00').toLocaleDateString('en-US', { 
+                      weekday: 'short',
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    }) : ''}
+                  </Text>
                 </View>
 
                 <View style={styles.modalField}>
@@ -1738,6 +1746,11 @@ const styles = StyleSheet.create({
   },
   modalInputText: {
     fontSize: 16,
+  },
+  modalDateDisplay: {
+    fontSize: 16,
+    fontWeight: '700',
+    paddingVertical: 8,
   },
   modalCheckboxRow: {
     flexDirection: 'row',
