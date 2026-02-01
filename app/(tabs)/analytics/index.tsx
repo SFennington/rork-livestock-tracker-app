@@ -327,8 +327,14 @@ export default function AnalyticsScreen() {
 
   const initialZoom = useMemo(() => {
     const days = chartData.length;
-    const minDisplayDays = Math.min(days, 30);
-    const requiredWidth = minDisplayDays * BASE_DAY_WIDTH;
+    if (days === 0) return 1;
+    // Calculate zoom to fit data in viewport, but ensure minimum display width
+    const requiredWidth = days * BASE_DAY_WIDTH;
+    if (days <= 7) {
+      // For small datasets, zoom in to fill the viewport
+      return Math.max(1, VIEWPORT_WIDTH / requiredWidth);
+    }
+    // For larger datasets, zoom out if needed
     if (requiredWidth > VIEWPORT_WIDTH) {
       return Math.max(MIN_ZOOM, VIEWPORT_WIDTH / requiredWidth);
     }
