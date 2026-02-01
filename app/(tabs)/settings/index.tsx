@@ -458,6 +458,7 @@ export default function SettingsScreen() {
                 amount: exp.amount,
                 description: exp.description,
                 groupId: exp.groupId,
+                timestamp: exp.timestamp || `${exp.date}T12:00:00.000Z`
               }));
               
               // Detect if egg quantities are in individual eggs or dozens
@@ -487,6 +488,7 @@ export default function SettingsScreen() {
                   description: inc.description,
                   groupId: inc.groupId,
                   quantity,
+                  timestamp: inc.timestamp || `${inc.date}T12:00:00.000Z`
                 };
               });
               financialRecords = [...expenseRecords, ...incomeRecords];
@@ -498,8 +500,8 @@ export default function SettingsScreen() {
               // AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
               // AsyncStorage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(importedData.data.ducks ?? [])),
               // AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify((importedData.data.eggProduction ?? []).map((e: any) => ({ ...e, timestamp: e.timestamp || `${e.date}T12:00:00.000Z` })))),
+              AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify((importedData.data.breedingRecords ?? []).map((b: any) => ({ ...b, timestamp: b.timestamp || `${b.breedingDate}T12:00:00.000Z` })))),
               AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.VACCINATIONS, JSON.stringify(importedData.data.vaccinations ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.HEALTH_RECORDS, JSON.stringify(importedData.data.healthRecords ?? [])),
@@ -507,8 +509,8 @@ export default function SettingsScreen() {
               AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(importedData.data.chickenHistory ?? [])),
-              AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify(importedData.data.duckHistory ?? [])),
+              AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify((importedData.data.chickenHistory ?? []).map((c: any) => ({ ...c, timestamp: c.timestamp || `${c.date}T12:00:00.000Z` })))),
+              AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify((importedData.data.duckHistory ?? []).map((d: any) => ({ ...d, timestamp: d.timestamp || `${d.date}T12:00:00.000Z` })))),
               AsyncStorage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(importedData.data.animals ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(importedData.data.groups ?? [])),
               AsyncStorage.setItem(STORAGE_KEYS.FINANCIAL_RECORDS, JSON.stringify(financialRecords)),
@@ -568,6 +570,7 @@ export default function SettingsScreen() {
                       amount: exp.amount,
                       description: exp.description,
                       groupId: exp.groupId,
+                      timestamp: exp.timestamp || `${exp.date}T12:00:00.000Z`
                     }));
                     
                     // Detect if egg quantities are in individual eggs or dozens
@@ -597,6 +600,7 @@ export default function SettingsScreen() {
                         description: inc.description,
                         groupId: inc.groupId,
                         quantity,
+                        timestamp: inc.timestamp || `${inc.date}T12:00:00.000Z`
                       };
                     });
                     financialRecords = [...expenseRecords, ...incomeRecords];
@@ -608,8 +612,8 @@ export default function SettingsScreen() {
                     // AsyncStorage.setItem(STORAGE_KEYS.CHICKENS, JSON.stringify(importedData.data.chickens ?? [])),
                     // AsyncStorage.setItem(STORAGE_KEYS.DUCKS, JSON.stringify(importedData.data.ducks ?? [])),
                     // AsyncStorage.setItem(STORAGE_KEYS.RABBITS, JSON.stringify(importedData.data.rabbits ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify(importedData.data.eggProduction ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify(importedData.data.breedingRecords ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.EGG_PRODUCTION, JSON.stringify((importedData.data.eggProduction ?? []).map((e: any) => ({ ...e, timestamp: e.timestamp || `${e.date}T12:00:00.000Z` })))),
+                    AsyncStorage.setItem(STORAGE_KEYS.BREEDING_RECORDS, JSON.stringify((importedData.data.breedingRecords ?? []).map((b: any) => ({ ...b, timestamp: b.timestamp || `${b.breedingDate}T12:00:00.000Z` })))),
                     AsyncStorage.setItem(STORAGE_KEYS.BREEDING_PLANS, JSON.stringify(importedData.data.breedingPlans ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.VACCINATIONS, JSON.stringify(importedData.data.vaccinations ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.HEALTH_RECORDS, JSON.stringify(importedData.data.healthRecords ?? [])),
@@ -617,8 +621,8 @@ export default function SettingsScreen() {
                     AsyncStorage.setItem(STORAGE_KEYS.FEED_RECORDS, JSON.stringify(importedData.data.feedRecords ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(importedData.data.expenses ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(importedData.data.income ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify(importedData.data.chickenHistory ?? [])),
-                    AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify(importedData.data.duckHistory ?? [])),
+                    AsyncStorage.setItem(STORAGE_KEYS.CHICKEN_HISTORY, JSON.stringify((importedData.data.chickenHistory ?? []).map((c: any) => ({ ...c, timestamp: c.timestamp || `${c.date}T12:00:00.000Z` })))),
+                    AsyncStorage.setItem(STORAGE_KEYS.DUCK_HISTORY, JSON.stringify((importedData.data.duckHistory ?? []).map((d: any) => ({ ...d, timestamp: d.timestamp || `${d.date}T12:00:00.000Z` })))),
                     AsyncStorage.setItem(STORAGE_KEYS.ANIMALS, JSON.stringify(importedData.data.animals ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(importedData.data.groups ?? [])),
                     AsyncStorage.setItem(STORAGE_KEYS.FINANCIAL_RECORDS, JSON.stringify(financialRecords)),
