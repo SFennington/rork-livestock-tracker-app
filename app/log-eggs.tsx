@@ -336,12 +336,10 @@ const styles = StyleSheet.create({
   },
   buttonGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
   },
   quantityButton: {
     flex: 1,
-    minWidth: 60,
     backgroundColor: "#fff",
     borderWidth: 1.5,
     borderColor: "#e5e7eb",
