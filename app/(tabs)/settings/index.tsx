@@ -459,16 +459,26 @@ export default function SettingsScreen() {
                 description: exp.description,
                 groupId: exp.groupId,
               }));
-              const incomeRecords = (importedData.data.income ?? []).map((inc: any) => ({
-                id: inc.id,
-                date: inc.date,
-                type: 'income',
-                category: inc.type,
-                amount: inc.amount,
-                description: inc.description,
-                groupId: inc.groupId,
-                quantity: inc.quantity,
-              }));
+              const incomeRecords = (importedData.data.income ?? []).map((inc: any) => {
+                let quantity = inc.quantity;
+                // Convert egg quantities from individual eggs to dozens if needed
+                // If quantity > 50, assume it's in individual eggs and convert to dozens
+                // If quantity <= 50, assume it's already in dozens
+                if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity > 50) {
+                  quantity = Math.round(quantity / 12);
+                  console.log(`Converting egg quantity ${inc.quantity} eggs -> ${quantity} dozen`);
+                }
+                return {
+                  id: inc.id,
+                  date: inc.date,
+                  type: 'income',
+                  category: inc.type,
+                  amount: inc.amount,
+                  description: inc.description,
+                  groupId: inc.groupId,
+                  quantity,
+                };
+              });
               financialRecords = [...expenseRecords, ...incomeRecords];
               console.log(`Migrated ${expenseRecords.length} expenses + ${incomeRecords.length} income = ${financialRecords.length} total records`);
             }
@@ -549,16 +559,26 @@ export default function SettingsScreen() {
                       description: exp.description,
                       groupId: exp.groupId,
                     }));
-                    const incomeRecords = (importedData.data.income ?? []).map((inc: any) => ({
-                      id: inc.id,
-                      date: inc.date,
-                      type: 'income',
-                      category: inc.type,
-                      amount: inc.amount,
-                      description: inc.description,
-                      groupId: inc.groupId,
-                      quantity: inc.quantity,
-                    }));
+                    const incomeRecords = (importedData.data.income ?? []).map((inc: any) => {
+                      let quantity = inc.quantity;
+                      // Convert egg quantities from individual eggs to dozens if needed
+                      // If quantity > 50, assume it's in individual eggs and convert to dozens
+                      // If quantity <= 50, assume it's already in dozens
+                      if (inc.type?.toLowerCase() === 'eggs' && quantity && quantity > 50) {
+                        quantity = Math.round(quantity / 12);
+                        console.log(`Converting egg quantity ${inc.quantity} eggs -> ${quantity} dozen`);
+                      }
+                      return {
+                        id: inc.id,
+                        date: inc.date,
+                        type: 'income',
+                        category: inc.type,
+                        amount: inc.amount,
+                        description: inc.description,
+                        groupId: inc.groupId,
+                        quantity,
+                      };
+                    });
                     financialRecords = [...expenseRecords, ...incomeRecords];
                     console.log(`Migrated ${expenseRecords.length} expenses + ${incomeRecords.length} income = ${financialRecords.length} total records`);
                   }
