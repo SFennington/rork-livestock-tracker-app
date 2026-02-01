@@ -250,6 +250,20 @@ export default function ManageAnimalsScreen() {
     return uniqueBreeds.sort((a, b) => a.localeCompare(b));
   };
 
+  // Get breeds that exist in the current group/filter context
+  const getAvailableBreedsForContext = (): string[] => {
+    // Get animals in current context (filtered by group/breed)
+    const contextAnimals = filterGroupId 
+      ? getAliveAnimals(filterType).filter(a => a.groupId === filterGroupId)
+      : getAliveAnimals(filterType);
+    
+    // Extract unique breeds from these animals
+    const breedsInContext = Array.from(new Set(contextAnimals.map(a => a.breed).filter(Boolean)));
+    
+    // Return sorted list
+    return breedsInContext.sort((a, b) => a.localeCompare(b));
+  };
+
   const handleSaveEdit = async (animal: IndividualAnimal) => {
     try {
       const newNumber = form.number ? parseInt(form.number, 10) : animal.number;
@@ -595,12 +609,7 @@ export default function ManageAnimalsScreen() {
                       <BreedPicker
                         value={form.breed ?? animal.breed ?? 'Unknown'}
                         onChange={(breed) => setForm(prev => ({ ...prev, breed }))}
-                        breeds={
-                          filterType === 'chicken' ? CHICKEN_BREEDS :
-                          filterType === 'duck' ? DUCK_BREEDS :
-                          filterType === 'rabbit' ? RABBIT_BREEDS :
-                          []
-                        }
+                        breeds={getAvailableBreedsForContext()}
                         label=""
                       />
                     </View>
