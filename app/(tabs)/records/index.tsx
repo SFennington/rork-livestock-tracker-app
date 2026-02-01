@@ -63,7 +63,7 @@ export default function RecordsScreen() {
   const [breedSort, setBreedSort] = useState<{ key: BreedSortKey; dir: SortDirection }>({ key: "breedingDate", dir: "desc" });
   const [moneySort, setMoneySort] = useState<{ key: MoneySortKey; dir: SortDirection }>({ key: "date", dir: "desc" });
 
-  const [eggFilters, setEggFilters] = useState<{ startDate?: string; endDate?: string; minCount?: string; maxCount?: string; notes?: string }>({});
+  const [eggFilters, setEggFilters] = useState<{ startDate?: string; endDate?: string; groupId?: string; breed?: string; minCount?: string; maxCount?: string; notes?: string }>({});
   const [breedFilters, setBreedFilters] = useState<{ startDate?: string; endDate?: string; status?: string } >({});
   const [moneyFilters, setMoneyFilters] = useState<{ startDate?: string; endDate?: string; groupId?: string; breed?: string; animalId?: string; type?: "income" | "expense" | "all"; text?: string }>({ type: "all" });
 
@@ -123,6 +123,8 @@ export default function RecordsScreen() {
       const t = new Date(r.date).getTime();
       if (start !== undefined && t < start) return false;
       if (end !== undefined && t > end) return false;
+      if (eggFilters.groupId && r.groupId !== eggFilters.groupId) return false;
+      if (eggFilters.breed && r.breed !== eggFilters.breed) return false;
       if (min !== undefined && r.count < min) return false;
       if (max !== undefined && r.count > max) return false;
       if (notesQ && !(r.notes ?? '').toLowerCase().includes(notesQ)) return false;
@@ -146,7 +148,7 @@ export default function RecordsScreen() {
     });
 
     return sorted;
-  }, [eggProduction, eggFilters.startDate, eggFilters.endDate, eggFilters.minCount, eggFilters.maxCount, eggFilters.notes, eggSort.key, eggSort.dir]);
+  }, [eggProduction, eggFilters.startDate, eggFilters.endDate, eggFilters.groupId, eggFilters.breed, eggFilters.minCount, eggFilters.maxCount, eggFilters.notes, eggSort.key, eggSort.dir]);
 
   const filteredSortedBreeding = useMemo(() => {
     const start = breedFilters.startDate ? new Date(breedFilters.startDate).getTime() : undefined;
@@ -191,6 +193,11 @@ export default function RecordsScreen() {
     const groupIds = new Set(financialRecords.filter(r => r.groupId).map(r => r.groupId!));
     return groups.filter(g => groupIds.has(g.id));
   }, [financialRecords, groups]);
+
+  // Get chicken groups for egg filters
+  const availableChickenGroups = useMemo(() => {
+    return groups.filter(g => g.type === 'chicken');
+  }, [groups]);
 
   const filteredSortedMoney = useMemo(() => {
     const start = moneyFilters.startDate ? new Date(moneyFilters.startDate).getTime() : undefined;
@@ -381,16 +388,69 @@ export default function RecordsScreen() {
                           <DatePicker value={eggFilters.endDate ?? ''} onChange={(d) => { setEggFilters(prev => ({ ...prev, endDate: d })); setShowEggDatePicker(null); }} label="To" />
                         </View>
                       )}
-                      <View style={styles.filterItemTiny}> 
-                        <Text style={styles.filterLabelCompact}>Min</Text>
-                        <TextInput style={styles.filterInputCompact} keyboardType="numeric" value={eggFilters.minCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, minCount: t }))} placeholder="0" />
-                      </View>
-                      <View style={styles.filterItemTiny}>
-                        <Text style={styles.filterLabelCompact}>Max</Text>
-                        <TextInput style={styles.filterInputCompact} keyboardType="numeric" value={eggFilters.maxCount ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, maxCount: t }))} placeholder="999" />
+                      <View style={styles.filterItemMedium}>
+                        <Text style={styles.filterLabelCompact}>Group</Text>
+                        <View style={styles.filterSelectWrapper}>
+                          <TextInput 
+                            style={styles.filterInputCompact} 
+                            value={eggFilters.groupId ? (availableChickenGroups.find(g => g.id === eggFilters.groupId)?.name ?? 'All') : 'All'} 
+                            editable={false}
+                          />
+                          <TouchableOpacity 
+                            style={styles.filterSelectButton}
+                            onPress={() => {
+                              Alert.alert(
+                                'Select Group',
+                                '',
+                                [
+                                  { text: 'All', onPress: () => setEggFilters(prev => ({ ...prev, groupId: undefined })) },
+                                  ...availableChickenGroups.map(g => ({
+                                    text: g.name,
+                                    onPress: () => setEggFilters(prev => ({ ...prev, groupId: g.id }))
+                                  })),
+                                  { text: 'Cancel', style: 'cancel' }
+                                ],
+                                { cancelable: true }
+                              );
+                            }}
+                          >
+                            <ChevronDown size={16} color="#6b7280" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                       <View style={styles.filterItemMedium}>
-                        <Text style={styles.filterLabelCompact}>Notes</Text>
+                        <Text style={styles.filterLabelCompact}>Breed</Text>
+                        <View style={styles.filterSelectWrapper}>
+                          <TextInput 
+                            style={styles.filterInputCompact} 
+                            value={eggFilters.breed || 'All'} 
+                            editable={false}
+                          />
+                          <TouchableOpacity 
+                            style={styles.filterSelectButton}
+                            onPress={() => {
+                              const uniqueBreeds = Array.from(new Set(eggProduction.filter(e => e.breed).map(e => e.breed!))).sort();
+                              Alert.alert(
+                                'Select Breed',
+                                '',
+                                [
+                                  { text: 'All', onPress: () => setEggFilters(prev => ({ ...prev, breed: undefined })) },
+                                  ...uniqueBreeds.map(b => ({
+                                    text: b,
+                                    onPress: () => setEggFilters(prev => ({ ...prev, breed: b }))
+                                  })),
+                                  { text: 'Cancel', style: 'cancel' }
+                                ],
+                                { cancelable: true }
+                              );
+                            }}
+                          >
+                            <ChevronDown size={16} color="#6b7280" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      <View style={styles.filterItemMedium}>
+                        <Text style={styles.filterLabelCompact}>Text</Text>
                         <TextInput style={styles.filterInputCompact} value={eggFilters.notes ?? ''} onChangeText={(t) => setEggFilters(prev => ({ ...prev, notes: t }))} placeholder="search" />
                       </View>
                       <TouchableOpacity style={styles.clearFiltersBtnCompact} onPress={() => { setEggFilters({}); setShowEggDatePicker(null); }} testID="eggs-clear-filters">
