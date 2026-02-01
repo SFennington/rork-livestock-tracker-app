@@ -10,7 +10,8 @@ import DatePicker from "@/components/DatePicker";
 import BreedPicker from "@/components/BreedPicker";
 
 export default function AddIncomeScreen() {
-  const { addIncome, income, expenses, eggProduction, getGroupsByType } = useLivestock();
+  const { getGroupsByType } = useLivestock();
+  const { addRecord } = useFinancialStore();
   const saveROISnapshot = useFinancialStore(state => state.saveROISnapshot);
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
@@ -76,38 +77,15 @@ export default function AddIncomeScreen() {
       return;
     }
 
-    await addIncome({
-      type: type as 'eggs' | 'meat' | 'livestock' | 'breeding' | 'other',
-      amount: price * qty,
+    await addRecord({
       date,
-      livestockType,
-      quantity: qty,
+      type: 'income',
+      category: type.charAt(0).toUpperCase() + type.slice(1),
+      amount: price * qty,
       description,
       groupId: groupId || undefined,
+      quantity: qty,
     });
-
-    // Calculate and save ROI snapshot
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-    const totalIncome = income.reduce((sum, i) => sum + i.amount, 0) + (price * qty);
-    let totalSold = 0, totalLaid = 0, totalBroken = 0, totalDonated = 0;
-    income.forEach(r => {
-      if (r.type === 'eggs' && r.quantity) {
-        if (r.amount === 0) totalDonated += r.quantity;
-        else totalSold += r.quantity;
-      }
-    });
-    if (type === 'eggs' && qty > 0) {
-      if (price * qty === 0) totalDonated += qty;
-      else totalSold += qty;
-    }
-    eggProduction.forEach(r => {
-      totalLaid += r.laid || r.count;
-      totalBroken += r.broken || 0;
-    });
-    const eggsConsumed = totalLaid - totalSold - settings.eggsOnHand - totalBroken - totalDonated;
-    const consumptionSavings = (eggsConsumed / 12) * settings.eggValuePerDozen;
-    const roi = (totalIncome + consumptionSavings) - totalExpenses;
-    await saveROISnapshot(roi);
 
     router.back();
   };
