@@ -21,6 +21,7 @@ export default function GroupDetailScreen() {
 
   const group = groups.find(g => g.id === groupId);
   const isUngrouped = groupId === 'ungrouped';
+  const isEggProducer = isUngrouped ? true : (group?.isEggProducer !== false);
   
   // Get available groups for merging (exclude current group)
   const availableMergeGroups = useMemo(() => {
@@ -153,6 +154,17 @@ export default function GroupDetailScreen() {
             >
               <Edit3 size={18} color={colors.primary} />
               <Text style={[styles.actionButtonText, { color: colors.primary }]}>Rename</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => {
+                if (!group) return;
+                updateGroup(group.id, { isEggProducer: !isEggProducer });
+              }}
+            >
+              <Text style={[styles.actionButtonText, { color: colors.primary }]}>
+                {isEggProducer ? '🥚 Egg Layer' : '🍖 Meat Bird'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.card, borderColor: colors.error }]}

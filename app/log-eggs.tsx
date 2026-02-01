@@ -25,7 +25,8 @@ export default function LogEggsScreen() {
   const [breed, setBreed] = useState<string>("");
   const [groupId, setGroupId] = useState<string>("");
 
-  const chickenGroups = getGroupsByType('chicken');
+  const allChickenGroups = getGroupsByType('chicken');
+  const chickenGroups = allChickenGroups.filter(g => g.isEggProducer !== false);
   
   // Get unique breeds from alive chickens only
   const aliveChickens = getAliveAnimals('chicken');

@@ -379,9 +379,14 @@ export default function LivestockScreen() {
                         </View>
                         <View style={styles.groupCardContent}>
                           <Text style={[styles.groupCardTitle, { color: colors.text }]}>{group.name}</Text>
-                          <Text style={[styles.groupCardDate, { color: colors.textSecondary }]}>
-                            Created {group.dateCreated}
-                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Text style={[styles.groupCardDate, { color: colors.textSecondary }]}>
+                              Created {group.dateCreated}
+                            </Text>
+                            {group.isEggProducer === false && (
+                              <Text style={{ fontSize: 11, color: colors.textMuted }}>🍖 Meat</Text>
+                            )}
+                          </View>
                         </View>
                         <View style={styles.groupCardRight}>
                           <Text style={[styles.groupCardCount, { color: colors.primary }]}>{groupCount}</Text>

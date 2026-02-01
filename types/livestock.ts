@@ -3,6 +3,7 @@ export interface Group {
   name: string;
   type: 'chicken' | 'duck' | 'rabbit';
   dateCreated: string;
+  isEggProducer?: boolean; // For poultry: true = egg layers, false = meat birds. Defaults to true for backward compat.
   notes?: string;
 }
 

@@ -910,6 +910,7 @@ export const [LivestockProvider, useLivestock] = createContextHook(() => {
       ...group,
       id: createId(),
       dateCreated: getLocalDateString(),
+      isEggProducer: group.isEggProducer !== undefined ? group.isEggProducer : true, // Default to egg producer
     };
     setGroups(prev => {
       const updated = [...prev, newGroup];
