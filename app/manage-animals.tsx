@@ -30,6 +30,8 @@ export default function ManageAnimalsScreen() {
     getDuckCountOnDate,
     addChickenHistoryEvent,
     addDuckHistoryEvent,
+    updateChickenHistoryEvent,
+    updateDuckHistoryEvent,
     groups,
   } = useLivestock();
 
@@ -269,6 +271,9 @@ export default function ManageAnimalsScreen() {
         return;
       }
       
+      // Check if breed changed and animal has an eventId
+      const breedChanged = form.breed && form.breed !== animal.breed && animal.eventId;
+      
       await updateAnimal(animal.id, {
         name: form.name,
         number: newNumber,
@@ -276,6 +281,47 @@ export default function ManageAnimalsScreen() {
         sex: form.sex,
         breed: form.breed,
       });
+      
+      // If breed changed and animal is linked to an event, update the event's breed breakdown
+      if (breedChanged) {
+        const eventId = animal.eventId;
+        const history = filterType === 'chicken' ? chickenHistory : filterType === 'duck' ? duckHistory : [];
+        const event = history.find(e => e.id === eventId);
+        
+        if (event && event.breeds) {
+          // Get all animals linked to this event
+          const eventAnimals = animals.filter(a => a.eventId === eventId && a.status === 'alive');
+          
+          // Recalculate breed breakdown
+          const breedCounts: Record<string, { roosters: number; hens: number }> = {};
+          for (const a of eventAnimals) {
+            const breed = a.id === animal.id ? form.breed! : a.breed; // Use new breed for current animal
+            if (!breedCounts[breed]) {
+              breedCounts[breed] = { roosters: 0, hens: 0 };
+            }
+            if (a.sex === 'M') {
+              breedCounts[breed].roosters++;
+            } else if (a.sex === 'F') {
+              breedCounts[breed].hens++;
+            }
+          }
+          
+          // Convert to breeds array
+          const updatedBreeds = Object.entries(breedCounts).map(([breed, counts]) => ({
+            breed,
+            roosters: counts.roosters,
+            hens: counts.hens,
+          }));
+          
+          // Update the event
+          if (filterType === 'chicken') {
+            await updateChickenHistoryEvent(eventId, { breeds: updatedBreeds });
+          } else if (filterType === 'duck') {
+            await updateDuckHistoryEvent(eventId, { breeds: updatedBreeds });
+          }
+        }
+      }
+      
       setEditingId(null);
       setForm({});
     } catch {
