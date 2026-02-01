@@ -58,8 +58,8 @@ function RootLayoutNav() {
       <Stack.Screen name="add-duck-event" options={{ presentation: "modal", title: "Log Duck Event", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="edit-chicken-event/[id]" options={{ presentation: "modal", title: "Edit Event", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="edit-duck-event/[id]" options={{ presentation: "modal", title: "Edit Event", headerStyle: { backgroundColor: colors.accent } }} />
-      <Stack.Screen name="add-expense" options={{ presentation: "modal", title: "Add Expense" }} />
-      <Stack.Screen name="add-income" options={{ presentation: "modal", title: "Add Income" }} />
+      <Stack.Screen name="add-expense" options={{ presentation: "modal", title: "Add Expense", headerStyle: { backgroundColor: '#ef4444' } }} />
+      <Stack.Screen name="add-income" options={{ presentation: "modal", title: "Add Income", headerStyle: { backgroundColor: '#10b981' } }} />
       <Stack.Screen name="add-transaction" options={{ presentation: "modal", title: "Add Transaction" }} />
       <Stack.Screen name="log-eggs" options={{ presentation: "modal", title: "Log Egg Production", headerStyle: { backgroundColor: colors.accent } }} />
       <Stack.Screen name="add-breeding" options={{ presentation: "modal", title: "Record Breeding", headerStyle: { backgroundColor: colors.accent } }} />
