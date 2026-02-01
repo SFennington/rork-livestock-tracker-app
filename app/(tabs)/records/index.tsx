@@ -782,9 +782,33 @@ export default function RecordsScreen() {
                           </TouchableOpacity>
                         </View>
                       </View>
-                      <View style={styles.filterItemTiny}>
+                      <View style={styles.filterItemMedium}>
                         <Text style={styles.filterLabelCompact}>Type</Text>
-                        <TextInput style={styles.filterInputCompact} value={(moneyFilters.type ?? 'all').toString()} onChangeText={(t) => setMoneyFilters(prev => ({ ...prev, type: (t === 'income' || t === 'expense' || t === 'all') ? t : 'all' }))} placeholder="all" />
+                        <View style={styles.filterSelectWrapper}>
+                          <TextInput 
+                            style={styles.filterInputCompact} 
+                            value={moneyFilters.type === 'income' ? 'Income' : moneyFilters.type === 'expense' ? 'Expense' : 'All'} 
+                            editable={false}
+                          />
+                          <TouchableOpacity 
+                            style={styles.filterSelectButton}
+                            onPress={() => {
+                              Alert.alert(
+                                'Select Type',
+                                '',
+                                [
+                                  { text: 'All', onPress: () => setMoneyFilters(prev => ({ ...prev, type: 'all' })) },
+                                  { text: 'Income', onPress: () => setMoneyFilters(prev => ({ ...prev, type: 'income' })) },
+                                  { text: 'Expense', onPress: () => setMoneyFilters(prev => ({ ...prev, type: 'expense' })) },
+                                  { text: 'Cancel', style: 'cancel' }
+                                ],
+                                { cancelable: true }
+                              );
+                            }}
+                          >
+                            <ChevronDown size={16} color="#6b7280" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                       <View style={styles.filterItemMedium}>
                         <Text style={styles.filterLabelCompact}>Text</Text>

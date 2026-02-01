@@ -103,7 +103,7 @@ export default function DatePicker({ value, onChange, label, collapsible = false
           style={styles.collapsedField} 
           onPress={() => setIsExpanded(true)}
         >
-          <Calendar size={18} color="#6b7280" />
+          <Calendar size={18} color="#fff" />
           <Text style={styles.collapsedFieldText}>
             {formatDisplayDate(value)}
           </Text>
@@ -180,9 +180,8 @@ const styles = StyleSheet.create({
   collapsedField: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderWidth: 1.5,
-    borderColor: "#e5e7eb",
+    backgroundColor: "transparent",
+    borderWidth: 0,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 12,
@@ -190,8 +189,8 @@ const styles = StyleSheet.create({
   },
   collapsedFieldText: {
     fontSize: 14,
-    fontWeight: "500" as const,
-    color: "#111827",
+    fontWeight: "700" as const,
+    color: "#fff",
   },
   calendar: {
     backgroundColor: "#fff",
